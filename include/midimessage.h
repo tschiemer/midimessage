@@ -77,6 +77,18 @@ namespace MidiMessage {
         StatusSystemExclusiveReset                          = StatusSystemExclusive + SystemExclusiveReset
     } Status_t;
 
+    typedef enum {
+        ChannelModeControllerAllSoundOff            = 120,
+        ChannelModeControllerResetAllControllers    = 121,
+        ChannelModeControllerLocalControl           = 122,
+        ChannelModeControllerAllNotesOff            = 123,
+        ChannelModeControllerOmniModeOff            = 124,
+        ChannelModeControllerOmniModeOn             = 125,
+        ChannelModeControllerMonoModeOn             = 126,
+        ChannelModeControllerPolyModeOn             = 127
+    } ChannelModeController_t;
+
+
 
     typedef struct {
         Status_t Status;
@@ -170,18 +182,6 @@ namespace MidiMessage {
     }
 
 
-    typedef enum {
-        ChannelModeControllerAllSoundOff            = 120,
-        ChannelModeControllerResetAllControllers    = 121,
-        ChannelModeControllerLocalControl           = 122,
-        ChannelModeControllerAllNotesOff            = 123,
-        ChannelModeControllerOmniModeOff            = 124,
-        ChannelModeControllerOmniModeOn             = 125,
-        ChannelModeControllerMonoModeOn             = 126,
-        ChannelModeControllerPolyModeOn             = 127
-    } ChannelModeController_t;
-
-
     inline bool isChannelModeMessage( uint8_t status, uint8_t controller ){
         return (status & StatusMask) == StatusControlChange  &&
                ((controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerResetAllControllers ||
@@ -221,6 +221,9 @@ namespace MidiMessage {
     }
 
 
+    inline bool isSystemExclusive( Status_t status ){
+        return (status & StatusMask) == StatusSystemExclusive;
+    }
 
     inline bool isSystemCommonMessage( uint8_t status ){
         return ((status & StatusMask) == StatusSystemExclusive) &&
