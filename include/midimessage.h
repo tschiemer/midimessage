@@ -122,6 +122,10 @@ namespace MidiMessage {
             } PitchBendChange;
             union {
                 struct {
+                    uint8_t Length;
+                    uint8_t * Buffer;
+                } Custom;
+                struct {
                     uint8_t MessageType;
                     uint8_t Values;
                 } MIDITimeCodeQuarterFrame;
@@ -576,8 +580,10 @@ namespace MidiMessage {
 
 
 
-    int pack( uint8_t * bytes, Message_t * msg, uint8_t * sysex );
-    bool unpack( uint8_t * bytes, int len, Message_t * msg, uint8_t * sysex );
+    int pack( uint8_t * bytes, Message_t * msg );
+    bool unpack( uint8_t * bytes, int len, Message_t * msg );
+
+    void freeMessage( Message_t * msg );
 }
 
 #endif //MIDIMESSAGE_H

@@ -3,12 +3,13 @@
 //
 
 #include <midimessage.h>
-
+#include <string.h>
+#include <cstdlib>
 
 
 namespace MidiMessage {
 
-    int pack( uint8_t * bytes, Message_t * msg, uint8_t * sysex ){
+    int pack( uint8_t * bytes, Message_t * msg ){
 
 
         switch (msg->Status){
@@ -36,42 +37,32 @@ namespace MidiMessage {
 
             case StatusSystemExclusive:
 
+                bytes[0] = msg->Status;
+                memcpy( &bytes[1], msg->Data.SysEx.Custom.Buffer, msg->Data.SysEx.Custom.Length );
 
-                switch(getChannel(msg->Status)){
-                    case SystemExclusive:
+                return 1 + msg->Data.SysEx.Custom.Length;
 
-                        ASSERT( sysex != NULL );
+            case StatusSystemExclusiveMIDITimeCodeQuarterFrame:
+                return packMIDITimeCodeQuarterFrame( bytes, msg->Data.SysEx.MIDITimeCodeQuarterFrame.MessageType, msg->Data.SysEx.MIDITimeCodeQuarterFrame.Values );
 
-                        //TODO
-                        ASSERT( false )
+            case StatusSystemExclusiveSongPositionPointer:
+                return packSongPositionPointer( bytes, msg->Data.SysEx.SongPositionPointer.Position );
 
-                        return 0;
+            case StatusSystemExclusiveSongSelect:
+                return packSongSelect( bytes, msg->Data.SysEx.SongSelect.Song );
 
-                    case SystemExclusiveMIDITimeCodeQuarterFrame:
-                        return packMIDITimeCodeQuarterFrame( bytes, msg->Data.SysEx.MIDITimeCodeQuarterFrame.MessageType, msg->Data.SysEx.MIDITimeCodeQuarterFrame.Values );
+            case StatusSystemExclusiveTuneRequest:
+            case StatusSystemExclusiveEndOfExclusive:
+            case StatusSystemExclusiveTimingClock:
+            case StatusSystemExclusiveStart:
+            case StatusSystemExclusiveContinue:
+            case StatusSystemExclusiveStop:
+            case StatusSystemExclusiveActiveSensing:
+            case StatusSystemExclusiveReset:
 
-                    case SystemExclusiveSongPositionPointer:
-                        return packSongPositionPointer( bytes, msg->Data.SysEx.SongPositionPointer.Position );
+                bytes[0] = msg->Status;
 
-                    case SystemExclusiveSongSelect:
-                        return packSongSelect( bytes, msg->Data.SysEx.SongSelect.Song );
-
-                    case SystemExclusiveTuneRequest:
-                    case SystemExclusiveEndOfExclusive:
-                    case SystemExclusiveTimingClock:
-                    case SystemExclusiveStart:
-                    case SystemExclusiveContinue:
-                    case SystemExclusiveStop:
-                    case SystemExclusiveActiveSensing:
-                    case SystemExclusiveReset:
-
-                        bytes[0] = StatusSystemExclusive | getChannel(msg->Status);
-
-                        return 1;
-
-                }
-//                unpack( bytes, &msg->Data.NoteOn.Channel, &msg->Data.NoteOn.Note, &msg->Data.NoteOn.Velocity );
-                break;
+                return 1;
 
             default:
                 break;
@@ -81,7 +72,8 @@ namespace MidiMessage {
         return 0;
     }
 
-    bool unpack( uint8_t * bytes, int len, Message_t * msg, uint8_t * sysex ){
+    bool unpack( uint8_t * bytes, int length, Message_t * msg ){
+
         if ( ! isValidStatusByte(bytes[0]) ){
             return false;
         }
@@ -91,25 +83,25 @@ namespace MidiMessage {
         switch (msg->Status){
 
             case StatusNoteOff:
-                return unpackNoteOff( bytes, len, &msg->Channel, &msg->Data.NoteOff.Key, &msg->Data.NoteOff.Velocity );
+                return unpackNoteOff( bytes, length, &msg->Channel, &msg->Data.NoteOff.Key, &msg->Data.NoteOff.Velocity );
 
             case StatusNoteOn:
-                return unpackNoteOn( bytes, len, &msg->Channel, &msg->Data.NoteOn.Key, &msg->Data.NoteOn.Velocity );
+                return unpackNoteOn( bytes, length, &msg->Channel, &msg->Data.NoteOn.Key, &msg->Data.NoteOn.Velocity );
 
             case StatusPolyphonicKeyPressure:
-                return unpackPolyphonicKeyPressure( bytes, len, &msg->Channel, &msg->Data.PolyphonicKeyPressure.Key, &msg->Data.PolyphonicKeyPressure.Pressure );
+                return unpackPolyphonicKeyPressure( bytes, length, &msg->Channel, &msg->Data.PolyphonicKeyPressure.Key, &msg->Data.PolyphonicKeyPressure.Pressure );
 
             case StatusControlChange:
-                return unpackControlChange( bytes, len, &msg->Channel, &msg->Data.ControlChange.Controller, &msg->Data.ControlChange.Value );
+                return unpackControlChange( bytes, length, &msg->Channel, &msg->Data.ControlChange.Controller, &msg->Data.ControlChange.Value );
 
             case StatusProgramChange:
-                return unpackProgramChange( bytes, len, &msg->Channel, &msg->Data.ProgramChange.Program );
+                return unpackProgramChange( bytes, length, &msg->Channel, &msg->Data.ProgramChange.Program );
 
             case StatusChannelPressure:
-                return unpackChannelPressure( bytes, len, &msg->Channel, &msg->Data.ChannelPressure.Pressure );
+                return unpackChannelPressure( bytes, length, &msg->Channel, &msg->Data.ChannelPressure.Pressure );
 
             case StatusPitchBendChange:
-                return unpackPitchBendChange( bytes, len, &msg->Channel, &msg->Data.PitchBendChange.Pitch );
+                return unpackPitchBendChange( bytes, length, &msg->Channel, &msg->Data.PitchBendChange.Pitch );
 
             case StatusSystemExclusive:
 
@@ -117,18 +109,26 @@ namespace MidiMessage {
 
                 switch((getChannel(bytes[0]))){
                     case SystemExclusive:
-                        //TODO
-                        ASSERT( false )
+
+                        if (length <= 1){
+                            msg->Data.SysEx.Custom.Length = 0;
+                            msg->Data.SysEx.Custom.Buffer = NULL;
+                        } else {
+                            msg->Data.SysEx.Custom.Length = length - 1;
+                            msg->Data.SysEx.Custom.Buffer = (uint8_t*)malloc( length - 1 );
+                            memcpy( msg->Data.SysEx.Custom.Buffer, &bytes[1], length - 1 );
+                        }
+
                         return false;
 
                     case SystemExclusiveMIDITimeCodeQuarterFrame:
-                        return unpackMIDITimeCodeQuarterFrame( bytes, len, &msg->Data.SysEx.MIDITimeCodeQuarterFrame.MessageType, &msg->Data.SysEx.MIDITimeCodeQuarterFrame.Values );
+                        return unpackMIDITimeCodeQuarterFrame( bytes, length, &msg->Data.SysEx.MIDITimeCodeQuarterFrame.MessageType, &msg->Data.SysEx.MIDITimeCodeQuarterFrame.Values );
 
                     case SystemExclusiveSongPositionPointer:
-                        return unpackSongPositionPointer( bytes, len, &msg->Data.SysEx.SongPositionPointer.Position );
+                        return unpackSongPositionPointer( bytes, length, &msg->Data.SysEx.SongPositionPointer.Position );
 
                     case SystemExclusiveSongSelect:
-                        return unpackSongSelect( bytes, len, &msg->Data.SysEx.SongSelect.Song );
+                        return unpackSongSelect( bytes, length, &msg->Data.SysEx.SongSelect.Song );
 
                     case SystemExclusiveTuneRequest:
                     case SystemExclusiveEndOfExclusive:
@@ -138,14 +138,25 @@ namespace MidiMessage {
                     case SystemExclusiveStop:
                     case SystemExclusiveActiveSensing:
                     case SystemExclusiveReset:
+                        if (length != 1){
+                            return false;
+                        }
                         return true;
 
                 }
 
             default:
-                msg->Status = (Status_t)0;
                 return false;
 
+        }
+    }
+
+    void freeMessage( Message_t * msg ){
+
+        if (msg->Status == StatusSystemExclusive &&
+                msg->Data.SysEx.Custom.Length > 0 &&
+                msg->Data.SysEx.Custom.Buffer != NULL){
+            free(msg->Data.SysEx.Custom.Buffer);
         }
     }
 
