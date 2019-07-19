@@ -21,7 +21,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
         return;
     }
 
-    if (!MidiMessage::isChannelVoiceMessage(msg)){
+    if (!MidiMessage::isChannelVoiceMessage(&msg)){
         return;
     }
 
