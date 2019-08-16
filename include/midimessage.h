@@ -582,10 +582,37 @@ namespace MidiMessage {
     }
 
 
-
+    /**
+     *  Tries to pack a given midi <msg> into the corresponding sequence of raw bytes.
+     *
+     *  @param  bytes   destination byte array
+     *  @param  msg     midi message to pack into array
+     *  @return         number of relevant bytes, zero on invalid message
+     */
     int pack( uint8_t * bytes, Message_t * msg );
+
+    /**
+     * Tries to parse/unpack a raw byte sequence assumed to be a midi message.
+     *
+     * NOTE: if the messaged parse is a SystemExclusive message (Status == StatusSystemExclusive)
+     * a buffer for the message contents is allocated which has to be freed (using freeMessage())
+     *
+     * @param   bytes   source byte array of midi message to parse
+     * @param   len     length of bytes to parse
+     * @param   msg     destination midi message struct
+     * @return          true iff valid midi message was read
+     * @see freeMessage()
+     */
     bool unpack( uint8_t * bytes, int len, Message_t * msg );
 
+    /**
+     * Frees SysEx memory (if set)
+     *
+     * Is safe to be called on any (correctly used) message, ie will only act if msg is has status == StatusSystemExclusive
+     * and has a data length of greater than zero.
+     *
+     * @param   msg     midi message to be freed
+     */
     void freeMessage( Message_t * msg );
 }
 
