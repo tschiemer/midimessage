@@ -9,6 +9,8 @@
 void receivedMidiMessageFromSomewhere( uint8_t * buf, int len );
 void sendMidiMessageToSomewhere( uint8_t * buf, int len );
 
+void receivedSysExMessageFromSomewhere( uint8_t * buf, int len );
+
 
 void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
@@ -21,12 +23,17 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
 
     if (!MidiMessage::unpack( buf, len, &msg )) {
+        std::cout << "Discarding invalid message" << std::endl;
         return;
     }
 
     if (!MidiMessage::isChannelVoiceMessage(&msg)){
+
+        std::cout << "Discarding non-ChannelVoice message" << std::endl;
+
         // if above a SysEx message with data content was unpacked, we have to make sure to free the memory again.
         MidiMessage::freeMessage(&msg);
+
         return;
     }
 
@@ -87,12 +94,43 @@ void sendMidiMessageToSomewhere( uint8_t * buf, int len ){
     std::cout << std::endl;
 }
 
+void receivedSysExMessageFromSomewhere( uint8_t * buf, int len ) {
+
+    MidiMessage::Message_t msg;
+
+    if (!MidiMessage::unpack( buf, len, &msg )) {
+        std::cout << "Discarding invalid message" << std::endl;
+        return;
+    }
+
+    if (msg.Status != MidiMessage::StatusSystemExclusive) {
+        std::cout << "Discarding non-SysEx message" << std::endl;
+        return;
+    }
+
+    std::cout << "Received SysEx Message with " << msg.Data.SysEx.Custom.Length << " bytes of custom data: ";
+
+    for (int i = 0; i < msg.Data.SysEx.Custom.Length; i++) {
+        std::cout << (int)msg.Data.SysEx.Custom.Buffer[i] << " ";
+    }
+
+    std::cout << std::endl;
+
+    MidiMessage::freeMessage( &msg );
+}
+
 
 int main(int argc, char * argv[]){
 
     uint8_t buf[3] = {MidiMessage::StatusNoteOff | 1, 33, 66};
+    uint8_t bufSysEx[10] = {MidiMessage::StatusSystemExclusive, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-    receivedMidiMessageFromSomewhere( buf, 3 );
+
+    receivedMidiMessageFromSomewhere( buf, sizeof(buf) );
+    receivedMidiMessageFromSomewhere( bufSysEx, sizeof(bufSysEx) );
+
+    receivedSysExMessageFromSomewhere( buf, sizeof(buf) );
+    receivedSysExMessageFromSomewhere( bufSysEx, sizeof(bufSysEx) );
 
     return 0;
 }
