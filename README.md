@@ -5,6 +5,15 @@ Very basic constants and un-/packer for MIDI Messages.
 Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) that do not provide these basics.
 
 
+## References
+
+- https://www.midi.org/specifications-old/item/the-midi-1-0-specification
+- https://www.midi.org/specifications-old/category/reference-tables
+- http://www.personal.kent.edu/~sbirch/Music_Production/MP-II/MIDI/an_introduction_to_midi_contents.htm
+
+
+## Code Example
+
 ```cpp
 
 void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
