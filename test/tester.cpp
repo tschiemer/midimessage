@@ -25,6 +25,8 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
     }
 
     if (!MidiMessage::isChannelVoiceMessage(&msg)){
+        // if above a SysEx message with data content was unpacked, we have to make sure to free the memory again.
+        MidiMessage::freeMessage(&msg);
         return;
     }
 
