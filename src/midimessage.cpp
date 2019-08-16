@@ -37,8 +37,15 @@ namespace MidiMessage {
 
             case StatusSystemExclusive:
 
+                ASSERT( bytes != NULL );
+
                 bytes[0] = msg->Status;
-                memcpy( &bytes[1], msg->Data.SysEx.Custom.Buffer, msg->Data.SysEx.Custom.Length );
+
+                if (msg->Data.SysEx.Custom.Length > 0) {
+                    ASSERT( msg->Data.SysEx.Custom.Buffer)
+
+                    memcpy(&bytes[1], msg->Data.SysEx.Custom.Buffer, msg->Data.SysEx.Custom.Length);
+                }
 
                 return 1 + msg->Data.SysEx.Custom.Length;
 
@@ -115,11 +122,13 @@ namespace MidiMessage {
                             msg->Data.SysEx.Custom.Buffer = NULL;
                         } else {
                             msg->Data.SysEx.Custom.Length = length - 1;
-                            msg->Data.SysEx.Custom.Buffer = (uint8_t*)malloc( length - 1 );
-                            memcpy( msg->Data.SysEx.Custom.Buffer, &bytes[1], length - 1 );
+                            if (length - 1 > 0){
+                                msg->Data.SysEx.Custom.Buffer = (uint8_t*)malloc( length - 1 );
+                                memcpy( msg->Data.SysEx.Custom.Buffer, &bytes[1], length - 1 );
+                            }
                         }
 
-                        return false;
+                        return true;
 
                     case SystemExclusiveMIDITimeCodeQuarterFrame:
                         return unpackMIDITimeCodeQuarterFrame( bytes, length, &msg->Data.SysEx.MIDITimeCodeQuarterFrame.MessageType, &msg->Data.SysEx.MIDITimeCodeQuarterFrame.Values );
