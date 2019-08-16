@@ -10,5 +10,5 @@ set(SOURCE_FILES main.cpp include/midimessage.h src/midimessage.cpp)
 add_library(midimessage ${SOURCE_FILES})
 
 
-add_executable(tester test/tester.cpp)
-target_link_libraries(tester midimessage)
+add_executable(example-sample example/sample.cpp)
+target_link_libraries(example-sample midimessage)
