@@ -88,6 +88,12 @@ namespace MidiMessage {
         ChannelModeControllerPolyModeOn             = 127
     } ChannelModeController_t;
 
+    typedef enum {
+        ReservedSystemExclusiveIdManufacturerExtension  = 0x00,
+        ReservedSystemExclusiveIdExperimental           = 0x7D,
+        ReservedSystemExclusiveIdNonRealTime            = 0x7E,
+        ReservedSystemExclusiveIdRealTime               = 0x7F
+    } ReservedSystemExclusiveId_t;
 
 
     typedef struct {
@@ -134,8 +140,9 @@ namespace MidiMessage {
             } PitchBendChange;
             union {
                 struct {
+                    uint32_t Id;
                     uint8_t Length;
-                    uint8_t * Buffer;
+                    void * Data;
                 } Custom;
                 struct {
                     uint8_t MessageType;

@@ -10,7 +10,7 @@
 namespace MidiMessage {
 
     int pack( uint8_t * bytes, Message_t * msg ){
-
+        int len;
 
         switch (msg->Status){
 
@@ -41,13 +41,53 @@ namespace MidiMessage {
 
                 bytes[0] = msg->Status;
 
+                if (msg->Data.SysEx.Custom.Id == ReservedSystemExclusiveIdExperimental){
+
+                    bytes[1] = ReservedSystemExclusiveIdExperimental;
+
+                    if (msg->Data.SysEx.Custom.Length > 0) {
+                        ASSERT( msg->Data.SysEx.Custom.Buffer)
+
+                        memcpy(&bytes[2], msg->Data.SysEx.Custom.Data, msg->Data.SysEx.Custom.Length);
+                    }
+
+                    return 2 + msg->Data.SysEx.Custom.Length;
+                }
+
+                if (msg->Data.SysEx.Custom.Id == ReservedSystemExclusiveIdRealTime){
+
+                    //TODO
+
+                    return 0;
+                }
+
+                if (msg->Data.SysEx.Custom.Id == ReservedSystemExclusiveIdRealTime){
+
+                    //TODO
+
+                    return 0;
+                }
+
+                // assume custom manufacturer data from here on
+
+
+                if ( (msg->Data.SysEx.Custom.Id & 0xFF00) != 0 ){
+                    bytes[1] = ReservedSystemExclusiveIdManufacturerExtension;
+                    bytes[2] = (msg->Data.SysEx.Custom.Id >> 8) & 0xFF;
+                    bytes[3] = msg->Data.SysEx.Custom.Id & 0xFF;
+                    len = 4;
+                } else {
+                    bytes[1] = msg->Data.SysEx.Custom.Id & 0xFF;
+                    len = 2;
+                }
+
                 if (msg->Data.SysEx.Custom.Length > 0) {
                     ASSERT( msg->Data.SysEx.Custom.Buffer)
 
-                    memcpy(&bytes[1], msg->Data.SysEx.Custom.Buffer, msg->Data.SysEx.Custom.Length);
+                    memcpy(&bytes[2], msg->Data.SysEx.Custom.Data, msg->Data.SysEx.Custom.Length);
                 }
 
-                return 1 + msg->Data.SysEx.Custom.Length;
+                return len + msg->Data.SysEx.Custom.Length;
 
             case StatusSystemExclusiveMIDITimeCodeQuarterFrame:
                 return packMIDITimeCodeQuarterFrame( bytes, msg->Data.SysEx.MIDITimeCodeQuarterFrame.MessageType, msg->Data.SysEx.MIDITimeCodeQuarterFrame.Values );
@@ -117,15 +157,52 @@ namespace MidiMessage {
                 switch((getChannel(bytes[0]))){
                     case SystemExclusive:
 
-                        if (length <= 1){
-                            msg->Data.SysEx.Custom.Length = 0;
-                            msg->Data.SysEx.Custom.Buffer = NULL;
-                        } else {
-                            msg->Data.SysEx.Custom.Length = length - 1;
-                            if (length - 1 > 0){
-                                msg->Data.SysEx.Custom.Buffer = (uint8_t*)malloc( length - 1 );
-                                memcpy( msg->Data.SysEx.Custom.Buffer, &bytes[1], length - 1 );
+                        // minimum of status byte and manufacturerid (assuming and optional ending)
+                        if (length < 2) {
+                            return false;
+                        }
+
+                        if (bytes[1] == ReservedSystemExclusiveIdExperimental) {
+                            msg->Data.SysEx.Custom.Id = ReservedSystemExclusiveIdExperimental;
+                            msg->Data.SysEx.Custom.Length = length - 2;
+                            if (length > 2) {
+                                msg->Data.SysEx.Custom.Data = calloc( length - 2, 1 );
+                                memcpy( msg->Data.SysEx.Custom.Data, &bytes[2], length - 2 );
                             }
+                            return true;
+                        }
+
+                        if (bytes[1] == ReservedSystemExclusiveIdRealTime) {
+                            msg->Data.SysEx.Custom.Id = ReservedSystemExclusiveIdRealTime;
+                            //TODO
+                            return false;
+                        }
+
+                        if (bytes[1] == ReservedSystemExclusiveIdNonRealTime) {
+                            msg->Data.SysEx.Custom.Id = ReservedSystemExclusiveIdNonRealTime;
+                            //TODO
+                            return false;
+                        }
+
+
+                        // assume manufacturer extension from hereon out.
+
+                        // is it a three byte manufacturer id?
+                        if (bytes[1] == ReservedSystemExclusiveIdManufacturerExtension) {
+                            if (length < 4) {
+                                return false;
+                            }
+                            msg->Data.SysEx.Custom.Id = ((uint32_t)bytes[2]) << 8;
+                            msg->Data.SysEx.Custom.Id += (uint32_t)bytes[3];
+                            msg->Data.SysEx.Custom.Length = length - 3;
+                        } else {
+                            msg->Data.SysEx.Custom.Id = (uint32_t)bytes[2];
+                            msg->Data.SysEx.Custom.Length = length - 2;
+                        }
+
+                        if (msg->Data.SysEx.Custom.Length > 0){
+                            msg->Data.SysEx.Custom.Data = calloc( msg->Data.SysEx.Custom.Length, 1 );
+                            memcpy( msg->Data.SysEx.Custom.Data, &bytes[1], msg->Data.SysEx.Custom.Length );
                         }
 
                         return true;
@@ -164,8 +241,8 @@ namespace MidiMessage {
 
         if (msg->Status == StatusSystemExclusive &&
                 msg->Data.SysEx.Custom.Length > 0 &&
-                msg->Data.SysEx.Custom.Buffer != NULL){
-            free(msg->Data.SysEx.Custom.Buffer);
+                msg->Data.SysEx.Custom.Data != NULL){
+            free(msg->Data.SysEx.Custom.Data);
         }
     }
 
