@@ -107,35 +107,28 @@ namespace MidiMessage {
                 uint8_t b3;
             } bytes;
             struct {
-//                uint8_t Channel;
                 uint8_t Key;
                 uint8_t Velocity;
             } NoteOn;
             struct {
-//                uint8_t Channel;
                 uint8_t Key;
                 uint8_t Velocity;
             } NoteOff;
             struct {
-//                uint8_t Channel;
                 uint8_t Key;
                 uint8_t Pressure;
             } PolyphonicKeyPressure;
             struct {
-//                uint8_t Channel;
                 uint8_t Controller;
                 uint8_t Value;
             } ControlChange;
             struct {
-//                uint8_t Channel;
                 uint8_t Program;
             } ProgramChange;
             struct {
-//                uint8_t Channel;
                 uint8_t Pressure;
             } ChannelPressure;
             struct {
-//                uint8_t Channel;
                 uint16_t Pitch;
             } PitchBendChange;
             union {
