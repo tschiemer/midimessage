@@ -101,12 +101,6 @@ namespace MidiMessage {
         uint8_t Channel;
         union {
             struct {
-                uint8_t b0;
-                uint8_t b1;
-                uint8_t b2;
-                uint8_t b3;
-            } bytes;
-            struct {
                 uint8_t Key;
                 uint8_t Velocity;
             } NoteOn;
@@ -198,7 +192,7 @@ namespace MidiMessage {
     }
 
     inline bool isChannelModeMessage( Message_t * msg ){
-        return isChannelModeMessage( msg->Status, msg->Data.bytes.b0 );
+        return isChannelModeMessage( msg->Status, msg->Data.ControlChange.Controller );
     }
 
     inline bool isChannelVoiceMessage( uint8_t status, uint8_t byte1 ){
@@ -217,7 +211,7 @@ namespace MidiMessage {
     }
 
     inline bool isChannelVoiceMessage( Message_t * msg ){
-        return isChannelVoiceMessage( msg->Status, msg->Data.bytes.b0 );
+        return isChannelVoiceMessage( msg->Status, msg->Data.ControlChange.Controller );
     }
 
 
