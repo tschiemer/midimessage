@@ -1,0 +1,23 @@
+//
+// MIDI SysEx Message Manufacturer Id List
+//
+// Generated using 'make manufacturerids'
+//
+// @date  ${date}
+// @url https://www.midi.org/specifications-old/item/manufacturer-id-numbers
+//
+
+#ifndef MIDIMESSAGE_MANUFACTURERIDS_H
+#define MIDIMESSAGE_MANUFACTURERIDS_H
+
+namespace MidiMessage {
+
+    typedef enum {
+
+${manufacturerIdList}
+
+    } ManufacturerId_t;
+
+}
+
+#endif //MIDIMESSAGE_MANUFACTURERIDS_H
