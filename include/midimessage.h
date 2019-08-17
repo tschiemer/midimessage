@@ -95,6 +95,181 @@ namespace MidiMessage {
         ReservedSystemExclusiveIdRealTime               = 0x7F
     } ReservedSystemExclusiveId_t;
 
+    typedef enum {
+        UniversalSysExNonRTSampleDumpHeader       = 0x01,
+        UniversalSysExNonRTSampleDataPacket       = 0x02,
+        UniversalSysExNonRTSampleDumpRequest      = 0x03,
+        UniversalSysExNonRTMidiTimeCode           = 0x04,
+        UniversalSysExNonRTSampleDumpExtension    = 0x05,
+        UniversalSysExNonRTGeneralInformation     = 0x06,
+        UniversalSysExNonRTFileDump               = 0x07,
+        UniversalSysExNonRTMidiTuningStandard     = 0x08,
+        UniversalSysExNonRTGeneralMidi            = 0x09,
+        UniversalSysExNonRTDownloadableSounds     = 0x0A,
+        UniversalSysExNonRTFileReferenceMessage   = 0x0B,
+        UniversalSysExNonRTMidiVisualControl      = 0x0C,
+        UniversalSysExNonRTMidiCapabilityInquiry  = 0x0D,
+
+        UniversalSysExNonRTEndOfFile              = 0x7B,
+        UniversalSysExNonRTWait                   = 0x7C,
+        UniversalSysExNonRTCancel                 = 0x7D,
+        UniversalSysExNonRTNAK                    = 0x7E,
+        UniversalSysExNonRTACK                    = 0x7F
+    } UniversalSysExNonRT_t;
+
+    typedef enum {
+        UniversalSysExNonRtMidiTimeCodeSpecial                  = 0x00,
+        UniversalSysExNonRtMidiTimeCodePunchInPoint             = 0x01,
+        UniversalSysExNonRtMidiTimeCodePunchOutPoint            = 0x02,
+        UniversalSysExNonRtMidiTimeCodeDeletePunchInPoint       = 0x03,
+        UniversalSysExNonRtMidiTimeCodeDeletePunchOutPoint      = 0x04,
+        UniversalSysExNonRtMidiTimeCodeEventStartPoint          = 0x05,
+        UniversalSysExNonRtMidiTimeCodeEventStopPoint           = 0x06,
+        UniversalSysExNonRtMidiTimeCodeEventStartPointsWithInfo = 0x07,
+        UniversalSysExNonRtMidiTimeCodeEventStopPointsWithInfo  = 0x08,
+        UniversalSysExNonRtMidiTimeCodeDeleteEventStartPoint    = 0x09,
+        UniversalSysExNonRtMidiTimeCodeDeleteEventStopPoint     = 0x0A,
+        UniversalSysExNonRtMidiTimeCodeCuePoints                = 0x0B,
+        UniversalSysExNonRtMidiTimeCodeCuePointsWithInfo        = 0x0C,
+        UniversalSysExNonRtMidiTimeCodeDeleteCuePoint           = 0x0D,
+        UniversalSysExNonRtMidiTimeCodeEventNameInInfo          = 0x0E
+    } UniversalSysExNonRtMidiTimeCode_t;
+
+    typedef enum {
+        UniversalSysExNonRtSampleDumpExtensionLoopPointsTransmission    = 0x01,
+        UniversalSysExNonRtSampleDumpExtensionLoopPointsRequest         = 0x02,
+        UniversalSysExNonRtSampleDumpExtensionSampleNameTransmission    = 0x03,
+        UniversalSysExNonRtSampleDumpExtensionSampleNameRequest         = 0x04,
+        UniversalSysExNonRtSampleDumpExtensionExtendedDumpHeader        = 0x05,
+        UniversalSysExNonRtSampleDumpExtensionExtendedLoopPointsTransmission    = 0x06,
+        UniversalSysExNonRtSampleDumpExtensionExtendedLoopPointsRequest = 0x07
+    } UniversalSysExNonRtSampleDumpExtension_t;
+
+    typedef enum {
+        UniversalSysExNonRtGeneralInformationIdentityRequest    = 0x01,
+        UniversalSysExNonRtGeneralInformationIdentityReply      = 0x02
+    } UniversalSysExNonRtGeneralInformation_t;
+
+    typedef enum {
+        UniversalSysExNonRtFileDumpHeader       = 0x01,
+        UniversalSysExNonRtFileDumpDataPacket   = 0x02,
+        UniversalSysExNonRtFileDumpRequest      = 0x03
+    } UniversalSysExNonRtFileDump_t;
+
+    typedef enum {
+        UniversalSysExNonRtMidiTuningStandardBulkDumpRequest        = 0x00,
+        UniversalSysExNonRtMidiTuningStandardBulkDumpReply          = 0x01,
+        UniversalSysExNonRtMidiTuningStandardTuningDumpRequest      = 0x02,
+        UniversalSysExNonRtMidiTuningStandardKeybasedTuningDump     = 0x03,
+        UniversalSysExNonRtMidiTuningStandardScaleTuningDump1Byte   = 0x04,
+        UniversalSysExNonRtMidiTuningStandardScaleTuningDump2Byte   = 0x05,
+        UniversalSysExNonRtMidiTuningStandardSingleNoteTuningChange = 0x06,
+        UniversalSysExNonRtMidiTuningStandardScaleTuning1Byte       = 0x07,
+        UniversalSysExNonRtMidiTuningStandardScaleTuning2Byte       = 0x08
+    } UniversalSysExNonRtMidiTuningStandard_t;
+
+    typedef enum {
+        UniversalSysExNonRtGeneralMidi1SystemOn     = 0x01,
+        UniversalSysExNonRtGeneralMidiSystemOff     = 0x02,
+        UniversalSysExNonRtGeneralMidi2SystemOn     = 0x03
+    } UniversalSysExNonRtGeneralMidi_t;
+
+    typedef enum {
+        UniversalSysExNonRtDownloadableSoundsTurnDlsOn      = 0x01,
+        UniversalSysExNonRtDownloadableSoundsTurnDlsOff     = 0x02,
+        UniversalSysExNonRtDownloadableSoundsTurnDlsVoiceAllocOff = 0x03,
+        UniversalSysExNonRtDownloadableSoundsTurnDlsVoiceAllocOn  = 0x04
+    } UniversalSysExNonRtDownloadableSounds_t;
+
+    typedef enum {
+        UniversalSysExNonRtFileReferenceMessageOpenFile         = 0x01,
+        UniversalSysExNonRtFileReferenceMessageSelectContents   = 0x02,
+        UniversalSysExNonRtFileReferenceMessageOpenAndSelect    = 0x03,
+        UniversalSysExNonRtFileReferenceMessageCloseFile        = 0x04
+    } UniversalSysExNonRtFileReferenceMessage_t;
+
+    typedef enum {
+        UniversalSysExNonRtMidiVisualControlTODO //TODO
+    } UniversalSysExNonRtMidiVisualControl_t;
+
+    typedef enum {
+        UniversalSysExNonRtMidiCapabilityInquiryTODO //TODO
+    } UniversalSysExNonRtMidiCapabilityInquiry_t;
+
+    typedef enum {
+        UniversalSysExRtMidiTimeCode                  = 0x01,
+        UniversalSysExRtMidiShowControl               = 0x02,
+        UniversalSysExRtDeviceControl                 = 0x04,
+        UniversalSysExRtRealTimeMtcCueing             = 0x05,
+        UniversalSysExRtMidiMachineControlCommands    = 0x06,
+        UniversalSysExRtMidiMachineControlResponses   = 0x07,
+        UniversalSysExRtMidiTuningStandard            = 0x08,
+        UniversalSysExRtControllerDestinationSetting  = 0x09,
+        UniversalSysExRtKeybasedInstrumentControl     = 0x0A,
+        UniversalSysExRtScalablePolyphonyMidiMip      = 0x0B,
+        UniversalSysExRtMobilePhoneControlMessage     = 0x0C
+    } UniversalSysExRt_t;
+
+    typedef enum {
+        UniversalSysExRtTimeCodeFullMessage           = 0x01,
+        UniversalSysExRtTimeCodeUserBits              = 0x02
+    } UniversalSysExRtTimeCode_t;
+
+    typedef enum {
+        UniversalSysExRtMidiShowControlTODO //TODO
+    } UniversalSysExRtMidiShowControl_t;
+
+    typedef enum {
+        UniversalSysExRtNotationInformationBarNumber                = 0x01,
+        UniversalSysExRtNotationInformationTimeSignatureImmediate   = 0x02,
+        UniversalSysExRtNotationInformationTimeSignatureDelayed     = 0x03
+    } UniversalSysExRtNotationInformation_t;
+
+    typedef enum {
+        UniversalSysExRtDeviceControlMasterVolume           = 0x01,
+        UniversalSysExRtDeviceControlMasterBalance          = 0x02,
+        UniversalSysExRtDeviceControlMasterFineTuning       = 0x03,
+        UniversalSysExRtDeviceControlMasterCoarseTuning     = 0x04,
+        UniversalSysExRtDeviceControlGlobalParameterControl = 0x05
+    } UniversalSysExRtDeviceControl_t;
+
+    typedef enum {
+        UniversalSysExRtRealTimeMtcCueingSpecial                    = 0x00, // ??
+        UniversalSysExRtRealTimeMtcCueingPunchInPoints              = 0x01,
+        UniversalSysExRtRealTimeMtcCueingPunchOutPoints             = 0x02,
+        // 3 - 4 reserved
+        UniversalSysExRtRealTimeMtcCueingEventStartPoints           = 0x05,
+        UniversalSysExRtRealTimeMtcCueingEventStopPoints            = 0x06,
+        UniversalSysExRtRealTimeMtcCueingEvenStartPointsWithInfo    = 0x07,
+        UniversalSysExRtRealTimeMtcCueingEventStopPointsWithInfo    = 0x08,
+        // 9 - A reserved
+        UniversalSysExRtRealTimeMtcCueingCuePoints                  = 0x0B,
+        UniversalSysExRtRealTimeMtcCueingCuePointsWithInfo          = 0x0C,
+        // D reserved
+        UniversalSysExRtRealTimeMtcCueingEventNameInInfo            = 0x0E
+    } UniversalSysExRtRealTimeMtcCueing_t;
+
+    typedef enum {
+        UniversalSysExRtMidiMachineControlCommandsTODO //TODO
+    } UniversalSysExRtMidiMachineControlCommands_t;
+
+    typedef enum {
+        UniversalSysExRtMidiMachineControlResponsesTODO //TODO
+    } UniversalSysExRtMidiMachineControlResponses_t;
+
+    typedef enum {
+        UniversalSysExRtMidiTuningStandardSingleNoteTuningChange                = 0x01,
+        UniversalSysExRtMidiTuningStandardSingleNoteTuningChangeWithBankSelect  = 0x02,
+        UniversalSysExRtMidiTuningStandardScaleTuning1Byte                      = 0x03,
+        UniversalSysExRtMidiTuningStandardScaleTuning2Byte                      = 0x04
+    } UniversalSysExRtMidiTuningStandard_t;
+
+    typedef enum {
+        UniversalSysExRtControllerDestinationSettingChannelPressure         = 0x01,
+        UniversalSysExRtControllerDestinationSettingPolyphonicKeyPressure   = 0x02,
+        UniversalSysExRtControllerDestinationSettingController              = 0x03
+    } UniversalSysExRtControllerDestinationSetting_t;
+
 
     typedef struct {
         Status_t Status;
