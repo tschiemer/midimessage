@@ -62,7 +62,6 @@ namespace MidiMessage {
 	 ManufacturerIdDigitalMusicCorp 	 = 0x00000007 /* --- / Digital Music Corp.  */,
 	 ManufacturerIdIOTASystems 	 = 0x00000008 /* --- / IOTA Systems  */,
 	 ManufacturerIdNewEnglandDigital 	 = 0x00000009 /* --- / New England Digital  */,
-	 ManufacturerIdTimeWarnerInteractive 	 = 0x00000001 /* --- / Time/Warner Interactive  */,
 	 ManufacturerIdDODElectronicsCorp 	 = 0x00000010 /* --- / DOD Electronics Corp.  */,
 	 ManufacturerIdStuderEditech 	 = 0x00000011 /* --- / Studer-Editech  */,
 	 ManufacturerIdSonus 	 = 0x00000012 /* rescinded / Sonus  */,
