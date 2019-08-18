@@ -169,6 +169,9 @@ namespace MidiMessage {
                             if (length > 2) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                                 ASSERT( length - 2 > SYSEX_MEMORY_STATIC_SIZE );
+                                if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
+                                    return false;
+                                }
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                                 msg->Data.SysEx.Custom.Data = calloc( length - 2, 1 );
 #endif
@@ -209,6 +212,9 @@ namespace MidiMessage {
                         if (msg->Data.SysEx.Custom.Length > 0){
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                             ASSERT( msg->Data.SysEx.Custom.Length > SYSEX_MEMORY_STATIC_SIZE );
+                            if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
+                                return false;
+                            }
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                             msg->Data.SysEx.Custom.Data = calloc( msg->Data.SysEx.Custom.Length, 1 );
 #endif
