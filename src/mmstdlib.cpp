@@ -8,6 +8,7 @@ namespace MidiMessage {
         return std::memcpy( dst, src, count );
     }
 
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
     void * calloc( size_t n, size_t s ) {
         return std::calloc( n, s );
     }
@@ -15,5 +16,6 @@ namespace MidiMessage {
     void free( void * ptr ) {
         std::free( ptr );
     }
+#endif
 
 }

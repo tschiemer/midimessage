@@ -167,7 +167,11 @@ namespace MidiMessage {
                             msg->Data.SysEx.Custom.Id = ReservedSystemExclusiveIdExperimental;
                             msg->Data.SysEx.Custom.Length = length - 2;
                             if (length > 2) {
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                                ASSERT( length - 2 > SYSEX_MEMORY_STATIC_SIZE );
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                                 msg->Data.SysEx.Custom.Data = calloc( length - 2, 1 );
+#endif
                                 memcpy( msg->Data.SysEx.Custom.Data, &bytes[2], length - 2 );
                             }
                             return true;
@@ -203,7 +207,11 @@ namespace MidiMessage {
                         }
 
                         if (msg->Data.SysEx.Custom.Length > 0){
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                            ASSERT( msg->Data.SysEx.Custom.Length > SYSEX_MEMORY_STATIC_SIZE );
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                             msg->Data.SysEx.Custom.Data = calloc( msg->Data.SysEx.Custom.Length, 1 );
+#endif
                             memcpy( msg->Data.SysEx.Custom.Data, &bytes[1], msg->Data.SysEx.Custom.Length );
                         }
 
@@ -239,11 +247,13 @@ namespace MidiMessage {
         }
     }
 
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
     void freeMessage( Message_t * msg ){
 
         if (msg->Status == StatusSystemExclusive &&
                 msg->Data.SysEx.Custom.Length > 0 &&
                 msg->Data.SysEx.Custom.Data != NULL){
+
 
             free(msg->Data.SysEx.Custom.Data);
 
@@ -251,5 +261,6 @@ namespace MidiMessage {
             msg->Data.SysEx.Custom.Data = NULL;
         }
     }
+#endif
 
 }

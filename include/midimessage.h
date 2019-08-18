@@ -16,6 +16,24 @@
 #define ASSERT(x)
 #endif
 
+
+#define SYSEX_MEMORY_STATIC 1
+#define SYSEX_MEMORY_DYNAMIC 2
+
+#ifndef SYSEX_MEMORY
+//#define SYSEX_MEMORY SYSEX_MEMORY_STATIC
+#define SYSEX_MEMORY SYSEX_MEMORY_DYNAMIC
+#endif
+
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+#ifndef SYSEX_MEMORY_STATIC_SIZE
+#define SYSEX_MEMORY_STATIC_SIZE 128
+#endif
+#if SYSEX_MEMORY_STATIC_SIZE < 1
+#warning If using static sysex memory please specify memory size
+#endif
+#endif // SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+
 namespace MidiMessage {
 
     const uint8_t StatusMaskByte  = 0x80;
@@ -305,7 +323,11 @@ namespace MidiMessage {
                 struct {
                     uint32_t Id;
                     uint8_t Length;
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                    uint8_t Data[SYSEX_MEMORY_STATIC_SIZE];
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                     void * Data;
+#endif
                 } Custom;
                 struct {
                     uint8_t MessageType;
@@ -775,6 +797,20 @@ namespace MidiMessage {
      */
     bool unpack( uint8_t * bytes, int len, Message_t * msg );
 
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+
+    /**
+     * Dummy function for freeing SysEx memory
+     *
+     * Note: This function is only provided to allow simple chaning of the SYSEX_MEMORY strategy.
+     *
+     * @param   msg     midi message to be (supposedly freed)
+     */
+    inline void freeMessage( Message_t * msg ) {
+        // do nothing
+    }
+
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
     /**
      * Frees SysEx memory (if set)
      *
@@ -784,6 +820,8 @@ namespace MidiMessage {
      * @param   msg     midi message to be freed
      */
     void freeMessage( Message_t * msg );
+#endif
+
 }
 
 #endif //MIDIMESSAGE_H
