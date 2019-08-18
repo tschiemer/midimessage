@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include <midimessage.h>
+#include "midimessage.h"
 
 
 void receivedMidiMessageFromSomewhere( uint8_t * buf, int len );

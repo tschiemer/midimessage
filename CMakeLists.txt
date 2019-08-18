@@ -5,12 +5,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 include_directories(include)
 
-set(SOURCE_FILES include/midimessage.h src/midimessage.cpp)
+set(SOURCE_FILES
+        include/midimessage.h
+        include/manufacturerids.h
+        include/mmstdlib.h
+        src/midimessage.cpp)
 
 add_library(midimessage ${SOURCE_FILES})
 
-
-add_executable(example-sample example/sample.cpp)
+add_executable(example-sample src/mmstdlib.cpp example/sample.cpp)
 target_link_libraries(example-sample midimessage)
 
 add_custom_target(manufacturerids

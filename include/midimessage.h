@@ -39,6 +39,7 @@ namespace MidiMessage {
 
     const uint16_t PitchCenter      = 0x2000;
 
+    const uint8_t BroadcastDeviceId = 0x7F; // for Universal SysEx (Non-)Realtime Messages
 
     typedef enum {
         SystemExclusive                             = 0x00,

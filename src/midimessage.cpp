@@ -2,9 +2,8 @@
 // Created by Philip Tschiemer on 19.07.19.
 //
 
-#include <midimessage.h>
-#include <string.h>
-#include <cstdlib>
+#include "midimessage.h"
+#include "mmstdlib.h"
 
 
 namespace MidiMessage {
