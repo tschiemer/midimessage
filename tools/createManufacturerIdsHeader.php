@@ -22,6 +22,9 @@ $fi = fopen($fname,  "r");
 $lines = [];
 $enum = [];
 
+// used to eliminate duplicates
+$codes = [];
+
 while (!feof($fi)) {
     array_push($lines, fgets($fi));
 
@@ -32,37 +35,59 @@ while (!feof($fi)) {
 
     $str = join("",$lines);
 
-    if (preg_match($regex, $str, $matches )){
+    if (!preg_match($regex, $str, $matches )){
+    	continue;
+    }
         //$matches = $matches[0];
 
 
-        $value = $matches[1];
-        $url = $matches[3];
-        $name = $matches[4];
-        $status = $matches[5];
+	$obj = [
+		'url' => $matches[3],
+		'name' => $matches[4],
+		'status' => $matches[5]
+	];
+	
+	if ($obj['status']  == 'rescinded'){
+// 		continue;
+	}
+		
+	$code = $matches[1];
 
-        $var = preg_replace('([^a-zA-Z]+)','', $name);
+	$obj['key'] = preg_replace('([^a-zA-Z]+)','', $obj['name']);
 
-        if (preg_match('/^(?:(\d{2})H){1} (?:(\d{2})H){1} (?:(\d{2})H){1}|(?:(\d{2})H){1}$/', $value, $hex)){
+	if (!preg_match('/^(?:(?:(?:([\da-fA-F]{2})H){1} (?:([\da-fA-F]{2})H){1} (?:([\da-fA-F]{2})H){1})|(?:([\da-fA-F]{2})H){1})$/', $code, $hex)){
+		continue;
+	}
 
-            if (isset($hex[4])){
-                $code = "000000{$hex[4]}";
-            } else {
-                $code = "00{$hex[1]}{$hex[2]}{$hex[3]}";
-            }
+	if (isset($hex[4])){
+		$obj['code'] = "00{$hex[4]}0000";
+	} else {
+		$obj['code'] = "00{$hex[1]}{$hex[2]}{$hex[3]}";
+	}
+	
+	// filter out duplicates
+	if (array_search( $obj['code'], $codes, TRUE ) !== FALSE){
+		continue;		
+	}
+	
+	array_push( $codes, $obj['code'] );
 
-            $str = "\t ManufacturerId{$var} \t = 0x{$code} /* ${status} / ${name} {$url} */";
-
-            //echo "{$str} \n";
-
-            //var_dump($hex);
-
-            array_push( $enum, $str );
-        }
-    }
+	array_push( $enum, (object)$obj );    	    
 }
 
 fclose( $fi );
+
+usort( $enum, function( $a, $b ) {
+	$ai = intval($a->code, 16);
+	$bi = intval($b->code, 16);
+	if ($ai < $bi) return -1;
+	if ($ai > $bi) return 1;
+	return 0;
+});
+
+$enum = array_map( function( $obj ){
+	return "\t\t ManufacturerId{$obj->key} \t = 0x{$obj->code} /* {$obj->status} / {$obj->name} {$obj->url} */";
+}, $enum );
 
 $enum = join(",\n",$enum);
 
