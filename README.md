@@ -4,13 +4,11 @@ Very basic constants and un-/packer for MIDI Messages.
 
 Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) that do not provide these basics.
 
+## Using libmidimessage
 
-## References
+`libmidimessage` relies on wrapper functions (as defined in `mmstdlib.h`) that have to be implemented by you.
 
-- https://www.midi.org/specifications-old/item/the-midi-1-0-specification
-- https://www.midi.org/specifications-old/category/reference-tables
-- http://www.personal.kent.edu/~sbirch/Music_Production/MP-II/MIDI/an_introduction_to_midi_contents.htm
-
+ To use the stdlib implementations you can use the example implementation `mmstdlib.cpp`.
 
 ## Code Example
 
@@ -60,3 +58,12 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 }
 
 ```
+
+## References
+
+- https://www.midi.org/specifications-old/item/the-midi-1-0-specification
+- https://www.midi.org/specifications-old/category/reference-tables
+- http://www.personal.kent.edu/~sbirch/Music_Production/MP-II/MIDI/an_introduction_to_midi_contents.htm
+
+
+## License MIT
