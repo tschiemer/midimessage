@@ -47,9 +47,13 @@ namespace MidiMessage {
                     bytes[1] = ReservedSystemExclusiveIdExperimental;
 
                     if (msg->Data.SysEx.Custom.Length > 0) {
-                        ASSERT( msg->Data.SysEx.Custom.Buffer)
 
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                        memcpy(&bytes[2], msg->Data.SysEx.Custom.Data.Bytes, msg->Data.SysEx.Custom.Length);
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                        ASSERT( msg->Data.SysEx.Custom.Data )
                         memcpy(&bytes[2], msg->Data.SysEx.Custom.Data, msg->Data.SysEx.Custom.Length);
+#endif
                     }
 
                     return 2 + msg->Data.SysEx.Custom.Length;
@@ -83,9 +87,12 @@ namespace MidiMessage {
                 }
 
                 if (msg->Data.SysEx.Custom.Length > 0) {
-                    ASSERT( msg->Data.SysEx.Custom.Buffer)
-
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                    memcpy(&bytes[2], msg->Data.SysEx.Custom.Data.Bytes, msg->Data.SysEx.Custom.Length);
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                    ASSERT( msg->Data.SysEx.Custom.Data )
                     memcpy(&bytes[2], msg->Data.SysEx.Custom.Data, msg->Data.SysEx.Custom.Length);
+#endif
                 }
 
                 return len + msg->Data.SysEx.Custom.Length;
@@ -172,10 +179,11 @@ namespace MidiMessage {
                                 if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
                                     return false;
                                 }
+                                memcpy( msg->Data.SysEx.Custom.Data.Bytes, &bytes[2], length - 2 );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                                 msg->Data.SysEx.Custom.Data = calloc( length - 2, 1 );
-#endif
                                 memcpy( msg->Data.SysEx.Custom.Data, &bytes[2], length - 2 );
+#endif
                             }
                             return true;
                         }
@@ -215,10 +223,11 @@ namespace MidiMessage {
                             if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
                                 return false;
                             }
+                            memcpy( msg->Data.SysEx.Custom.Data.Bytes, &bytes[1], msg->Data.SysEx.Custom.Length );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                             msg->Data.SysEx.Custom.Data = calloc( msg->Data.SysEx.Custom.Length, 1 );
-#endif
                             memcpy( msg->Data.SysEx.Custom.Data, &bytes[1], msg->Data.SysEx.Custom.Length );
+#endif
                         }
 
                         return true;

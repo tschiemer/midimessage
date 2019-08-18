@@ -323,8 +323,11 @@ namespace MidiMessage {
                 struct {
                     uint32_t Id;
                     uint8_t Length;
+                    uint8_t SubId1;
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                    uint8_t Data[SYSEX_MEMORY_STATIC_SIZE];
+                    union {
+                        uint8_t Bytes[SYSEX_MEMORY_STATIC_SIZE];
+                    } Data;
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                     void * Data;
 #endif

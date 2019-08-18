@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <midimessage.h>
 #include "midimessage.h"
 
 
@@ -121,7 +122,11 @@ void receivedSysExMessageFromSomewhere( uint8_t * buf, int len ) {
     }
 
     for (int i = 0; i < msg.Data.SysEx.Custom.Length; i++) {
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+        std::cout << (int)msg.Data.SysEx.Custom.Data.Bytes[i] << " ";
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
         std::cout << (int)((uint8_t*)msg.Data.SysEx.Custom.Data)[i] << " ";
+#endif
     }
 
     std::cout << std::endl;
