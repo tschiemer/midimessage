@@ -3,7 +3,7 @@
 //
 // Generated using 'make manufacturerids'
 //
-// @date  2019-08-18T10:23:06+00:00
+// @date  2019-08-18T10:26:09+00:00
 // @url https://www.midi.org/specifications-old/item/manufacturer-id-numbers
 //
 
@@ -58,7 +58,6 @@ namespace MidiMessage {
 		 ManufacturerIdRocktronCorporation 	 = 0x00000029 /* --- / Rocktron Corporation  */,
 		 ManufacturerIdPianoDisc 	 = 0x0000002A /* --- / PianoDisc  */,
 		 ManufacturerIdCannonResearchGroup 	 = 0x0000002B /* --- / Cannon Research Group  */,
-		 ManufacturerIdReserved 	 = 0x0000002C /* --- / Reserved  */,
 		 ManufacturerIdRodgersInstrumentLLC 	 = 0x0000002D /* --- / Rodgers Instrument LLC  */,
 		 ManufacturerIdBlueSkyLogic 	 = 0x0000002E /* --- / Blue Sky Logic  */,
 		 ManufacturerIdEncoreElectronics 	 = 0x0000002F /* --- / Encore Electronics  */,
@@ -68,7 +67,6 @@ namespace MidiMessage {
 		 ManufacturerIdSIncorporated 	 = 0x00000033 /* --- / S3 Incorporated  */,
 		 ManufacturerIdBroderbundRedOrb 	 = 0x00000034 /* --- / Broderbund / Red Orb  */,
 		 ManufacturerIdAllenOrganCo 	 = 0x00000035 /* --- / Allen Organ Co.  */,
-		 ManufacturerIdReserved 	 = 0x00000036 /* --- / Reserved  */,
 		 ManufacturerIdMusicQuest 	 = 0x00000037 /* rescinded / Music Quest  */,
 		 ManufacturerIdAphex 	 = 0x00000038 /* --- / Aphex  */,
 		 ManufacturerIdGallienKrueger 	 = 0x00000039 /* --- / Gallien Krueger  */,
@@ -107,7 +105,6 @@ namespace MidiMessage {
 		 ManufacturerIdDesignEvent 	 = 0x0000005A /* --- / Design Event  */,
 		 ManufacturerIdWinjammerSoftwareLtd 	 = 0x0000005B /* --- / Winjammer Software Ltd.  */,
 		 ManufacturerIdATampTBellLaboratories 	 = 0x0000005C /* --- / AT&amp;T Bell Laboratories  */,
-		 ManufacturerIdReserved 	 = 0x0000005D /* --- / Reserved  */,
 		 ManufacturerIdSymetrix 	 = 0x0000005E /* --- / Symetrix  */,
 		 ManufacturerIdMIDItheWorld 	 = 0x0000005F /* --- / MIDI the World  */,
 		 ManufacturerIdSpatializer 	 = 0x00000060 /* --- / Spatializer  */,

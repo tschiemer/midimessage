@@ -50,6 +50,9 @@ while (!feof($fi)) {
 	if ($obj['status']  == 'rescinded'){
 // 		continue;
 	}
+	if ($obj['name'] == 'Reserved'){
+		continue;
+	}
 		
 	$code = $matches[1];
 
