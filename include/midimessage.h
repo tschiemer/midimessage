@@ -2,8 +2,8 @@
 // Created by Philip Tschiemer on 19.07.19.
 //
 
-#ifndef MIDIMESSAGE_H
-#define MIDIMESSAGE_H
+#ifndef MidiMESSAGE_H
+#define MidiMESSAGE_H
 
 #include <cstdint>
 
@@ -54,14 +54,21 @@ namespace MidiMessage {
     const int MessageLengthProgramChange            = 2;
     const int MessageLengthChannelPressure          = 2;
     const int MessageLengthPitchBendChange          = 3;
+    const int MessageLengthMidiTimeCodeQuarterFrame = 2;
+    const int MessageLengthSysExMidiTimeCodeFullMessage = 10;
 
     const uint16_t PitchCenter      = 0x2000;
 
     const uint8_t BroadcastDeviceId = 0x7F; // for Universal SysEx (Non-)Realtime Messages
 
+    const uint8_t MaxHour = 23;
+    const uint8_t MaxMinute = 59;
+    const uint8_t MaxSecond = 59;
+    const uint8_t MaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MidiTimeCodeFrameRate_t
+
     typedef enum {
         SystemExclusive                             = 0x00,
-        SystemExclusiveMIDITimeCodeQuarterFrame     = 0x01,
+        SystemExclusiveMidiTimeCodeQuarterFrame     = 0x01,
         SystemExclusiveSongPositionPointer          = 0x02,
         SystemExclusiveSongSelect                   = 0x03,
         SystemExclusiveTuneRequest                  = 0x06,
@@ -83,7 +90,7 @@ namespace MidiMessage {
         StatusChannelPressure       = 0xD0,
         StatusPitchBendChange       = 0xE0,
         StatusSystemExclusive       = 0xF0,
-        StatusSystemExclusiveMIDITimeCodeQuarterFrame       = StatusSystemExclusive + SystemExclusiveMIDITimeCodeQuarterFrame,
+        StatusSystemExclusiveMidiTimeCodeQuarterFrame       = StatusSystemExclusive + SystemExclusiveMidiTimeCodeQuarterFrame,
         StatusSystemExclusiveSongPositionPointer            = StatusSystemExclusive + SystemExclusiveSongPositionPointer,
         StatusSystemExclusiveSongSelect                     = StatusSystemExclusive + SystemExclusiveSongSelect,
         StatusSystemExclusiveTuneRequest                    = StatusSystemExclusive + SystemExclusiveTuneRequest,
@@ -230,9 +237,9 @@ namespace MidiMessage {
     } UniversalSysExRt_t;
 
     typedef enum {
-        UniversalSysExRtTimeCodeFullMessage           = 0x01,
-        UniversalSysExRtTimeCodeUserBits              = 0x02
-    } UniversalSysExRtTimeCode_t;
+        UniversalSysExRtMidiTimeCodeFullMessage           = 0x01,
+        UniversalSysExRtMidiTimeCodeUserBits              = 0x02
+    } UniversalSysExRtMidiTimeCode_t;
 
     typedef enum {
         UniversalSysExRtMidiShowControlTODO //TODO
@@ -289,10 +296,58 @@ namespace MidiMessage {
         UniversalSysExRtControllerDestinationSettingController              = 0x03
     } UniversalSysExRtControllerDestinationSetting_t;
 
+    typedef enum {
+        MidiTimeCodeQuarterFrameMessageTypeFrameLS      = 0b000,
+        MidiTimeCodeQuarterFrameMessageTypeFrameMS      = 0b001,
+        MidiTimeCodeQuarterFrameMessageTypeSecondLS     = 0b010,
+        MidiTimeCodeQuarterFrameMessageTypeSecondMS     = 0b011,
+        MidiTimeCodeQuarterFrameMessageTypeMinuteLS     = 0b100,
+        MidiTimeCodeQuarterFrameMessageTypeMinuteMS     = 0b101,
+        MidiTimeCodeQuarterFrameMessageTypeHourLS       = 0b110,
+        MidiTimeCodeQuarterFrameMessageTypeHourMS       = 0b111
+    } MidiTimeCodeQuarterFrameMessageType_t;
+
+    inline bool isMidiTimeCodeQuarterMessageType( MidiTimeCodeQuarterFrameMessageType_t type ){
+        return (type == MidiTimeCodeQuarterFrameMessageTypeFrameLS ||
+                type == MidiTimeCodeQuarterFrameMessageTypeFrameMS ||
+                type == MidiTimeCodeQuarterFrameMessageTypeSecondLS ||
+                type == MidiTimeCodeQuarterFrameMessageTypeSecondMS ||
+                type == MidiTimeCodeQuarterFrameMessageTypeMinuteLS ||
+                type == MidiTimeCodeQuarterFrameMessageTypeMinuteMS ||
+                type == MidiTimeCodeQuarterFrameMessageTypeHourLS ||
+                type == MidiTimeCodeQuarterFrameMessageTypeHourMS);
+    }
+
+    typedef enum {
+        MidiTimeCodeFrameRate24fps      = 0b00,
+        MidiTimeCodeFrameRate25fps      = 0b01,
+        MidiTimeCodeFrameRate29_97fps   = 0b10, // 30fps Drop-Frame
+        MidiTimeCodeFrameRate30fpsDropFrame = MidiTimeCodeFrameRate29_97fps,
+        MidiTimeCodeFrameRate30fps      = 0b11  // 30fps Non-Drop
+    } MidiTimeCodeFrameRate_t;
+
+    inline bool isMidiTimeCodeFrameRate( MidiTimeCodeFrameRate_t fps ) {
+        return (fps == MidiTimeCodeFrameRate24fps ||
+                fps == MidiTimeCodeFrameRate25fps ||
+                fps == MidiTimeCodeFrameRate29_97fps ||
+                fps == MidiTimeCodeFrameRate30fps);
+    }
 
     typedef struct {
+        uint8_t MessageType;
+        uint8_t Nibble;
+    } MidiTimeCodeQuarterFrame_t;
+
+    typedef struct {
+        uint8_t FpsHour;
+        uint8_t Minute;
+        uint8_t Second;
+        uint8_t Frame;
+    } MidiTimeCode_t;
+    
+    typedef struct {
         Status_t Status;
-        uint8_t Channel;
+        uint8_t Channel; // Also DeviceId for SysEx messages
         union {
             struct {
                 uint8_t Key;
@@ -319,30 +374,28 @@ namespace MidiMessage {
             struct {
                 uint16_t Pitch;
             } PitchBendChange;
-            union {
-                struct {
-                    uint32_t Id;
-                    uint8_t Length;
-                    uint8_t SubId1;
+            struct {
+                uint32_t Id;
+                uint8_t Length;
+                uint8_t SubId1;
+                uint8_t SubId2;
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                    union {
-                        uint8_t Bytes[SYSEX_MEMORY_STATIC_SIZE];
-                    } Data;
+                union {
+                    uint8_t Bytes[SYSEX_MEMORY_STATIC_SIZE];
+                    MidiTimeCode_t MidiTimeCode;
+                } Data;
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    void * Data;
+                void * Data;
 #endif
-                } Custom;
-                struct {
-                    uint8_t MessageType;
-                    uint8_t Values;
-                } MIDITimeCodeQuarterFrame;
-                struct {
-                    uint16_t Position;
-                } SongPositionPointer;
-                struct {
-                    uint8_t Song;
-                } SongSelect;
             } SysEx;
+
+            MidiTimeCodeQuarterFrame_t MidiTimeCodeQuarterFrame;
+            struct {
+                uint16_t Position;
+            } SongPositionPointer;
+            struct {
+                uint8_t Song;
+            } SongSelect;
         } Data;
     } Message_t;
 
@@ -423,7 +476,7 @@ namespace MidiMessage {
     inline bool isSystemCommonMessage( uint8_t status ){
         return ((status & StatusMask) == StatusSystemExclusive) &&
                ((status & ChannelMask) == SystemExclusive ||
-                (status & ChannelMask) == SystemExclusiveMIDITimeCodeQuarterFrame ||
+                (status & ChannelMask) == SystemExclusiveMidiTimeCodeQuarterFrame ||
                 (status & ChannelMask) == SystemExclusiveSongPositionPointer ||
                 (status & ChannelMask) == SystemExclusiveSongSelect ||
                 (status & ChannelMask) == SystemExclusiveTuneRequest ||
@@ -637,7 +690,7 @@ namespace MidiMessage {
         bytes[1] = ChannelModeControllerAllSoundOff;
         bytes[2] = 0;
 
-        return 3;
+        return MessageLengthControlChange;
     }
 
     inline int packResetAllControllers( uint8_t * bytes, uint8_t channel ){
@@ -647,7 +700,7 @@ namespace MidiMessage {
         bytes[1] = ChannelModeControllerResetAllControllers;
         bytes[2] = 0;
 
-        return 3;
+        return MessageLengthControlChange;
     }
 
     inline int packLocalControl( uint8_t * bytes, uint8_t channel, bool on ){
@@ -657,7 +710,7 @@ namespace MidiMessage {
         bytes[1] = ChannelModeControllerLocalControl;
         bytes[2] = on ? 127 : 0;
 
-        return 3;
+        return MessageLengthControlChange;
     }
 
     inline int packAllNotesOff( uint8_t * bytes, uint8_t channel ){
@@ -667,7 +720,7 @@ namespace MidiMessage {
         bytes[1] = ChannelModeControllerAllNotesOff;
         bytes[2] = 0;
 
-        return 3;
+        return MessageLengthControlChange;
     }
 
     inline int packOmniMode( uint8_t * bytes, uint8_t channel, bool on ){
@@ -677,7 +730,7 @@ namespace MidiMessage {
         bytes[1] = on ? ChannelModeControllerOmniModeOn : ChannelModeControllerOmniModeOff;
         bytes[2] = 0;
 
-        return 3;
+        return MessageLengthControlChange;
     }
 
 
@@ -689,7 +742,7 @@ namespace MidiMessage {
         bytes[1] = ChannelModeControllerMonoModeOn;
         bytes[2] = numberOfChannels;
 
-        return 3;
+        return MessageLengthControlChange;
     }
 
 
@@ -705,33 +758,35 @@ namespace MidiMessage {
         return isPolyModeOn( msg->Status, msg->Data.ControlChange.Controller, msg->Data.ControlChange.Value );
     }
 
-    inline void packPolyModeOn( uint8_t * bytes, uint8_t channel){
+    inline int packPolyModeOn( uint8_t * bytes, uint8_t channel){
         ASSERT( channel & ChannelMask == channel );
 
         bytes[0] = StatusControlChange | (channel & ChannelMask);
         bytes[1] = ChannelModeControllerPolyModeOn;
         bytes[2] = 0;
+
+        return MessageLengthControlChange;
     }
 
 
 
-    inline int packMIDITimeCodeQuarterFrame( uint8_t * bytes, uint8_t messageType, uint8_t values ){
+    inline int packMidiTimeCodeQuarterFrame( uint8_t * bytes, uint8_t messageType, uint8_t nibble ){
 
-        bytes[0] = StatusSystemExclusive | SystemExclusiveMIDITimeCodeQuarterFrame;
-        bytes[1] = ((messageType & 0x05) << 4) | (values & 0x0f);
+        bytes[0] = StatusSystemExclusive | SystemExclusiveMidiTimeCodeQuarterFrame;
+        bytes[1] = ((messageType & 0x05) << 4) | (nibble & 0x0f);
 
-        return 2;
+        return MessageLengthMidiTimeCodeQuarterFrame;
     }
 
-    inline bool unpackMIDITimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * values ){
-        ASSERT( bytes[0] == StatusSystemExclusiveMIDITimeCodeQuarterFrame );
+    inline bool unpackMidiTimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * nibble ){
+        ASSERT( bytes[0] == StatusSystemExclusiveMidiTimeCodeQuarterFrame );
 
         if (len != 2){
             return false;
         }
 
         *messageType = (bytes[1] >> 4) & 0x05;
-        *values = bytes[1] & 0x0f;
+        *nibble = bytes[1] & 0x0f;
 
         return true;
     }
@@ -774,6 +829,112 @@ namespace MidiMessage {
         *song = bytes[1] & ValueMask;
 
         return true;
+    }
+
+    inline int packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fps ) {
+        ASSERT( (deviceId & ValueMask) == deviceId );
+        ASSERT( hour <= MaxHour );
+        ASSERT( minute <= MaxMinute );
+        ASSERT( second <= MaxSecond );
+        ASSERT( isMidiTimeCodeFrameRate(fps) );
+        ASSERT( frame <= MaxFps[fps] );
+
+        bytes[0] = SystemExclusive;
+        bytes[1] = ReservedSystemExclusiveIdRealTime;
+        bytes[2] = deviceId & ValueMask;
+        bytes[3] = UniversalSysExRtMidiTimeCode;
+        bytes[4] = UniversalSysExRtMidiTimeCodeFullMessage;
+        bytes[5] = (fps << 4) | (hour & 0b00011111);
+        bytes[6] = minute & 0b00111111;
+        bytes[7] = second & 0b00111111;
+        bytes[8] = frame & 0b00011111;
+        bytes[9] = SystemExclusiveStop;
+
+        return MessageLengthSysExMidiTimeCodeFullMessage;
+    }
+
+    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t * fps ) {
+        ASSERT( bytes[0] == SystemExclusive );
+        ASSERT( bytes[1] == ReservedSystemExclusiveIdRealTime );
+        ASSERT( bytes[3] == UniversalSysExRtMidiTimeCode );
+        ASSERT( bytes[4] == UniversalSysExRtMidiTimeCodeFullMessage );
+
+        if ( len < 9 || 10 < len ){
+            return false;
+        }
+
+        *fps = (bytes[5] >> 5) & 0b11;
+        *hour = bytes[5] & 0b00011111;
+        *minute = bytes[6] & 0b00111111;
+        *second = bytes[7] & 0b00111111;
+        *frame = bytes[8] & 0b00011111;
+
+        return true;
+    }
+
+    /**
+     * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
+     */
+    inline void MidiTimeCodeFromQuarterFrames( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrame_t * frames) {
+        ASSERT( frames[0].MessageType == MidiTimeCodeQuarterFrameMessageTypeFrameLS );
+        ASSERT( frames[1].MessageType == MidiTimeCodeQuarterFrameMessageTypeFrameMS );
+        ASSERT( frames[2].MessageType == MidiTimeCodeQuarterFrameMessageTypeSecondLS );
+        ASSERT( frames[3].MessageType == MidiTimeCodeQuarterFrameMessageTypeSecondMS );
+        ASSERT( frames[4].MessageType == MidiTimeCodeQuarterFrameMessageTypeMinuteLS );
+        ASSERT( frames[5].MessageType == MidiTimeCodeQuarterFrameMessageTypeMinuteMS );
+        ASSERT( frames[6].MessageType == MidiTimeCodeQuarterFrameMessageTypeHourLS );
+        ASSERT( frames[7].MessageType == MidiTimeCodeQuarterFrameMessageTypeHourMS );
+
+        ASSERT( frames[0].Nibble & 0x0F == frames[0].Nibble );
+        ASSERT( frames[1].Nibble & 0x0F == frames[1].Nibble );
+        ASSERT( frames[2].Nibble & 0x0F == frames[2].Nibble );
+        ASSERT( frames[3].Nibble & 0x0F == frames[3].Nibble );
+        ASSERT( frames[4].Nibble & 0x0F == frames[4].Nibble );
+        ASSERT( frames[5].Nibble & 0x0F == frames[5].Nibble );
+        ASSERT( frames[6].Nibble & 0x0F == frames[6].Nibble );
+        ASSERT( frames[7].Nibble & 0x0F == frames[7].Nibble );
+
+        mtc->Frame = (frames[1].Nibble << 4) | (frames[0].Nibble);
+        mtc->Second = (frames[3].Nibble << 4) | (frames[2].Nibble);
+        mtc->Minute = (frames[5].Nibble << 4) | (frames[4].Nibble);
+        mtc->FpsHour = (frames[7].Nibble << 4) | (frames[6].Nibble);
+    }
+
+    /**
+     * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
+     */
+    inline void MidiTimeCodeFromQuarterFrames( MidiTimeCode_t * mtc, uint8_t * nibbles) {
+        ASSERT( nibbles[0] & 0x0F == nibbles[0] );
+        ASSERT( nibbles[1] & 0x0F == nibbles[1] );
+        ASSERT( nibbles[2] & 0x0F == nibbles[2] );
+        ASSERT( nibbles[3] & 0x0F == nibbles[3] );
+        ASSERT( nibbles[4] & 0x0F == nibbles[4] );
+        ASSERT( nibbles[5] & 0x0F == nibbles[5] );
+        ASSERT( nibbles[6] & 0x0F == nibbles[6] );
+        ASSERT( nibbles[7] & 0x0F == nibbles[7] );
+
+        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
+        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
+        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
+        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
+    }
+
+    inline uint8_t MidiQuarterFrameFromTimeCode( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrameMessageType_t type ) {
+        ASSERT( mtc != NULL );
+        ASSERT( isMidiTimeCodeQuarterMessageType(type) );
+
+        switch(type){
+            MidiTimeCodeQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
+            MidiTimeCodeQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
+            MidiTimeCodeQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
+            MidiTimeCodeQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
+        }
+
+        return (uint8_t) ~0;
     }
 
 
@@ -827,4 +988,4 @@ namespace MidiMessage {
 
 }
 
-#endif //MIDIMESSAGE_H
+#endif //MidiMESSAGE_H

@@ -109,23 +109,23 @@ void receivedSysExMessageFromSomewhere( uint8_t * buf, int len ) {
         return;
     }
 
-    std::cout << "Received SysEx Message with " << (int)msg.Data.SysEx.Custom.Length << " bytes of data" << std::endl;
+    std::cout << "Received SysEx Message with " << (int)msg.Data.SysEx.Length << " bytes of data" << std::endl;
 
-    if (msg.Data.SysEx.Custom.Id == MidiMessage::ReservedSystemExclusiveIdExperimental){
+    if (msg.Data.SysEx.Id == MidiMessage::ReservedSystemExclusiveIdExperimental){
         std::cout << "Experimental message!" << std::endl;
-    } else if (msg.Data.SysEx.Custom.Id == MidiMessage::ReservedSystemExclusiveIdRealTime) {
+    } else if (msg.Data.SysEx.Id == MidiMessage::ReservedSystemExclusiveIdRealTime) {
         std::cout << "Universal real time message!" << std::endl;
-    } else if (msg.Data.SysEx.Custom.Id == MidiMessage::ReservedSystemExclusiveIdNonRealTime) {
+    } else if (msg.Data.SysEx.Id == MidiMessage::ReservedSystemExclusiveIdNonRealTime) {
         std::cout << "Universal non-real time message!" << std::endl;
     } else {
         std::cout << "Custom manufacturer message!" << std::endl;
     }
 
-    for (int i = 0; i < msg.Data.SysEx.Custom.Length; i++) {
+    for (int i = 0; i < msg.Data.SysEx.Length; i++) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-        std::cout << (int)msg.Data.SysEx.Custom.Data.Bytes[i] << " ";
+        std::cout << (int)msg.Data.SysEx.Data.Bytes[i] << " ";
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-        std::cout << (int)((uint8_t*)msg.Data.SysEx.Custom.Data)[i] << " ";
+        std::cout << (int)((uint8_t*)msg.Data.SysEx.Data)[i] << " ";
 #endif
     }
 
