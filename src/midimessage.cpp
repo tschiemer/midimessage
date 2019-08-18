@@ -2,8 +2,10 @@
 // Created by Philip Tschiemer on 19.07.19.
 //
 
-#include "midimessage.h"
-#include "mmstdlib.h"
+#include <midimessage.h>
+#include <mmstdlib.h>
+#include <cstddef>
+
 
 
 namespace MidiMessage {
@@ -171,8 +173,9 @@ namespace MidiMessage {
                             return true;
                         }
 
-                        if (bytes[1] == ReservedSystemExclusiveIdRealTime) {
-                            msg->Data.SysEx.Custom.Id = ReservedSystemExclusiveIdRealTime;
+                        if (bytes[1] == ReservedSystemExclusiveIdRealTime || bytes[1] == ReservedSystemExclusiveIdNonRealTime) {
+                            msg->Data.SysEx.Custom.Id = bytes[1];
+                            msg->Channel = bytes[2];
                             //TODO
                             return false;
                         }
@@ -241,7 +244,11 @@ namespace MidiMessage {
         if (msg->Status == StatusSystemExclusive &&
                 msg->Data.SysEx.Custom.Length > 0 &&
                 msg->Data.SysEx.Custom.Data != NULL){
+
             free(msg->Data.SysEx.Custom.Data);
+
+            msg->Data.SysEx.Custom.Length = 0;
+            msg->Data.SysEx.Custom.Data = NULL;
         }
     }
 
