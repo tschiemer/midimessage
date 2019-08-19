@@ -87,60 +87,50 @@ namespace MidiMessage {
 
             bytes[0] = msg->Status;
 
-            if (msg->Data.SysEx.Id == ReservedSystemExclusiveIdExperimental){
+            if (msg->Data.SysEx.Id == ReservedSysExIdExperimental){
 
-                bytes[1] = ReservedSystemExclusiveIdExperimental;
+                bytes[1] = ReservedSysExIdExperimental;
 
                 if (msg->Data.SysEx.Length > 0) {
 
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                    memcpy(&bytes[2], msg->Data.SysEx.Data.Bytes, msg->Data.SysEx.Length);
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    ASSERT( msg->Data.SysEx.Data )
-                    memcpy(&bytes[2], msg->Data.SysEx.Data, msg->Data.SysEx.Length);
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                    ASSERT( msg->Data.SysEx.Data.Bytes != NULL );
 #endif
+                    memcpy(&bytes[2], msg->Data.SysEx.Data.Bytes, msg->Data.SysEx.Length);
                 }
 
                 return 2 + msg->Data.SysEx.Length;
-            }
+            } // (msg->Data.SysEx.Id == ReservedSysExIdExperimental)
 
-            if (msg->Data.SysEx.Id == ReservedSystemExclusiveIdRealTime){
+            if (isManufacturerSysExId( msg->Data.SysEx.Id )){
 
-                //TODO
+                len = 1 + packSysExId( bytes, msg->Data.SysEx.Id );
 
-                return 0;
-            }
-
-            if (msg->Data.SysEx.Id == ReservedSystemExclusiveIdRealTime){
-
-                //TODO
-
-                return 0;
-            }
-
-            // assume custom manufacturer data from here on
-
-
-            if ( (msg->Data.SysEx.Id & 0xFF00) != 0 ){
-                bytes[1] = ReservedSystemExclusiveIdManufacturerExtension;
-                bytes[2] = (msg->Data.SysEx.Id >> 8) & 0xFF;
-                bytes[3] = msg->Data.SysEx.Id & 0xFF;
-                len = 4;
-            } else {
-                bytes[1] = msg->Data.SysEx.Id & 0xFF;
-                len = 2;
-            }
-
-            if (msg->Data.SysEx.Length > 0) {
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                memcpy(&bytes[2], msg->Data.SysEx.Data.Bytes, msg->Data.SysEx.Length);
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                ASSERT( msg->Data.SysEx.Data )
-                memcpy(&bytes[2], msg->Data.SysEx.Data, msg->Data.SysEx.Length);
+                if (msg->Data.SysEx.Length > 0) {
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                    ASSERT( msg->Data.SysEx.Data.Bytes != NULL );
 #endif
-            }
+                    memcpy(&bytes[2], msg->Data.SysEx.Data.Bytes, msg->Data.SysEx.Length);
+                }
 
-            return len + msg->Data.SysEx.Length;
+                return len + msg->Data.SysEx.Length;
+            } // (isManufacturerSysExId( msg->Data.SysEx.Id ))
+
+            if (msg->Data.SysEx.Id == ReservedSysExIdRealTime){
+
+                //TODO
+
+                return 0;
+            } // (msg->Data.SysEx.Id == ReservedSysExIdRealTime)
+
+            if (msg->Data.SysEx.Id == ReservedSysExIdRealTime){
+
+                //TODO
+
+                return 0;
+            } // (msg->Data.SysEx.Id == ReservedSysExIdRealTime)
+
+
         } // msg->Status == SystemMessageSystemExclusive
 
 
@@ -246,30 +236,58 @@ namespace MidiMessage {
                 return false;
             }
 
-            if (bytes[1] == ReservedSystemExclusiveIdExperimental) {
-                msg->Data.SysEx.Id = ReservedSystemExclusiveIdExperimental;
+            if (bytes[1] == ReservedSysExIdExperimental) {
+                msg->Data.SysEx.Id = ReservedSysExIdExperimental;
                 msg->Data.SysEx.Length = length - 2;
                 if (length > 2) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                     ASSERT( length - 2 > SYSEX_MEMORY_STATIC_SIZE );
-                        if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
-                            return false;
-                        }
-                        memcpy( msg->Data.SysEx.Data.Bytes, &bytes[2], length - 2 );
+//                    if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
+//                        return false;
+//                    }
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    msg->Data.SysEx.Data = calloc((length - 2), 1);
-                    memcpy(msg->Data.SysEx.Data, &bytes[2], length - 2);
+                    msg->Data.SysEx.Data.Bytes = (uint8_t*)calloc((length - 2), 1);
 #endif
+                    memcpy( msg->Data.SysEx.Data.Bytes, &bytes[2], length - 2 );
                 }
                 return true;
-            }
+            } // (bytes[1] == ReservedSysExIdExperimental)
 
-            if (bytes[1] == ReservedSystemExclusiveIdRealTime) {
+            if (isManufacturerSysExId(bytes[1])){
+
+                // is it a three byte manufacturer id?
+                if (bytes[1] == ReservedSysExIdManufacturerExtension) {
+                    if (length < 4) {
+                        return false;
+                    }
+                    msg->Data.SysEx.Id = ((uint32_t) bytes[2]) << 8;
+                    msg->Data.SysEx.Id += (uint32_t) bytes[3];
+                    msg->Data.SysEx.Length = length - 3;
+                } else {
+                    msg->Data.SysEx.Id = (uint32_t) bytes[2];
+                    msg->Data.SysEx.Length = length - 2;
+                }
+
+                if (msg->Data.SysEx.Length > 0) {
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                    ASSERT( msg->Data.SysEx.Length > SYSEX_MEMORY_STATIC_SIZE );
+//                if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
+//                    return false;
+//                }
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                    msg->Data.SysEx.Data.Bytes = (uint8_t*)calloc(msg->Data.SysEx.Length, 1);
+#endif
+                    memcpy( msg->Data.SysEx.Data.Bytes, &bytes[1], msg->Data.SysEx.Length);
+                }
+                return true;
+            } // isManufacturerSysExId(bytes[1])
+
+            if (bytes[1] == ReservedSysExIdRealTime) {
                 if (length < 4) {
                     return false;
                 }
-                msg->Data.SysEx.Id = ReservedSystemExclusiveIdRealTime;
-                msg->Channel = bytes[2];
+                msg->Data.SysEx.Id = ReservedSysExIdRealTime;
+//                msg->Channel = bytes[2]; // DeviceId
                 msg->Data.SysEx.SubId1 = bytes[3];
 
                 switch (bytes[3]) {
@@ -284,22 +302,7 @@ namespace MidiMessage {
                         switch (bytes[4]) {
 
                             case UniversalSysExRtMidiTimeCodeFullMessage:
-                                if (length < 9) {
-                                    return false;
-                                }
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                            msg->Data.SysEx.Data.MidiTimeCode.FpsHour = bytes[4];
-                                    msg->Data.SysEx.Data.MidiTimeCode.Minute = bytes[5];
-                                    msg->Data.SysEx.Data.MidiTimeCode.Second = bytes[6];
-                                    msg->Data.SysEx.Data.MidiTimeCode.Frame = bytes[7];
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                                msg->Data.SysEx.Data = (MidiTimeCode_t *) calloc(1, sizeof(MidiTimeCode_t));
-                                ((MidiTimeCode_t *) msg->Data.SysEx.Data)->FpsHour = bytes[4];
-                                ((MidiTimeCode_t *) msg->Data.SysEx.Data)->Minute = bytes[5];
-                                ((MidiTimeCode_t *) msg->Data.SysEx.Data)->Second = bytes[6];
-                                ((MidiTimeCode_t *) msg->Data.SysEx.Data)->Frame = bytes[7];
-#endif
-                                return true;
+                                return unpackSysExMidiTimeCodeFullMessage( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.MidiTimeCode );
 
                             case UniversalSysExRtMidiTimeCodeUserBits:
                                 if (length < 13) {
@@ -307,13 +310,11 @@ namespace MidiMessage {
                                 }
                                 msg->Data.SysEx.Length = 5;
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                            ASSERT( msg->Data.SysEx.Length > SYSEX_MEMORY_STATIC_SIZE );
-
-                                    memcpy( msg->Data.SysEx.Data.Bytes, &bytes[1], msg->Data.SysEx.Length );
+                                ASSERT( msg->Data.SysEx.Length > SYSEX_MEMORY_STATIC_SIZE );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                                msg->Data.SysEx.Data = calloc(msg->Data.SysEx.Length, 1);
-                                memcpy(msg->Data.SysEx.Data, &bytes[1], msg->Data.SysEx.Length);
+                                msg->Data.SysEx.Data.Bytes = (uint8_t*)calloc(msg->Data.SysEx.Length, 1);
 #endif
+                                memcpy( msg->Data.SysEx.Data.Bytes, &bytes[1], msg->Data.SysEx.Length );
 
                                 return true;
                         }
@@ -361,13 +362,13 @@ namespace MidiMessage {
                 }
 
                 return false;
-            }
+            } // (bytes[1] == ReservedSysExIdRealTime)
 
-            if (bytes[1] == ReservedSystemExclusiveIdNonRealTime) {
+            if (bytes[1] == ReservedSysExIdNonRealTime) {
                 if (length < 4) {
                     return false;
                 }
-                msg->Data.SysEx.Id = ReservedSystemExclusiveIdNonRealTime;
+                msg->Data.SysEx.Id = ReservedSysExIdNonRealTime;
                 msg->Channel = bytes[2];
                 msg->Data.SysEx.SubId1 = bytes[3];
 
@@ -435,40 +436,12 @@ namespace MidiMessage {
                 }
 
                 return false;
-            }
 
+            } // (bytes[1] == ReservedSysExIdNonRealTime)
 
-            // assume manufacturer extension from hereon out.
-
-            // is it a three byte manufacturer id?
-            if (bytes[1] == ReservedSystemExclusiveIdManufacturerExtension) {
-                if (length < 4) {
-                    return false;
-                }
-                msg->Data.SysEx.Id = ((uint32_t) bytes[2]) << 8;
-                msg->Data.SysEx.Id += (uint32_t) bytes[3];
-                msg->Data.SysEx.Length = length - 3;
-            } else {
-                msg->Data.SysEx.Id = (uint32_t) bytes[2];
-                msg->Data.SysEx.Length = length - 2;
-            }
-
-            if (msg->Data.SysEx.Length > 0) {
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                ASSERT( msg->Data.SysEx.Length > SYSEX_MEMORY_STATIC_SIZE );
-                    if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
-                        return false;
-                    }
-                    memcpy( msg->Data.SysEx.Data.Bytes, &bytes[1], msg->Data.SysEx.Length );
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                msg->Data.SysEx.Data = calloc(msg->Data.SysEx.Length, 1);
-                memcpy(msg->Data.SysEx.Data, &bytes[1], msg->Data.SysEx.Length);
-#endif
-            }
-
-            return true;
         } // (msg->Status == SystemMessageSystemExclusive)
 
+        return false;
     }
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
@@ -476,13 +449,12 @@ namespace MidiMessage {
 
         if (msg->Status == SystemMessageSystemExclusive &&
                 msg->Data.SysEx.Length > 0 &&
-                msg->Data.SysEx.Data != NULL){
+                msg->Data.SysEx.Data.Bytes != NULL){
 
-
-            free(msg->Data.SysEx.Data);
+            free(msg->Data.SysEx.Data.Bytes);
 
             msg->Data.SysEx.Length = 0;
-            msg->Data.SysEx.Data = NULL;
+            msg->Data.SysEx.Data.Bytes = NULL;
         }
     }
 #endif

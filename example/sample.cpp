@@ -109,22 +109,18 @@ void receivedSysExMessageFromSomewhere( uint8_t * buf, int len ) {
 
     std::cout << "Received SysEx Message with " << (int)msg.Data.SysEx.Length << " bytes of data" << std::endl;
 
-    if (msg.Data.SysEx.Id == MidiMessage::ReservedSystemExclusiveIdExperimental){
+    if (msg.Data.SysEx.Id == MidiMessage::ReservedSysExIdExperimental){
         std::cout << "Experimental message!" << std::endl;
-    } else if (msg.Data.SysEx.Id == MidiMessage::ReservedSystemExclusiveIdRealTime) {
+    } else if (msg.Data.SysEx.Id == MidiMessage::ReservedSysExIdRealTime) {
         std::cout << "Universal real time message!" << std::endl;
-    } else if (msg.Data.SysEx.Id == MidiMessage::ReservedSystemExclusiveIdNonRealTime) {
+    } else if (msg.Data.SysEx.Id == MidiMessage::ReservedSysExIdNonRealTime) {
         std::cout << "Universal non-real time message!" << std::endl;
     } else {
         std::cout << "Custom manufacturer message!" << std::endl;
     }
 
     for (int i = 0; i < msg.Data.SysEx.Length; i++) {
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
         std::cout << (int)msg.Data.SysEx.Data.Bytes[i] << " ";
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-        std::cout << (int)((uint8_t*)msg.Data.SysEx.Data)[i] << " ";
-#endif
     }
 
     std::cout << std::endl;
@@ -152,17 +148,17 @@ int main(int argc, char * argv[]){
 
     std::cout << "-------------- Experimental Sysex msg" << std::endl;
 
-    uint8_t bufSysExExperimental[6] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSystemExclusiveIdExperimental, 1, 3, 3, 7};
+    uint8_t bufSysExExperimental[6] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSysExIdExperimental, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysExExperimental, sizeof(bufSysExExperimental) );
 
     std::cout << "-------------- Universal Realtime Sysex msg" << std::endl;
 
-    uint8_t bufSysRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSystemExclusiveIdRealTime, 1, 3, 3, 7};
+    uint8_t bufSysRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSysExIdRealTime, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysRealtime, sizeof(bufSysRealtime) );
 
     std::cout << "-------------- Universal Non-RealtimeSysex msg" << std::endl;
 
-    uint8_t bufSysNonRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSystemExclusiveIdNonRealTime, 1, 3, 3, 7};
+    uint8_t bufSysNonRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSysExIdNonRealTime, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysNonRealtime, sizeof(bufSysNonRealtime) );
 
     return 0;

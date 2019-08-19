@@ -113,6 +113,13 @@ namespace MidiMessage {
     const uint8_t SysExBroadcastDeviceId = 0x7F; // for Universal SysEx (Non-)Realtime Messages
 
 
+    const uint8_t FpsMask       = 0b01100000;
+    const uint8_t FpsOffset     = 5;
+    const uint8_t HourMask      = 0b00011111;
+    const uint8_t MinuteMask    = 0b00111111;
+    const uint8_t SecondMask    = 0b00111111;
+    const uint8_t FrameMask     = 0b00011111;
+
     const uint8_t MaxHour = 23;
     const uint8_t MaxMinute = 59;
     const uint8_t MaxSecond = 59;
@@ -219,18 +226,71 @@ namespace MidiMessage {
 
 
     typedef enum {
-        ReservedSystemExclusiveIdManufacturerExtension  = 0x00,
-        ReservedSystemExclusiveIdExperimental           = 0x7D,
-        ReservedSystemExclusiveIdNonRealTime            = 0x7E,
-        ReservedSystemExclusiveIdRealTime               = 0x7F
-    } ReservedSystemExclusiveId_t;
+        ReservedSysExIdManufacturerExtension  = 0x00,
+        ReservedSysExIdExperimental           = 0x7D,
+        ReservedSysExIdNonRealTime            = 0x7E,
+        ReservedSysExIdRealTime               = 0x7F
+    } ReservedSysExId_t;
 
-    inline bool isReservedSystemExclusiveId( uint8_t value ){
-        return (value == ReservedSystemExclusiveIdManufacturerExtension ||
-                value == ReservedSystemExclusiveIdExperimental ||
-                value == ReservedSystemExclusiveIdNonRealTime ||
-                value == ReservedSystemExclusiveIdRealTime);
+    inline bool isReservedSysExId( uint8_t value ){
+        return (value == ReservedSysExIdManufacturerExtension ||
+                value == ReservedSysExIdExperimental ||
+                value == ReservedSysExIdNonRealTime ||
+                value == ReservedSysExIdRealTime);
     }
+
+    inline bool isManufacturerSysExId( uint8_t byte0 ){
+        return (byte0 != ReservedSysExIdExperimental &&
+                byte0 != ReservedSysExIdNonRealTime &&
+                byte0 != ReservedSysExIdRealTime);
+    }
+    inline bool isManufacturerSysExId( uint32_t id ){
+        return isManufacturerSysExId( (uint8_t)((id >> 16) & DataMask));
+    }
+
+    inline bool is1ByteSysExId( uint8_t * bytes ){
+        return bytes[0] == ReservedSysExIdManufacturerExtension;
+    }
+
+    inline bool is3ByteSysExId( uint8_t * bytes ){
+        return !is1ByteSysExId( bytes );
+    }
+    inline bool is1ByteSysExId( uint32_t id ){
+        return ((id >> 16) & DataMask) == ReservedSysExIdManufacturerExtension;
+    }
+
+    inline bool is3ByteSysExId( uint32_t id ){
+        return !is1ByteSysExId(  id );
+    }
+
+
+    inline int packSysExId( uint8_t * bytes, uint32_t id ){
+        ASSERT( bytes != NULL );
+
+        bytes[0] = (id >> 16) & DataMask;
+
+        if (bytes[0] == ReservedSysExIdManufacturerExtension){
+            bytes[1] = (id >> 8) & DataMask;
+            bytes[2] = id & DataMask;
+            return 3;
+        }
+        
+        return 1;
+    }
+
+    inline uint32_t unpackSysExId( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+
+        uint32_t id = ((uint32_t)bytes[0]) << 16;
+
+        if (bytes[0] == ReservedSysExIdManufacturerExtension){
+            id |= ((uint32_t)bytes[1]) << 8;
+            id |= ((uint32_t)bytes[2]);
+        }
+
+        return id;
+    }
+
 
     typedef enum {
         UniversalSysExNonRtSampleDumpHeader       = 0x01,
@@ -615,6 +675,20 @@ namespace MidiMessage {
                 fps == MidiTimeCodeFrameRate30fps);
     }
 
+
+    inline MidiTimeCodeFrameRate_t getFps( uint8_t fpsHour ){
+        return (MidiTimeCodeFrameRate_t)((fpsHour & FpsMask) >> FpsOffset);
+    }
+
+    inline uint8_t setFps( MidiTimeCodeFrameRate_t fps ){
+        return (((uint8_t)fps) << FpsOffset) & FpsMask;
+    }
+
+    inline uint8_t getHour( uint8_t fpsHour ){
+        return fpsHour & HourMask;
+    }
+
+
     // Structures
     /////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////
@@ -625,12 +699,14 @@ namespace MidiMessage {
         uint8_t Nibble;
     } MidiTimeCodeQuarterFrame_t;
 
+
     typedef struct {
         uint8_t FpsHour;
         uint8_t Minute;
         uint8_t Second;
         uint8_t Frame;
     } MidiTimeCode_t;
+
     
     typedef struct {
         StatusClass_t StatusClass;
@@ -667,14 +743,14 @@ namespace MidiMessage {
                 uint8_t Length;
                 uint8_t SubId1;
                 uint8_t SubId2;
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                 union {
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                     uint8_t Bytes[SYSEX_MEMORY_STATIC_SIZE];
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                    uint8_t * Bytes;
+#endif
                     MidiTimeCode_t MidiTimeCode;
                 } Data;
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                void * Data;
-#endif
             } SysEx;
 
             MidiTimeCodeQuarterFrame_t MidiTimeCodeQuarterFrame;
@@ -1281,29 +1357,37 @@ namespace MidiMessage {
         ASSERT( frame <= MaxFps[fps] );
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = ReservedSystemExclusiveIdRealTime;
+        bytes[1] = ReservedSysExIdRealTime;
         bytes[2] = deviceId & DataMask;
         bytes[3] = UniversalSysExRtMidiTimeCode;
         bytes[4] = UniversalSysExRtMidiTimeCodeFullMessage;
-        bytes[5] = (fps << 4) | (hour & 0b00011111);
-        bytes[6] = minute & 0b00111111;
-        bytes[7] = second & 0b00111111;
-        bytes[8] = frame & 0b00011111;
+        bytes[5] = ((fps << FpsOffset) & FpsMask) | (hour & HourMask);
+        bytes[6] = minute & MinuteMask;
+        bytes[7] = second & SecondMask;
+        bytes[8] = frame & FrameMask;
         bytes[9] = SystemMessageEndOfSystemExclusive;
 
         return MsgLenSysExMidiTimeCodeFullMessage;
     }
 
+    inline int packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, MidiTimeCode_t * mtc){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        return packSysExMidiTimeCodeFullMessage( bytes, deviceId, mtc->FpsHour & HourMask, mtc->Minute, mtc->Second, mtc->Frame, getFps(mtc->FpsHour) );
+    }
+
     inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t * fps ) {
         ASSERT( bytes != NULL );
 
+        //TODO require fixed length?...
         if ( len < 9 || 10 < len ){
             return false;
         }
         if (bytes[0] != StatusClassSystemMessage) {
             return false;
         }
-        if (bytes[1] != ReservedSystemExclusiveIdRealTime ) {
+        if (bytes[1] != ReservedSysExIdRealTime ) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2] ) {
@@ -1321,6 +1405,21 @@ namespace MidiMessage {
         *minute = bytes[6] & 0b00111111;
         *second = bytes[7] & 0b00111111;
         *frame = bytes[8] & 0b00011111;
+
+        return true;
+    }
+
+    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        MidiTimeCodeFrameRate_t fps = MidiTimeCodeFrameRate24fps;
+
+        if ( ! unpackSysExMidiTimeCodeFullMessage( bytes, len, deviceId, &mtc->FpsHour, &mtc->Minute, &mtc->Second, &mtc->Frame, (uint8_t*)&fps)) {
+            return false;
+        }
+
+        mtc->FpsHour |= setFps(fps);
 
         return true;
     }
