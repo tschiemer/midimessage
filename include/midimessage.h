@@ -2,8 +2,8 @@
 // Created by Philip Tschiemer on 19.07.19.
 //
 
-#ifndef MidiMESSAGE_H
-#define MidiMESSAGE_H
+#ifndef MIDIMESSAGE_H
+#define MIDIMESSAGE_H
 
 #include <cstdint>
 
@@ -1412,4 +1412,4 @@ namespace MidiMessage {
 
 }
 
-#endif //MidiMESSAGE_H
+#endif //MIDIMESSAGE_H
