@@ -4,6 +4,45 @@ Very basic constants and un-/packer for MIDI Messages.
 
 Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) that do not provide these basics.
 
+## Contained contants & un-/packers
+
+| Feature Set |  Feature / Message | Message Family | Status |
+|-----|-----|----|:-----:|
+| Channel Voice Message | Note On / Off | |  ok |
+| | Polyphonic Key Pressure (Aftertouch) | | ok |
+| | Control Change | | ok |
+| | Program Change | | ok |
+| | Channel Pressure (Aftertouch) | | ok |
+| | Pitch Bend Change | | ok |
+| Channel Mode Messages | Specific Control Change (All Sound Off, Reset All Controllers, etc) | Control Change | |
+| System Common Messages | Song position pointer | | ok |
+| | Song select | | ok |
+| | Tune request | | ok |
+| System Real Time Messages | Timing clock | | ok |
+| | Start | | ok |
+| | Continue | | ok |
+| | Stop | | ok |
+| | Active Sensing | | ok |
+| | Reset | | ok |
+| MIDI Time Code | Quarter Frames | System Common | ok |
+| | Full Message + User Bits| SysEx Real Time | ok |
+| |  | SysEx Non-Real Time | TODO |
+| | Real Time MTC Cueing | SysEx Real Time | TODO |
+| MIDI Machine Control | | | TODO |
+| MIDI Show Control | | | TODO |
+| MIDI Tuning Standard | | | TODO |
+| System Exclusive | Experimental (custom) messages | | ok |
+| | Manufacturer messages (+ manufacturer ids) | | ok |
+| | Sample Dump | Non-Real Time | TODO |
+| | General Information | Non-Real Time | TODO |
+| | File Dump | Non-Real Time | TODO |
+| | General MIDI System Messages | Non-Real Time | TODO |
+| | Downloadable Sounds | Non-Real Time | TODO |
+| | Device Control (Master volume and balance) | Real Time | TODO |
+| | Notation Information | Real Time | TODO |
+
+
+
 ## Using libmidimessage
 
 `libmidimessage` relies on wrapper functions (as defined in `mmstdlib.h`) that have to be implemented by you.
