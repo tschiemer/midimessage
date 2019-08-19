@@ -1295,6 +1295,44 @@ namespace MidiMessage {
 
         return MsgLenMidiTimeCodeQuarterFrame;
     }
+    
+    /**
+     * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
+     */
+    inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
+        ASSERT( nibbles[0] & NibbleMask == nibbles[0] );
+        ASSERT( nibbles[1] & NibbleMask == nibbles[1] );
+        ASSERT( nibbles[2] & NibbleMask == nibbles[2] );
+        ASSERT( nibbles[3] & NibbleMask == nibbles[3] );
+        ASSERT( nibbles[4] & NibbleMask == nibbles[4] );
+        ASSERT( nibbles[5] & NibbleMask == nibbles[5] );
+        ASSERT( nibbles[6] & NibbleMask == nibbles[6] );
+        ASSERT( nibbles[7] & NibbleMask == nibbles[7] );
+
+        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
+        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
+        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
+        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
+    }
+
+    inline uint8_t MidiQuarterFrameNibbleFromTimeCode( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrameMessageType_t type ) {
+        ASSERT( mtc != NULL );
+        ASSERT( isMidiTimeCodeQuarterMessageType(type) );
+
+        switch(type){
+            MidiTimeCodeQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
+            MidiTimeCodeQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
+            MidiTimeCodeQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
+            MidiTimeCodeQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
+        }
+
+        return (uint8_t) ~0;
+    }
+
 
     inline int packSongPositionPointer (uint8_t * bytes, uint16_t position ){
         ASSERT( bytes != NULL );
@@ -1424,72 +1462,6 @@ namespace MidiMessage {
         return true;
     }
 
-    /**
-     * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
-     */
-    inline void MidiTimeCodeFromQuarterFrames( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrame_t * frames) {
-        ASSERT( mtc != NULL );
-        ASSERT( frames != NULL );
-        ASSERT( frames[0].MessageType == MidiTimeCodeQuarterFrameMessageTypeFrameLS );
-        ASSERT( frames[1].MessageType == MidiTimeCodeQuarterFrameMessageTypeFrameMS );
-        ASSERT( frames[2].MessageType == MidiTimeCodeQuarterFrameMessageTypeSecondLS );
-        ASSERT( frames[3].MessageType == MidiTimeCodeQuarterFrameMessageTypeSecondMS );
-        ASSERT( frames[4].MessageType == MidiTimeCodeQuarterFrameMessageTypeMinuteLS );
-        ASSERT( frames[5].MessageType == MidiTimeCodeQuarterFrameMessageTypeMinuteMS );
-        ASSERT( frames[6].MessageType == MidiTimeCodeQuarterFrameMessageTypeHourLS );
-        ASSERT( frames[7].MessageType == MidiTimeCodeQuarterFrameMessageTypeHourMS );
-
-        ASSERT( frames[0].Nibble & 0x0F == frames[0].Nibble );
-        ASSERT( frames[1].Nibble & 0x0F == frames[1].Nibble );
-        ASSERT( frames[2].Nibble & 0x0F == frames[2].Nibble );
-        ASSERT( frames[3].Nibble & 0x0F == frames[3].Nibble );
-        ASSERT( frames[4].Nibble & 0x0F == frames[4].Nibble );
-        ASSERT( frames[5].Nibble & 0x0F == frames[5].Nibble );
-        ASSERT( frames[6].Nibble & 0x0F == frames[6].Nibble );
-        ASSERT( frames[7].Nibble & 0x0F == frames[7].Nibble );
-
-        mtc->Frame = (frames[1].Nibble << 4) | (frames[0].Nibble);
-        mtc->Second = (frames[3].Nibble << 4) | (frames[2].Nibble);
-        mtc->Minute = (frames[5].Nibble << 4) | (frames[4].Nibble);
-        mtc->FpsHour = (frames[7].Nibble << 4) | (frames[6].Nibble);
-    }
-
-    /**
-     * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
-     */
-    inline void MidiTimeCodeFromQuarterFrames( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
-        ASSERT( nibbles[0] & NibbleMask == nibbles[0] );
-        ASSERT( nibbles[1] & NibbleMask == nibbles[1] );
-        ASSERT( nibbles[2] & NibbleMask == nibbles[2] );
-        ASSERT( nibbles[3] & NibbleMask == nibbles[3] );
-        ASSERT( nibbles[4] & NibbleMask == nibbles[4] );
-        ASSERT( nibbles[5] & NibbleMask == nibbles[5] );
-        ASSERT( nibbles[6] & NibbleMask == nibbles[6] );
-        ASSERT( nibbles[7] & NibbleMask == nibbles[7] );
-
-        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
-        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
-        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
-        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
-    }
-
-    inline uint8_t MidiQuarterFrameFromTimeCode( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrameMessageType_t type ) {
-        ASSERT( mtc != NULL );
-        ASSERT( isMidiTimeCodeQuarterMessageType(type) );
-
-        switch(type){
-            MidiTimeCodeQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
-            MidiTimeCodeQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
-            MidiTimeCodeQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
-            MidiTimeCodeQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
-        }
-
-        return (uint8_t) ~0;
-    }
 
 
     /**
