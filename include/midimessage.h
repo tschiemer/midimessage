@@ -36,72 +36,154 @@
 
 namespace MidiMessage {
 
-    const uint8_t StatusMaskByte  = 0x80;
+    // Constants & Enumerations
+    /////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
 
-    const uint8_t StatusMask      = 0xF0;
-    const uint8_t ChannelMask     = 0x0F;
+    /**
+     * Non-Data Bytes always have a non-zero match
+     */
+    const uint8_t ControlByteMask = 0x80;
 
-    const uint8_t ValueMask         = 0b01111111; // = 127
+    inline bool isControlByte( uint8_t value ) {
+        return (value & ControlByteMask) != 0;
+    }
+
+
+
+    const uint8_t DataMask = 0b01111111; // = 127
     const uint16_t DoubleValueMask  = 0b0111111101111111;
 
     const uint8_t MaxValue          = 127;
     const uint16_t MaxDoubleValue   = 0x3FFF;
 
-    const int MessageLengthNoteOff                  = 3;
-    const int MessageLengthNoteOn                   = 3;
-    const int MessageLengthPolyphonicKeyPressure    = 3;
-    const int MessageLengthControlChange            = 3;
-    const int MessageLengthProgramChange            = 2;
-    const int MessageLengthChannelPressure          = 2;
-    const int MessageLengthPitchBendChange          = 3;
-    const int MessageLengthMidiTimeCodeQuarterFrame = 2;
-    const int MessageLengthSysExMidiTimeCodeFullMessage = 10;
+    inline uint8_t getData( uint8_t value ){
+        return value & DataMask;
+    }
+
+    inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
+        ASSERT( bytes[0] & DataMask == bytes[0] );
+        ASSERT( bytes[1] & DataMask == bytes[1] );
+
+        *value = (((uint16_t)bytes[1]) << 8) | ((uint16_t)bytes[0]);
+    }
+
+    inline void packDoubleValue( uint8_t * bytes, uint16_t value ) {
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+    }
+
+
+
+    const uint8_t StatusClassMask = 0xF0;
+    const uint8_t ChannelMask     = 0x0F;
+
+    inline uint8_t getChannel( uint8_t value ){
+        return value & ChannelMask;
+    }
+
+
+
+    const int MsgLenNoteOff                         = 3;
+    const int MsgLenNoteOn                          = 3;
+    const int MsgLenPolyphonicKeyPressure           = 3;
+    const int MsgLenControlChange                   = 3;
+    const int MsgLenProgramChange                   = 2;
+    const int MsgLenChannelPressure                 = 2;
+    const int MsgLenPitchBendChange                 = 3;
+    const int MsgLenMidiTimeCodeQuarterFrame        = 2;
+    const int MsgLenSongPositionPointer             = 3;
+    const int MsgLenSongSelect                      = 2;
+    const int MsgLenSysExMidiTimeCodeFullMessage    = 10;
+
 
     const uint16_t PitchCenter      = 0x2000;
 
-    const uint8_t BroadcastDeviceId = 0x7F; // for Universal SysEx (Non-)Realtime Messages
+
+    const uint8_t SysExBroadcastDeviceId = 0x7F; // for Universal SysEx (Non-)Realtime Messages
+
 
     const uint8_t MaxHour = 23;
     const uint8_t MaxMinute = 59;
     const uint8_t MaxSecond = 59;
     const uint8_t MaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MidiTimeCodeFrameRate_t
 
-    typedef enum {
-        SystemExclusive                             = 0x00,
-        SystemExclusiveMidiTimeCodeQuarterFrame     = 0x01,
-        SystemExclusiveSongPositionPointer          = 0x02,
-        SystemExclusiveSongSelect                   = 0x03,
-        SystemExclusiveTuneRequest                  = 0x06,
-        SystemExclusiveEndOfExclusive               = 0x07,
-        SystemExclusiveTimingClock                  = 0x08,
-        SystemExclusiveStart                        = 0x0A,
-        SystemExclusiveContinue                     = 0x0B,
-        SystemExclusiveStop                         = 0x0C,
-        SystemExclusiveActiveSensing                = 0x0E,
-        SystemExclusiveReset                        = 0x0F
-    } SystemExclusive_t;
 
     typedef enum {
-        StatusNoteOff               = 0x80,
-        StatusNoteOn                = 0x90,
-        StatusPolyphonicKeyPressure = 0xA0,
-        StatusControlChange         = 0xB0,
-        StatusProgramChange         = 0xC0,
-        StatusChannelPressure       = 0xD0,
-        StatusPitchBendChange       = 0xE0,
-        StatusSystemExclusive       = 0xF0,
-        StatusSystemExclusiveMidiTimeCodeQuarterFrame       = StatusSystemExclusive + SystemExclusiveMidiTimeCodeQuarterFrame,
-        StatusSystemExclusiveSongPositionPointer            = StatusSystemExclusive + SystemExclusiveSongPositionPointer,
-        StatusSystemExclusiveSongSelect                     = StatusSystemExclusive + SystemExclusiveSongSelect,
-        StatusSystemExclusiveTuneRequest                    = StatusSystemExclusive + SystemExclusiveTuneRequest,
-        StatusSystemExclusiveEndOfExclusive                 = StatusSystemExclusive + SystemExclusiveEndOfExclusive,
-        StatusSystemExclusiveTimingClock                    = StatusSystemExclusive + SystemExclusiveTimingClock,
-        StatusSystemExclusiveStart                          = StatusSystemExclusive + SystemExclusiveStart,
-        StatusSystemExclusiveContinue                       = StatusSystemExclusive + SystemExclusiveContinue,
-        StatusSystemExclusiveStop                           = StatusSystemExclusive + SystemExclusiveStop,
-        StatusSystemExclusiveActiveSensing                  = StatusSystemExclusive + SystemExclusiveActiveSensing,
-        StatusSystemExclusiveReset                          = StatusSystemExclusive + SystemExclusiveReset
-    } Status_t;
+        StatusClassNoteOff                  = 0x80,
+        StatusClassNoteOn                   = 0x90,
+        StatusClassPolyphonicKeyPressure    = 0xA0,
+        StatusClassControlChange            = 0xB0,
+        StatusClassProgramChange            = 0xC0,
+        StatusClassChannelPressure          = 0xD0,
+        StatusClassPitchBendChange          = 0xE0,
+        StatusClassSystemMessage            = 0xF0
+    } StatusClass_t;
+
+    inline bool isStatusClass( uint8_t value ){
+        return (value == StatusClassNoteOff ||
+                value == StatusClassNoteOn ||
+                value == StatusClassPolyphonicKeyPressure ||
+                value == StatusClassControlChange ||
+                value == StatusClassProgramChange ||
+                value == StatusClassChannelPressure ||
+                value == StatusClassPitchBendChange ||
+                value == StatusClassSystemMessage);
+    }
+
+
+    inline StatusClass_t getStatusClass( uint8_t value ){
+        return (StatusClass_t)(value & StatusClassMask);
+    }
+
+    typedef enum {
+        SystemMessageSystemExclusive = 0xF0,
+        SystemMessageMidiTimeCodeQuarterFrame = 0xF1,
+        SystemMessageSongPositionPointer = 0xF2,
+        SystemMessageSongSelect = 0xF3,
+        SystemMessageTuneRequest = 0xF6,
+        SystemMessageEndOfSystemExclusive = 0xF7,
+        SystemMessageTimingClock = 0xF8,
+        SystemMessageStart = 0xFA,
+        SystemMessageContinue = 0xFB,
+        SystemMessageStop = 0xFC,
+        SystemMessageActiveSensing = 0xFE,
+        SystemMessageReset = 0xFF
+    } SystemMessage_t;
+
+    inline bool isSystemMessage( uint8_t value ){
+        return (value == SystemMessageSystemExclusive ||
+                value == SystemMessageMidiTimeCodeQuarterFrame ||
+                value == SystemMessageSongPositionPointer ||
+                value == SystemMessageSongSelect ||
+                value == SystemMessageTuneRequest ||
+                value == SystemMessageEndOfSystemExclusive ||
+                value == SystemMessageTimingClock ||
+                value == SystemMessageStart ||
+                value == SystemMessageContinue ||
+                value == SystemMessageStop ||
+                value == SystemMessageActiveSensing ||
+                value == SystemMessageReset);
+    }
+
+    inline bool isSystemCommonMessage( uint8_t value ){
+        return (value == SystemMessageSystemExclusive ||
+                value == SystemMessageMidiTimeCodeQuarterFrame ||
+                value == SystemMessageSongPositionPointer ||
+                value == SystemMessageSongSelect ||
+                value == SystemMessageTuneRequest ||
+                value == SystemMessageEndOfSystemExclusive);
+    }
+
+
+    inline bool isSystemRealTimeMessage( uint8_t status ){
+        return (status == SystemMessageTimingClock ||
+                status == SystemMessageStart ||
+                status == SystemMessageContinue ||
+                status == SystemMessageStop ||
+                status == SystemMessageActiveSensing ||
+                status == SystemMessageReset);
+    }
 
     typedef enum {
         ChannelModeControllerAllSoundOff            = 120,
@@ -114,6 +196,18 @@ namespace MidiMessage {
         ChannelModeControllerPolyModeOn             = 127
     } ChannelModeController_t;
 
+    inline bool isChannelModeController( uint8_t value ){
+        return (value == ChannelModeControllerAllSoundOff ||
+                value == ChannelModeControllerResetAllControllers ||
+                value == ChannelModeControllerLocalControl ||
+                value == ChannelModeControllerAllNotesOff ||
+                value == ChannelModeControllerOmniModeOff ||
+                value == ChannelModeControllerOmniModeOn ||
+                value == ChannelModeControllerMonoModeOn ||
+                value == ChannelModeControllerPolyModeOn);
+    }
+
+
     typedef enum {
         ReservedSystemExclusiveIdManufacturerExtension  = 0x00,
         ReservedSystemExclusiveIdExperimental           = 0x7D,
@@ -121,27 +215,55 @@ namespace MidiMessage {
         ReservedSystemExclusiveIdRealTime               = 0x7F
     } ReservedSystemExclusiveId_t;
 
-    typedef enum {
-        UniversalSysExNonRTSampleDumpHeader       = 0x01,
-        UniversalSysExNonRTSampleDataPacket       = 0x02,
-        UniversalSysExNonRTSampleDumpRequest      = 0x03,
-        UniversalSysExNonRTMidiTimeCode           = 0x04,
-        UniversalSysExNonRTSampleDumpExtension    = 0x05,
-        UniversalSysExNonRTGeneralInformation     = 0x06,
-        UniversalSysExNonRTFileDump               = 0x07,
-        UniversalSysExNonRTMidiTuningStandard     = 0x08,
-        UniversalSysExNonRTGeneralMidi            = 0x09,
-        UniversalSysExNonRTDownloadableSounds     = 0x0A,
-        UniversalSysExNonRTFileReferenceMessage   = 0x0B,
-        UniversalSysExNonRTMidiVisualControl      = 0x0C,
-        UniversalSysExNonRTMidiCapabilityInquiry  = 0x0D,
+    inline bool isReservedSystemExclusiveId( uint8_t value ){
+        return (value == ReservedSystemExclusiveIdManufacturerExtension ||
+                value == ReservedSystemExclusiveIdExperimental ||
+                value == ReservedSystemExclusiveIdNonRealTime ||
+                value == ReservedSystemExclusiveIdRealTime);
+    }
 
-        UniversalSysExNonRTEndOfFile              = 0x7B,
-        UniversalSysExNonRTWait                   = 0x7C,
-        UniversalSysExNonRTCancel                 = 0x7D,
-        UniversalSysExNonRTNAK                    = 0x7E,
-        UniversalSysExNonRTACK                    = 0x7F
-    } UniversalSysExNonRT_t;
+    typedef enum {
+        UniversalSysExNonRtSampleDumpHeader       = 0x01,
+        UniversalSysExNonRtSampleDataPacket       = 0x02,
+        UniversalSysExNonRtSampleDumpRequest      = 0x03,
+        UniversalSysExNonRtMidiTimeCode           = 0x04,
+        UniversalSysExNonRtSampleDumpExtension    = 0x05,
+        UniversalSysExNonRtGeneralInformation     = 0x06,
+        UniversalSysExNonRtFileDump               = 0x07,
+        UniversalSysExNonRtMidiTuningStandard     = 0x08,
+        UniversalSysExNonRtGeneralMidi            = 0x09,
+        UniversalSysExNonRtDownloadableSounds     = 0x0A,
+        UniversalSysExNonRtFileReferenceMessage   = 0x0B,
+        UniversalSysExNonRtMidiVisualControl      = 0x0C,
+        UniversalSysExNonRtMidiCapabilityInquiry  = 0x0D,
+
+        UniversalSysExNonRtEndOfFile              = 0x7B,
+        UniversalSysExNonRtWait                   = 0x7C,
+        UniversalSysExNonRtCancel                 = 0x7D,
+        UniversalSysExNonRtNAK                    = 0x7E,
+        UniversalSysExNonRtACK                    = 0x7F
+    } UniversalSysExNonRt_t;
+    
+    inline bool isUniversalSysExNonRt( uint8_t value ){
+        return (value == UniversalSysExNonRtSampleDumpHeader ||
+                value == UniversalSysExNonRtSampleDataPacket ||
+                value == UniversalSysExNonRtSampleDumpRequest ||
+                value == UniversalSysExNonRtMidiTimeCode ||
+                value == UniversalSysExNonRtSampleDumpExtension ||
+                value == UniversalSysExNonRtGeneralInformation ||
+                value == UniversalSysExNonRtFileDump ||
+                value == UniversalSysExNonRtMidiTuningStandard ||
+                value == UniversalSysExNonRtGeneralMidi ||
+                value == UniversalSysExNonRtDownloadableSounds ||
+                value == UniversalSysExNonRtFileReferenceMessage ||
+                value == UniversalSysExNonRtMidiVisualControl ||
+                value == UniversalSysExNonRtMidiCapabilityInquiry ||
+                value == UniversalSysExNonRtEndOfFile ||
+                value == UniversalSysExNonRtWait ||
+                value == UniversalSysExNonRtCancel ||
+                value == UniversalSysExNonRtNAK ||
+                value == UniversalSysExNonRtACK);
+    }
 
     typedef enum {
         UniversalSysExNonRtMidiTimeCodeSpecial                  = 0x00,
@@ -161,6 +283,24 @@ namespace MidiMessage {
         UniversalSysExNonRtMidiTimeCodeEventNameInInfo          = 0x0E
     } UniversalSysExNonRtMidiTimeCode_t;
 
+    inline bool isUniversalSysExNonRtMidiTimeCode( uint8_t value ){
+        return (value == UniversalSysExNonRtMidiTimeCodeSpecial ||
+                value == UniversalSysExNonRtMidiTimeCodePunchInPoint ||
+                value == UniversalSysExNonRtMidiTimeCodePunchOutPoint ||
+                value == UniversalSysExNonRtMidiTimeCodeDeletePunchInPoint ||
+                value == UniversalSysExNonRtMidiTimeCodeDeletePunchOutPoint ||
+                value == UniversalSysExNonRtMidiTimeCodeEventStartPoint ||
+                value == UniversalSysExNonRtMidiTimeCodeEventStopPoint ||
+                value == UniversalSysExNonRtMidiTimeCodeEventStartPointsWithInfo ||
+                value == UniversalSysExNonRtMidiTimeCodeEventStopPointsWithInfo ||
+                value == UniversalSysExNonRtMidiTimeCodeDeleteEventStartPoint ||
+                value == UniversalSysExNonRtMidiTimeCodeDeleteEventStopPoint ||
+                value == UniversalSysExNonRtMidiTimeCodeCuePoints ||
+                value == UniversalSysExNonRtMidiTimeCodeCuePointsWithInfo ||
+                value == UniversalSysExNonRtMidiTimeCodeDeleteCuePoint ||
+                value == UniversalSysExNonRtMidiTimeCodeEventNameInInfo);
+    }
+
     typedef enum {
         UniversalSysExNonRtSampleDumpExtensionLoopPointsTransmission    = 0x01,
         UniversalSysExNonRtSampleDumpExtensionLoopPointsRequest         = 0x02,
@@ -171,16 +311,37 @@ namespace MidiMessage {
         UniversalSysExNonRtSampleDumpExtensionExtendedLoopPointsRequest = 0x07
     } UniversalSysExNonRtSampleDumpExtension_t;
 
+    inline bool isUniversalSysExNonRtSampleDumpExtension( uint8_t value ){
+        return (value == UniversalSysExNonRtSampleDumpExtensionLoopPointsTransmission ||
+                value == UniversalSysExNonRtSampleDumpExtensionLoopPointsRequest ||
+                value == UniversalSysExNonRtSampleDumpExtensionSampleNameTransmission ||
+                value == UniversalSysExNonRtSampleDumpExtensionSampleNameRequest ||
+                value == UniversalSysExNonRtSampleDumpExtensionExtendedDumpHeader ||
+                value == UniversalSysExNonRtSampleDumpExtensionExtendedLoopPointsTransmission ||
+                value == UniversalSysExNonRtSampleDumpExtensionExtendedLoopPointsRequest);
+    }
+
     typedef enum {
         UniversalSysExNonRtGeneralInformationIdentityRequest    = 0x01,
         UniversalSysExNonRtGeneralInformationIdentityReply      = 0x02
     } UniversalSysExNonRtGeneralInformation_t;
+
+    inline bool isUniversalSysExNonRtGeneralInformation( uint8_t value ){
+        return (value == UniversalSysExNonRtGeneralInformationIdentityRequest ||
+                value == UniversalSysExNonRtGeneralInformationIdentityReply);
+    }
 
     typedef enum {
         UniversalSysExNonRtFileDumpHeader       = 0x01,
         UniversalSysExNonRtFileDumpDataPacket   = 0x02,
         UniversalSysExNonRtFileDumpRequest      = 0x03
     } UniversalSysExNonRtFileDump_t;
+
+    inline bool isUniversalSysExNonRtFileDump( uint8_t value ){
+        return (value == UniversalSysExNonRtFileDumpHeader ||
+                value == UniversalSysExNonRtFileDumpDataPacket ||
+                value == UniversalSysExNonRtFileDumpRequest);
+    }
 
     typedef enum {
         UniversalSysExNonRtMidiTuningStandardBulkDumpRequest        = 0x00,
@@ -194,11 +355,28 @@ namespace MidiMessage {
         UniversalSysExNonRtMidiTuningStandardScaleTuning2Byte       = 0x08
     } UniversalSysExNonRtMidiTuningStandard_t;
 
+    inline bool isUniversalSysExNonRtMidiTuningStandard( uint8_t value ){
+        return (value == UniversalSysExNonRtMidiTuningStandardBulkDumpRequest ||
+                value == UniversalSysExNonRtMidiTuningStandardBulkDumpReply ||
+                value == UniversalSysExNonRtMidiTuningStandardTuningDumpRequest ||
+                value == UniversalSysExNonRtMidiTuningStandardKeybasedTuningDump ||
+                value == UniversalSysExNonRtMidiTuningStandardScaleTuningDump1Byte ||
+                value == UniversalSysExNonRtMidiTuningStandardSingleNoteTuningChange ||
+                value == UniversalSysExNonRtMidiTuningStandardScaleTuning1Byte ||
+                value == UniversalSysExNonRtMidiTuningStandardScaleTuning2Byte);
+    }
+
     typedef enum {
         UniversalSysExNonRtGeneralMidi1SystemOn     = 0x01,
         UniversalSysExNonRtGeneralMidiSystemOff     = 0x02,
         UniversalSysExNonRtGeneralMidi2SystemOn     = 0x03
     } UniversalSysExNonRtGeneralMidi_t;
+
+    inline bool isUniversalSysExNonRtGeneralMidi( uint8_t value ){
+        return (value == UniversalSysExNonRtGeneralMidi1SystemOn ||
+                value == UniversalSysExNonRtGeneralMidiSystemOff ||
+                value == UniversalSysExNonRtGeneralMidi2SystemOn);
+    }
 
     typedef enum {
         UniversalSysExNonRtDownloadableSoundsTurnDlsOn      = 0x01,
@@ -207,6 +385,13 @@ namespace MidiMessage {
         UniversalSysExNonRtDownloadableSoundsTurnDlsVoiceAllocOn  = 0x04
     } UniversalSysExNonRtDownloadableSounds_t;
 
+    inline bool isUniversalSysExNonRtDownloadableSounds( uint8_t value ){
+        return (value == UniversalSysExNonRtDownloadableSoundsTurnDlsOn ||
+                value == UniversalSysExNonRtDownloadableSoundsTurnDlsOff ||
+                value == UniversalSysExNonRtDownloadableSoundsTurnDlsVoiceAllocOff ||
+                value == UniversalSysExNonRtDownloadableSoundsTurnDlsVoiceAllocOn);
+    }
+
     typedef enum {
         UniversalSysExNonRtFileReferenceMessageOpenFile         = 0x01,
         UniversalSysExNonRtFileReferenceMessageSelectContents   = 0x02,
@@ -214,13 +399,28 @@ namespace MidiMessage {
         UniversalSysExNonRtFileReferenceMessageCloseFile        = 0x04
     } UniversalSysExNonRtFileReferenceMessage_t;
 
+    inline bool isUniversalSysExNonRtFileReferenceMessage( uint8_t value ){
+        return (value == UniversalSysExNonRtFileReferenceMessageOpenFile ||
+                value == UniversalSysExNonRtFileReferenceMessageSelectContents ||
+                value == UniversalSysExNonRtFileReferenceMessageOpenAndSelect ||
+                value == UniversalSysExNonRtFileReferenceMessageCloseFile);
+    }
+
     typedef enum {
         UniversalSysExNonRtMidiVisualControlTODO //TODO
     } UniversalSysExNonRtMidiVisualControl_t;
 
+    inline bool isUniversalSysExNonRtMidiVisualControl( uint8_t value ){
+        return false; //TODO
+    }
+
     typedef enum {
         UniversalSysExNonRtMidiCapabilityInquiryTODO //TODO
     } UniversalSysExNonRtMidiCapabilityInquiry_t;
+
+    inline bool isUniversalSysExNonRtMidiCapabilityInquiry( uint8_t value ){
+        return false; //TODO
+    }
 
     typedef enum {
         UniversalSysExRtMidiTimeCode                  = 0x01,
@@ -236,20 +436,50 @@ namespace MidiMessage {
         UniversalSysExRtMobilePhoneControlMessage     = 0x0C
     } UniversalSysExRt_t;
 
+    inline bool isUniversalSysExRt( uint8_t value ){
+        return (value == UniversalSysExRtMidiTimeCode ||
+                value == UniversalSysExRtMidiShowControl ||
+                value == UniversalSysExRtDeviceControl ||
+                value == UniversalSysExRtRealTimeMtcCueing ||
+                value == UniversalSysExRtMidiMachineControlCommands ||
+                value == UniversalSysExRtMidiMachineControlResponses ||
+                value == UniversalSysExRtMidiTuningStandard ||
+                value == UniversalSysExRtControllerDestinationSetting ||
+                value == UniversalSysExRtKeybasedInstrumentControl ||
+                value == UniversalSysExRtScalablePolyphonyMidiMip ||
+                value == UniversalSysExRtMobilePhoneControlMessage);
+    }
+
     typedef enum {
         UniversalSysExRtMidiTimeCodeFullMessage           = 0x01,
         UniversalSysExRtMidiTimeCodeUserBits              = 0x02
     } UniversalSysExRtMidiTimeCode_t;
 
+    inline bool isUniversalSysExRtMidiTimeCode( uint8_t value ){
+        return (value == UniversalSysExRtMidiTimeCodeFullMessage ||
+                value == UniversalSysExRtMidiTimeCodeUserBits);
+    }
+
     typedef enum {
         UniversalSysExRtMidiShowControlTODO //TODO
     } UniversalSysExRtMidiShowControl_t;
+
+    inline bool isUniversalSysExRtMidiShowControl( uint8_t value ){
+        return false; //TODO
+    }
+
 
     typedef enum {
         UniversalSysExRtNotationInformationBarNumber                = 0x01,
         UniversalSysExRtNotationInformationTimeSignatureImmediate   = 0x02,
         UniversalSysExRtNotationInformationTimeSignatureDelayed     = 0x03
     } UniversalSysExRtNotationInformation_t;
+
+    inline bool isUniversalSysExRtNotationInformation( uint8_t value ){
+        return (value == UniversalSysExRtNotationInformationBarNumber ||
+                value == UniversalSysExRtNotationInformationTimeSignatureImmediate ||
+                value == UniversalSysExRtNotationInformationTimeSignatureDelayed);
+    }
 
     typedef enum {
         UniversalSysExRtDeviceControlMasterVolume           = 0x01,
@@ -258,6 +488,14 @@ namespace MidiMessage {
         UniversalSysExRtDeviceControlMasterCoarseTuning     = 0x04,
         UniversalSysExRtDeviceControlGlobalParameterControl = 0x05
     } UniversalSysExRtDeviceControl_t;
+
+    inline bool isUniversalSysExRtDeviceControl( uint8_t value ) {
+        return (value == UniversalSysExRtDeviceControlMasterVolume ||
+                value == UniversalSysExRtDeviceControlMasterBalance ||
+                value == UniversalSysExRtDeviceControlMasterFineTuning ||
+                value == UniversalSysExRtDeviceControlMasterCoarseTuning ||
+                value == UniversalSysExRtDeviceControlGlobalParameterControl);
+    }
 
     typedef enum {
         UniversalSysExRtRealTimeMtcCueingSpecial                    = 0x00, // ??
@@ -275,13 +513,34 @@ namespace MidiMessage {
         UniversalSysExRtRealTimeMtcCueingEventNameInInfo            = 0x0E
     } UniversalSysExRtRealTimeMtcCueing_t;
 
+    inline bool isUniversalSysExRtRealTimeMtcCueing( uint8_t value ){
+        return (value == UniversalSysExRtRealTimeMtcCueingSpecial ||
+                value == UniversalSysExRtRealTimeMtcCueingPunchInPoints ||
+                value == UniversalSysExRtRealTimeMtcCueingPunchOutPoints ||
+                value == UniversalSysExRtRealTimeMtcCueingEventStartPoints ||
+                value == UniversalSysExRtRealTimeMtcCueingEventStopPoints ||
+                value == UniversalSysExRtRealTimeMtcCueingEvenStartPointsWithInfo ||
+                value == UniversalSysExRtRealTimeMtcCueingEventStopPointsWithInfo ||
+                value == UniversalSysExRtRealTimeMtcCueingCuePoints ||
+                value == UniversalSysExRtRealTimeMtcCueingCuePointsWithInfo ||
+                value == UniversalSysExRtRealTimeMtcCueingEventNameInInfo);
+    }
+
     typedef enum {
         UniversalSysExRtMidiMachineControlCommandsTODO //TODO
     } UniversalSysExRtMidiMachineControlCommands_t;
 
+    inline bool isUniversalSysExRtMidiMachineControlCommands( uint8_t value ) {
+        return false; //TODO
+    }
+
     typedef enum {
         UniversalSysExRtMidiMachineControlResponsesTODO //TODO
     } UniversalSysExRtMidiMachineControlResponses_t;
+
+    inline bool isUniversalSysExRtMidiMachineControlResponses( uint8_t value ) {
+        return false; //TODO
+    }
 
     typedef enum {
         UniversalSysExRtMidiTuningStandardSingleNoteTuningChange                = 0x01,
@@ -290,11 +549,24 @@ namespace MidiMessage {
         UniversalSysExRtMidiTuningStandardScaleTuning2Byte                      = 0x04
     } UniversalSysExRtMidiTuningStandard_t;
 
+    inline bool isUniversalSysExRtMidiTuningStandard( uint8_t value ) {
+        return (value == UniversalSysExRtMidiTuningStandardSingleNoteTuningChange ||
+                value == UniversalSysExRtMidiTuningStandardSingleNoteTuningChangeWithBankSelect ||
+                value == UniversalSysExRtMidiTuningStandardScaleTuning1Byte ||
+                value == UniversalSysExRtMidiTuningStandardScaleTuning2Byte);
+    }
+
     typedef enum {
         UniversalSysExRtControllerDestinationSettingChannelPressure         = 0x01,
         UniversalSysExRtControllerDestinationSettingPolyphonicKeyPressure   = 0x02,
         UniversalSysExRtControllerDestinationSettingController              = 0x03
     } UniversalSysExRtControllerDestinationSetting_t;
+
+    inline bool isUniversalSysExRtControllerDestinationSetting( uint8_t value ) {
+        return (value == UniversalSysExRtControllerDestinationSettingChannelPressure ||
+                value == UniversalSysExRtControllerDestinationSettingPolyphonicKeyPressure ||
+                value == UniversalSysExRtControllerDestinationSettingController);
+    }
 
     typedef enum {
         MidiTimeCodeQuarterFrameMessageTypeFrameLS      = 0b000,
@@ -307,15 +579,15 @@ namespace MidiMessage {
         MidiTimeCodeQuarterFrameMessageTypeHourMS       = 0b111
     } MidiTimeCodeQuarterFrameMessageType_t;
 
-    inline bool isMidiTimeCodeQuarterMessageType( MidiTimeCodeQuarterFrameMessageType_t type ){
-        return (type == MidiTimeCodeQuarterFrameMessageTypeFrameLS ||
-                type == MidiTimeCodeQuarterFrameMessageTypeFrameMS ||
-                type == MidiTimeCodeQuarterFrameMessageTypeSecondLS ||
-                type == MidiTimeCodeQuarterFrameMessageTypeSecondMS ||
-                type == MidiTimeCodeQuarterFrameMessageTypeMinuteLS ||
-                type == MidiTimeCodeQuarterFrameMessageTypeMinuteMS ||
-                type == MidiTimeCodeQuarterFrameMessageTypeHourLS ||
-                type == MidiTimeCodeQuarterFrameMessageTypeHourMS);
+    inline bool isMidiTimeCodeQuarterMessageType( uint8_t value ){
+        return (value == MidiTimeCodeQuarterFrameMessageTypeFrameLS ||
+                value == MidiTimeCodeQuarterFrameMessageTypeFrameMS ||
+                value == MidiTimeCodeQuarterFrameMessageTypeSecondLS ||
+                value == MidiTimeCodeQuarterFrameMessageTypeSecondMS ||
+                value == MidiTimeCodeQuarterFrameMessageTypeMinuteLS ||
+                value == MidiTimeCodeQuarterFrameMessageTypeMinuteMS ||
+                value == MidiTimeCodeQuarterFrameMessageTypeHourLS ||
+                value == MidiTimeCodeQuarterFrameMessageTypeHourMS);
     }
 
     typedef enum {
@@ -326,12 +598,17 @@ namespace MidiMessage {
         MidiTimeCodeFrameRate30fps      = 0b11  // 30fps Non-Drop
     } MidiTimeCodeFrameRate_t;
 
-    inline bool isMidiTimeCodeFrameRate( MidiTimeCodeFrameRate_t fps ) {
+    inline bool isMidiTimeCodeFrameRate( uint8_t fps ) {
         return (fps == MidiTimeCodeFrameRate24fps ||
                 fps == MidiTimeCodeFrameRate25fps ||
                 fps == MidiTimeCodeFrameRate29_97fps ||
                 fps == MidiTimeCodeFrameRate30fps);
     }
+
+    // Structures
+    /////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
+
 
     typedef struct {
         uint8_t MessageType;
@@ -346,7 +623,8 @@ namespace MidiMessage {
     } MidiTimeCode_t;
     
     typedef struct {
-        Status_t Status;
+        StatusClass_t StatusClass;
+        uint8_t Status;
         uint8_t Channel; // Also DeviceId for SysEx messages
         union {
             struct {
@@ -400,68 +678,30 @@ namespace MidiMessage {
     } Message_t;
 
 
-    inline bool isValidStatusByte( uint8_t byte ){
-        return (byte & StatusMaskByte) == StatusMaskByte;
+
+    inline bool isSystemCommonMessage( Message_t * msg ){
+        return isSystemCommonMessage( msg->Status );
     }
 
 
-    inline Status_t getStatus( uint8_t byte ){
-        return (Status_t)(byte & StatusMask);
-    }
-
-    inline uint8_t getChannel( uint8_t byte ){
-        return (byte & ChannelMask);
-    }
-
-    inline uint8_t getValue( uint8_t byte ){
-        return (byte & ValueMask);
-    }
-
-    inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
-        ASSERT( bytes[0] & ValueMask == bytes[0] );
-        ASSERT( bytes[1] & ValueMask == bytes[1] );
-
-        *value = (((uint16_t)bytes[1]) << 8) | ((uint16_t)bytes[0]);
-    }
-
-    inline void packDoubleValue( uint8_t * bytes, uint16_t value ) {
-        bytes[0] = value & ValueMask;
-        bytes[1] = (value >> 7) & ValueMask;
+    inline bool isSystemRealTimeMessage( Message_t * msg ){
+        return isSystemRealTimeMessage( msg->Status );
     }
 
 
     inline bool isChannelModeMessage( uint8_t status, uint8_t controller ){
-        return (status & StatusMask) == StatusControlChange  &&
-               ((controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerResetAllControllers ||
-                (controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerLocalControl ||
-                (controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerAllNotesOff ||
-                (controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerOmniModeOff ||
-                (controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerOmniModeOn ||
-                (controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerMonoModeOn ||
-                (controller & ChannelModeControllerAllSoundOff) == ChannelModeControllerPolyModeOn);
-    }
-
-    inline bool isChannelModeMessage( uint8_t * bytes ){
-        return isChannelModeMessage( bytes[0], bytes[1] );
+        return getStatusClass(status) == StatusClassControlChange && isChannelModeController(controller);
     }
 
     inline bool isChannelModeMessage( Message_t * msg ){
         return isChannelModeMessage( msg->Status, msg->Data.ControlChange.Controller );
     }
 
-    inline bool isChannelVoiceMessage( uint8_t status, uint8_t byte1 ){
-        return ((status & StatusMask) == StatusNoteOff ||
-                (status & StatusMask) == StatusNoteOn ||
-                (status & StatusMask) == StatusPolyphonicKeyPressure ||
-                (status & StatusMask) == StatusControlChange ||
-                (status & StatusMask) == StatusProgramChange ||
-                (status & StatusMask) == StatusChannelPressure ||
-                (status & StatusMask) == StatusPitchBendChange) &&
-               !isChannelModeMessage(status, byte1);
-    }
 
-    inline bool isChannelVoiceMessage( uint8_t * bytes ){
-        return isChannelVoiceMessage( bytes[0], bytes[1] );
+    inline bool isChannelVoiceMessage( uint8_t status, uint8_t byte1 ) {
+        return isStatusClass( (status & StatusClassMask) )  &&
+               (status & StatusClassMask) != StatusClassSystemMessage &&
+               !isChannelModeMessage(status, byte1);
     }
 
     inline bool isChannelVoiceMessage( Message_t * msg ){
@@ -469,285 +709,446 @@ namespace MidiMessage {
     }
 
 
-    inline bool isSystemExclusive( Status_t status ){
-        return (status & StatusMask) == StatusSystemExclusive;
-    }
-
-    inline bool isSystemCommonMessage( uint8_t status ){
-        return ((status & StatusMask) == StatusSystemExclusive) &&
-               ((status & ChannelMask) == SystemExclusive ||
-                (status & ChannelMask) == SystemExclusiveMidiTimeCodeQuarterFrame ||
-                (status & ChannelMask) == SystemExclusiveSongPositionPointer ||
-                (status & ChannelMask) == SystemExclusiveSongSelect ||
-                (status & ChannelMask) == SystemExclusiveTuneRequest ||
-                (status & ChannelMask) == SystemExclusiveEndOfExclusive);
-    }
-
-    inline bool isSystemCommonMessage( uint8_t * bytes ){
-        return isSystemCommonMessage( bytes[0] );
-    }
-
-    inline bool isSystemCommonMessage( Message_t * msg ){
-        return isSystemCommonMessage( msg->Status );
-    }
-
-
-    inline bool isSystemRealTimeMessage( uint8_t status ){
-        return ((status & StatusMask) == StatusSystemExclusive) &&
-               ((status & ChannelMask) == SystemExclusiveTimingClock ||
-                (status & ChannelMask) == SystemExclusiveStart ||
-                (status & ChannelMask) == SystemExclusiveContinue ||
-                (status & ChannelMask) == SystemExclusiveStop ||
-                (status & ChannelMask) == SystemExclusiveActiveSensing ||
-                (status & ChannelMask) == SystemExclusiveReset);
-    }
-
-    inline bool isSystemRealTimeMessage( uint8_t * bytes ){
-        return isSystemRealTimeMessage( bytes[0] );
-    }
-
-    inline bool isSystemRealTimeMessage( Message_t * msg ){
-        return isSystemRealTimeMessage( msg->Status );
-    }
 
 
 
     inline int packNoteOff( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
+        ASSERT((key & DataMask) == key );
+        ASSERT((velocity & DataMask) == velocity );
 
-        bytes[0] = StatusNoteOff | (channel & ChannelMask);
-        bytes[1] = key & ValueMask;
-        bytes[2] = velocity & ValueMask;
+        bytes[0] = StatusClassNoteOff | (channel & ChannelMask);
+        bytes[1] = key & DataMask;
+        bytes[2] = velocity & DataMask;
 
-        return MessageLengthNoteOff;
+        return MsgLenNoteOff;
     }
 
-    inline bool unpackNoteOff( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t  * velocity ){
-        ASSERT( bytes[0] & StatusMask == StatusNoteOff );
+    inline int unpackNoteOff( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t  * velocity ){
+        ASSERT( bytes != NULL );
 
-        if (len != MessageLengthNoteOff){
+        if (len != MsgLenNoteOff) {
+            return false;
+        }
+        if ((bytes[0] & StatusClassMask) != StatusClassNoteOff) {
+            return false;
+        }
+        if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
             return false;
         }
 
         *channel = bytes[0] & ChannelMask;
-        *key = bytes[1] & ValueMask;
-        *velocity = bytes[2] & ValueMask;
+        *key = bytes[1];
+        *velocity = bytes[2];
 
-        return true;
+        return MsgLenNoteOff;
     }
 
 
     inline int packNoteOn( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
+        ASSERT((key & DataMask) == key );
+        ASSERT((velocity & DataMask) == velocity );
 
-        bytes[0] = StatusNoteOn | (channel & ChannelMask);
-        bytes[1] = key & ValueMask;
-        bytes[2] = velocity & ValueMask;
+        bytes[0] = StatusClassNoteOn | (channel & ChannelMask);
+        bytes[1] = key & DataMask;
+        bytes[2] = velocity & DataMask;
 
-        return MessageLengthNoteOn;
+        return MsgLenNoteOn;
     }
 
-    inline bool unpackNoteOn( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * velocity ){
-        ASSERT( bytes[0] & StatusMask == StatusNoteOn );
+    inline int unpackNoteOn( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * velocity ){
+        ASSERT( bytes != NULL );
 
-        if (len != MessageLengthNoteOn){
+        if ( len != MsgLenNoteOn ) {
+            return false;
+        }
+        if ((bytes[0] & StatusClassMask) == StatusClassNoteOn) {
+            return false;
+        }
+        if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
             return false;
         }
 
         *channel = bytes[0] & ChannelMask;
-        *key = bytes[1] & ValueMask;
-        *velocity = bytes[2] & ValueMask;
+        *key = bytes[1];
+        *velocity = bytes[2];
 
-        return true;
+        return MsgLenNoteOn;
     }
 
 
     inline int packPolyphonicKeyPressure( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t pressure ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
+        ASSERT((key & DataMask) == key );
+        ASSERT((pressure & DataMask) == pressure)
 
-        bytes[0] = StatusPolyphonicKeyPressure | (channel & ChannelMask);
-        bytes[1] = key & ValueMask;
-        bytes[2] = pressure & ValueMask;
+        bytes[0] = StatusClassPolyphonicKeyPressure | (channel & ChannelMask);
+        bytes[1] = key & DataMask;
+        bytes[2] = pressure & DataMask;
 
-        return MessageLengthPolyphonicKeyPressure;
+        return MsgLenPolyphonicKeyPressure;
     }
 
-    inline bool unpackPolyphonicKeyPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * pressure ){
-        ASSERT( bytes[0] & StatusMask == StatusPolyphonicKeyPressure );
+    inline int unpackPolyphonicKeyPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * pressure ){
+        ASSERT( bytes != NULL );
 
-        if (len != MessageLengthPolyphonicKeyPressure){
+        if ( len != MsgLenPolyphonicKeyPressure ) {
+            return false;
+        }
+        if ((bytes[0] & StatusClassMask) == StatusClassPolyphonicKeyPressure) {
+            return false;
+        }
+        if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
             return false;
         }
 
         *channel = bytes[0] & ChannelMask;
-        *key = bytes[1] & ValueMask;
-        *pressure = bytes[2] & ValueMask;
+        *key = bytes[1];
+        *pressure = bytes[2];
 
-        return true;
+        return MsgLenPolyphonicKeyPressure;
     }
 
 
     inline int packControlChange( uint8_t * bytes, uint8_t channel, uint8_t controller, uint8_t value ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
+        ASSERT((controller & DataMask) == controller );
+        ASSERT((value & DataMask) == value );
 
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
-        bytes[1] = controller & ValueMask;
-        bytes[2] = value & ValueMask;
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[1] = controller & DataMask;
+        bytes[2] = value & DataMask;
 
-        return MessageLengthControlChange;
+        return MsgLenControlChange;
     }
 
-    inline bool unpackControlChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * controller, uint8_t * value ){
-        ASSERT( bytes[0] & StatusMask == StatusControlChange );
+    inline int unpackControlChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * controller, uint8_t * value ){
+        ASSERT( bytes != NULL );
 
-        if (len != MessageLengthControlChange){
+        if ( len != MsgLenControlChange ) {
+            return false;
+        }
+        if ((bytes[0] & StatusClassMask) == StatusClassControlChange) {
+            return false;
+        }
+        if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
             return false;
         }
 
         *channel = bytes[0] & ChannelMask;
-        *controller = bytes[1] & ValueMask;
-        *value = bytes[2] & ValueMask;
+        *controller = bytes[1];
+        *value = bytes[2];
 
-        return true;
+        return MsgLenControlChange;
     }
 
 
     inline int packProgramChange( uint8_t * bytes, uint8_t channel, uint8_t program ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
+        ASSERT((program & DataMask) == program );
 
-        bytes[0] = StatusProgramChange | (channel & ChannelMask);
-        bytes[1] = program & ValueMask;
+        bytes[0] = StatusClassProgramChange | (channel & ChannelMask);
+        bytes[1] = program & DataMask;
 
-        return MessageLengthProgramChange;
+        return MsgLenProgramChange;
     }
 
-    inline bool unpackProgramChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * program ){
-        ASSERT( bytes[0] & StatusMask == StatusProgramChange );
+    inline int unpackProgramChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * program ){
+        ASSERT( bytes != NULL );
 
-        if (len != MessageLengthProgramChange){
+        if ( len != MsgLenProgramChange ) {
+            return false;
+        }
+        if ((bytes[0] & StatusClassMask) == StatusClassProgramChange) {
+            return false;
+        }
+        if ((bytes[1] & DataMask) != bytes[1] ) {
             return false;
         }
 
         *channel = bytes[0] & ChannelMask;
-        *program = bytes[1] & ValueMask;
+        *program = bytes[1];
 
-        return true;
+        return MsgLenProgramChange;
     }
 
 
     inline int packChannelPressure( uint8_t * bytes, uint8_t channel, uint8_t pressure ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
 
-        bytes[0] = StatusChannelPressure | (channel & ChannelMask);
-        bytes[1] = pressure & ValueMask;
+        bytes[0] = StatusClassChannelPressure | (channel & ChannelMask);
+        bytes[1] = pressure & DataMask;
 
-        return MessageLengthChannelPressure;
+        return MsgLenChannelPressure;
     }
 
-    inline bool unpackChannelPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * pressure ){
-        ASSERT( bytes[0] & StatusMask == StatusChannelPressure );
+    inline int unpackChannelPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * pressure ){
+        ASSERT( bytes != NULL );
 
-        if (len != MessageLengthChannelPressure){
+        if ( len != MsgLenChannelPressure ) {
+            return false;
+        }
+        if ((bytes[0] & StatusClassMask) == StatusClassChannelPressure) {
+            return false;
+        }
+        if ((bytes[1] & DataMask) != bytes[1] ) {
             return false;
         }
 
-        *channel = bytes[0] & ChannelMask;
-        *pressure = bytes[1] & ValueMask;
+        *channel = bytes[0];
+        *pressure = bytes[1];
 
-        return true;
+        return MsgLenChannelPressure;
     }
 
 
     inline int packPitchBendChange( uint8_t * bytes, uint8_t channel, uint16_t pitch ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
         ASSERT( pitch <= MaxDoubleValue );
 
-        bytes[0] = StatusPitchBendChange | (channel & ChannelMask);
+        bytes[0] = StatusClassPitchBendChange | (channel & ChannelMask);
         packDoubleValue( &bytes[1], pitch );
 
-        return MessageLengthPitchBendChange;
+        return MsgLenPitchBendChange;
     }
 
-    inline bool unpackPitchBendChange( uint8_t * bytes, int len, uint8_t * channel, uint16_t * pitch ){
-        ASSERT( bytes[0] & StatusMask == StatusPitchBendChange );
+    inline int unpackPitchBendChange( uint8_t * bytes, int len, uint8_t * channel, uint16_t * pitch ){
+        ASSERT( bytes != NULL );
 
-        if (len != MessageLengthPitchBendChange){
+        if ( len != MsgLenPitchBendChange ) {
+            return false;
+        }
+        if ((bytes[0] & StatusClassMask) == StatusClassPitchBendChange) {
+            return false;
+        }
+        if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
             return false;
         }
 
         *channel = bytes[0] & ChannelMask;
         unpackDoubleValue( &bytes[1], pitch );
 
-        return false;
+        return MsgLenPitchBendChange;
     }
 
 
 
     inline int packAllSoundOff( uint8_t * bytes, uint8_t channel ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
 
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = ChannelModeControllerAllSoundOff;
         bytes[2] = 0;
 
-        return MessageLengthControlChange;
+        return MsgLenControlChange;
+    }
+
+    inline int unpackAllSoundOff( uint8_t * bytes, int len, uint8_t * channel ) {
+        ASSERT( bytes != NULL );
+
+        if ( len != MsgLenControlChange ) {
+            return false;
+        }
+
+        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
+            return false;
+        }
+
+        if ( (bytes[1] != ChannelModeControllerAllSoundOff) || (bytes[2] != 0) ) {
+            return false;
+        }
+
+        *channel = bytes[0] & ChannelMask;
+
+        return MsgLenControlChange;
     }
 
     inline int packResetAllControllers( uint8_t * bytes, uint8_t channel ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
 
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = ChannelModeControllerResetAllControllers;
         bytes[2] = 0;
 
-        return MessageLengthControlChange;
+        return MsgLenControlChange;
+    }
+
+    inline int unpackResetAllControllers( uint8_t * bytes, int len, uint8_t * channel ) {
+        ASSERT( bytes != NULL );
+
+        if ( len != MsgLenControlChange ) {
+            return false;
+        }
+
+        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
+            return false;
+        }
+
+        if ( (bytes[1] != ChannelModeControllerResetAllControllers) || (bytes[2] != 0) ) {
+            return false;
+        }
+
+        *channel = bytes[0] & ChannelMask;
+
+        return MsgLenControlChange;
     }
 
     inline int packLocalControl( uint8_t * bytes, uint8_t channel, bool on ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
 
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = ChannelModeControllerLocalControl;
         bytes[2] = on ? 127 : 0;
 
-        return MessageLengthControlChange;
+        return MsgLenControlChange;
+    }
+
+    inline int unpackLocalControl( uint8_t * bytes, int len, uint8_t * channel, bool * on ) {
+        ASSERT( bytes != NULL );
+
+        if ( len != MsgLenControlChange ) {
+            return false;
+        }
+
+        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
+            return false;
+        }
+
+        if ( (bytes[1] != ChannelModeControllerLocalControl) || (bytes[2] != 0 && bytes[2] != 127) ) {
+            return false;
+        }
+
+        *channel = bytes[0] & ChannelMask;
+        *on = bytes[1] == 127;
+
+        return MsgLenControlChange;
     }
 
     inline int packAllNotesOff( uint8_t * bytes, uint8_t channel ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
 
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = ChannelModeControllerAllNotesOff;
         bytes[2] = 0;
 
-        return MessageLengthControlChange;
+        return MsgLenControlChange;
+    }
+
+    inline int unpackAllNotesOff( uint8_t * bytes, int len, uint8_t * channel ) {
+        ASSERT( bytes != NULL );
+
+        if ( len != MsgLenControlChange ) {
+            return false;
+        }
+
+        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
+            return false;
+        }
+
+        if ( (bytes[1] != ChannelModeControllerAllNotesOff) || (bytes[2] != 0) ) {
+            return false;
+        }
+
+        *channel = bytes[0] & ChannelMask;
+
+        return MsgLenControlChange;
     }
 
     inline int packOmniMode( uint8_t * bytes, uint8_t channel, bool on ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
 
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = on ? ChannelModeControllerOmniModeOn : ChannelModeControllerOmniModeOff;
         bytes[2] = 0;
 
-        return MessageLengthControlChange;
+        return MsgLenControlChange;
+    }
+
+    inline int unpackOmniMode( uint8_t * bytes, int len, uint8_t * channel, bool * on ) {
+        ASSERT( bytes != NULL );
+
+        if ( len != MsgLenControlChange ) {
+            return false;
+        }
+
+        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
+            return false;
+        }
+
+        if ( (bytes[1] != ChannelModeControllerOmniModeOn && bytes[1] != ChannelModeControllerOmniModeOff) || (bytes[2] != 0) ) {
+            return false;
+        }
+
+        *channel = bytes[0] & ChannelMask;
+        *on = bytes[1] == ChannelModeControllerOmniModeOn;
+
+        return MsgLenControlChange;
     }
 
 
 
     inline int packMonoMode( uint8_t * bytes, uint8_t channel, uint8_t numberOfChannels ){
-        ASSERT( channel & ChannelMask == channel );
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
 
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = ChannelModeControllerMonoModeOn;
         bytes[2] = numberOfChannels;
 
-        return MessageLengthControlChange;
+        return MsgLenControlChange;
+    }
+
+//    inline bool isMonoMode
+
+    inline int unpackMonoMode( uint8_t * bytes, int len, uint8_t * channel, uint8_t * numberOfChannels ) {
+        ASSERT( bytes != NULL );
+
+        if ( len != MsgLenControlChange ) {
+            return false;
+        }
+
+        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
+            return false;
+        }
+
+        if ( (bytes[1] != ChannelModeControllerMonoModeOn) || ((bytes[2] & DataMask) != bytes[2]) ) {
+            return false;
+        }
+
+        *channel = bytes[0] & ChannelMask;
+        *numberOfChannels = bytes[2];
+
+        return MsgLenControlChange;
     }
 
 
+
+    inline int packPolyModeOn( uint8_t * bytes, uint8_t channel){
+        ASSERT( bytes != NULL );
+        ASSERT( (channel & ChannelMask) == channel );
+
+        bytes[0] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[1] = ChannelModeControllerPolyModeOn;
+        bytes[2] = 0;
+
+        return MsgLenControlChange;
+    }
+
     inline bool isPolyModeOn( uint8_t status, uint8_t controller, uint8_t value ){
-        return ((status & StatusMask) == StatusControlChange) && (controller == ChannelModeControllerPolyModeOn) && (value == 0);
+        return ((status & StatusClassMask) == StatusClassControlChange) && (controller == ChannelModeControllerPolyModeOn) && (value == 0);
     }
 
     inline bool isPolyModeOn( uint8_t * bytes ){
@@ -758,30 +1159,27 @@ namespace MidiMessage {
         return isPolyModeOn( msg->Status, msg->Data.ControlChange.Controller, msg->Data.ControlChange.Value );
     }
 
-    inline int packPolyModeOn( uint8_t * bytes, uint8_t channel){
-        ASSERT( channel & ChannelMask == channel );
-
-        bytes[0] = StatusControlChange | (channel & ChannelMask);
-        bytes[1] = ChannelModeControllerPolyModeOn;
-        bytes[2] = 0;
-
-        return MessageLengthControlChange;
-    }
-
 
 
     inline int packMidiTimeCodeQuarterFrame( uint8_t * bytes, uint8_t messageType, uint8_t nibble ){
+        ASSERT( bytes != NULL );
 
-        bytes[0] = StatusSystemExclusive | SystemExclusiveMidiTimeCodeQuarterFrame;
+        bytes[0] = SystemMessageMidiTimeCodeQuarterFrame;
         bytes[1] = ((messageType & 0x05) << 4) | (nibble & 0x0f);
 
-        return MessageLengthMidiTimeCodeQuarterFrame;
+        return MsgLenMidiTimeCodeQuarterFrame;
     }
 
     inline bool unpackMidiTimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * nibble ){
-        ASSERT( bytes[0] == StatusSystemExclusiveMidiTimeCodeQuarterFrame );
+        ASSERT( bytes != NULL );
 
-        if (len != 2){
+        if ( len != 2 ) {
+            return false;
+        }
+        if (bytes[0] != SystemMessageMidiTimeCodeQuarterFrame) {
+            return false;
+        }
+        if ((bytes[1] & DataMask) != bytes[1] ) {
             return false;
         }
 
@@ -792,17 +1190,22 @@ namespace MidiMessage {
     }
 
     inline int packSongPositionPointer (uint8_t * bytes, uint16_t position ){
+        ASSERT( bytes != NULL );
+        ASSERT( position <= MaxDoubleValue );
 
-        bytes[0] = StatusSystemExclusive | SystemExclusiveSongPositionPointer;
+        bytes[0] = SystemMessageSongPositionPointer;
         packDoubleValue( &bytes[1], position );
 
-        return 2;
+        return MsgLenSongPositionPointer;
     }
 
     inline bool unpackSongPositionPointer( uint8_t * bytes, int len, uint16_t * position ){
-        ASSERT( bytes[0] == StatusSystemExclusiveSongPositionPointer );
+        ASSERT( bytes != NULL );
 
-        if (len != 3){
+        if (len != MsgLenSongPositionPointer){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSongPositionPointer) {
             return false;
         }
 
@@ -812,54 +1215,73 @@ namespace MidiMessage {
     }
 
     inline int packSongSelect( uint8_t * bytes, uint8_t song ){
+        ASSERT( bytes != NULL );
+        ASSERT( song & DataMask == song );
 
-        bytes[0] = StatusSystemExclusive | StatusSystemExclusiveSongSelect;
-        bytes[1] = song & ValueMask;
+        bytes[0] = SystemMessageSystemExclusive | SystemMessageSongSelect;
+        bytes[1] = song & DataMask;
 
-        return 2;
+        return MsgLenSongSelect;
     }
 
     inline bool unpackSongSelect( uint8_t * bytes, int len, uint8_t * song){
-        ASSERT( bytes[0] == StatusSystemExclusiveSongSelect );
+        ASSERT( bytes != NULL );
+        ASSERT(bytes[0] == SystemMessageSongSelect);
 
-        if (len != 2){
+        if (len != MsgLenSongSelect){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSongPositionPointer) {
             return false;
         }
 
-        *song = bytes[1] & ValueMask;
+        *song = bytes[1] & DataMask;
 
         return true;
     }
 
     inline int packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fps ) {
-        ASSERT( (deviceId & ValueMask) == deviceId );
+        ASSERT( bytes != NULL );
+        ASSERT((deviceId & DataMask) == deviceId );
         ASSERT( hour <= MaxHour );
         ASSERT( minute <= MaxMinute );
         ASSERT( second <= MaxSecond );
         ASSERT( isMidiTimeCodeFrameRate(fps) );
         ASSERT( frame <= MaxFps[fps] );
 
-        bytes[0] = SystemExclusive;
+        bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = ReservedSystemExclusiveIdRealTime;
-        bytes[2] = deviceId & ValueMask;
+        bytes[2] = deviceId & DataMask;
         bytes[3] = UniversalSysExRtMidiTimeCode;
         bytes[4] = UniversalSysExRtMidiTimeCodeFullMessage;
         bytes[5] = (fps << 4) | (hour & 0b00011111);
         bytes[6] = minute & 0b00111111;
         bytes[7] = second & 0b00111111;
         bytes[8] = frame & 0b00011111;
-        bytes[9] = SystemExclusiveStop;
+        bytes[9] = SystemMessageEndOfSystemExclusive;
 
-        return MessageLengthSysExMidiTimeCodeFullMessage;
+        return MsgLenSysExMidiTimeCodeFullMessage;
     }
 
     inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t * fps ) {
-        ASSERT( bytes[0] == SystemExclusive );
-        ASSERT( bytes[1] == ReservedSystemExclusiveIdRealTime );
-        ASSERT( bytes[3] == UniversalSysExRtMidiTimeCode );
-        ASSERT( bytes[4] == UniversalSysExRtMidiTimeCodeFullMessage );
+        ASSERT( bytes != NULL );
 
         if ( len < 9 || 10 < len ){
+            return false;
+        }
+        if (bytes[0] != StatusClassSystemMessage) {
+            return false;
+        }
+        if (bytes[1] != ReservedSystemExclusiveIdRealTime ) {
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if (bytes[3] != UniversalSysExRtMidiTimeCode) {
+            return false;
+        }
+        if (bytes[4] != UniversalSysExRtMidiTimeCodeFullMessage){
             return false;
         }
 
@@ -876,6 +1298,8 @@ namespace MidiMessage {
      * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
      */
     inline void MidiTimeCodeFromQuarterFrames( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrame_t * frames) {
+        ASSERT( mtc != NULL );
+        ASSERT( frames != NULL );
         ASSERT( frames[0].MessageType == MidiTimeCodeQuarterFrameMessageTypeFrameLS );
         ASSERT( frames[1].MessageType == MidiTimeCodeQuarterFrameMessageTypeFrameMS );
         ASSERT( frames[2].MessageType == MidiTimeCodeQuarterFrameMessageTypeSecondLS );
@@ -950,7 +1374,7 @@ namespace MidiMessage {
     /**
      * Tries to parse/unpack a raw byte sequence assumed to be a midi message.
      *
-     * NOTE: if the messaged parse is a SystemExclusive message (Status == StatusSystemExclusive)
+     * NOTE: if the messaged parse is a SystemExclusive message (Status == SystemMessageSystemExclusive)
      * a buffer for the message contents is allocated which has to be freed (using freeMessage())
      *
      * @param   bytes   source byte array of midi message to parse
@@ -978,7 +1402,7 @@ namespace MidiMessage {
     /**
      * Frees SysEx memory (if set)
      *
-     * Is safe to be called on any (correctly used) message, ie will only act if msg is has status == StatusSystemExclusive
+     * Is safe to be called on any (correctly used) message, ie will only act if msg is has status == SystemMessageSystemExclusive
      * and has a data length of greater than zero.
      *
      * @param   msg     midi message to be freed

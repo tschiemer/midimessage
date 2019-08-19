@@ -40,7 +40,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
     // Struct based approach to create messages
     // (the final message packaging is unified)
-    msg2.Status = MidiMessage::StatusNoteOn;
+    msg2.StatusClass = MidiMessage::StatusClassNoteOn;
     msg2.Channel = msg.Channel;
     msg2.Data.NoteOn.Key = 40 + pitch;
     msg2.Data.NoteOn.Velocity = 100;
@@ -49,9 +49,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
     len2 = MidiMessage::pack( buf2, &msg2 );
     if (len2 > 0){
-
         sendMidiMessageToSomewhere( buf2, len2 );
-
     }
 
     // direct approach
@@ -72,24 +70,24 @@ void sendMidiMessageToSomewhere( uint8_t * buf, int len ){
 
     std::cout << std::endl;
 
-    MidiMessage::Status_t status = MidiMessage::getStatus(buf[0]);
+    MidiMessage::StatusClass_t statusClass = MidiMessage::getStatusClass(buf[0]);
 
-    std::cout << "Status " << (int)status;
-    if (MidiMessage::StatusNoteOn == status) {
+    std::cout << "Status " << (int)statusClass;
+    if (MidiMessage::StatusClassNoteOn == statusClass) {
         std::cout << " (Note On)";
-    } else if (MidiMessage::StatusNoteOff == status) {
+    } else if (MidiMessage::StatusClassNoteOff == statusClass) {
         std::cout << " (Note Off)";
     }
     std::cout << std::endl;
 
 
-    if (!MidiMessage::isSystemExclusive(status)){
+    if (MidiMessage::StatusClassSystemMessage != statusClass){
         std::cout << "Channel " << (int)MidiMessage::getChannel(buf[0]) << std:: endl;
     }
 
-    if (MidiMessage::StatusNoteOn == status || MidiMessage::StatusNoteOff == status) {
-        std::cout << "key " << (int)MidiMessage::getValue(buf[1]) << std::endl;
-        std::cout << "velocity " << (int)MidiMessage::getValue(buf[2]) << std::endl;
+    if (MidiMessage::StatusClassNoteOn == statusClass || MidiMessage::StatusClassNoteOff == statusClass) {
+        std::cout << "key " << (int)MidiMessage::getData(buf[1]) << std::endl;
+        std::cout << "velocity " << (int)MidiMessage::getData(buf[2]) << std::endl;
     }
 
     std::cout << std::endl;
@@ -104,7 +102,7 @@ void receivedSysExMessageFromSomewhere( uint8_t * buf, int len ) {
         return;
     }
 
-    if (msg.Status != MidiMessage::StatusSystemExclusive) {
+    if (msg.Status != MidiMessage::SystemMessageSystemExclusive) {
         std::cout << "Discarding non-SysEx message" << std::endl;
         return;
     }
@@ -140,8 +138,8 @@ int main(int argc, char * argv[]){
 
     std::cout << "-------------- Voice channel msg vs SysEx msg" << std::endl;
 
-    uint8_t buf[3] = {MidiMessage::StatusNoteOff | 1, 33, 66};
-    uint8_t bufSysExManufacturer[10] = {MidiMessage::StatusSystemExclusive, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    uint8_t buf[3] = {MidiMessage::StatusClassNoteOff | 1, 33, 66};
+    uint8_t bufSysExManufacturer[10] = {MidiMessage::SystemMessageSystemExclusive, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 
     receivedMidiMessageFromSomewhere( buf, sizeof(buf) );
@@ -154,17 +152,17 @@ int main(int argc, char * argv[]){
 
     std::cout << "-------------- Experimental Sysex msg" << std::endl;
 
-    uint8_t bufSysExExperimental[6] = {MidiMessage::StatusSystemExclusive, MidiMessage::ReservedSystemExclusiveIdExperimental, 1, 3, 3, 7};
+    uint8_t bufSysExExperimental[6] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSystemExclusiveIdExperimental, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysExExperimental, sizeof(bufSysExExperimental) );
 
     std::cout << "-------------- Universal Realtime Sysex msg" << std::endl;
 
-    uint8_t bufSysRealtime[10] = {MidiMessage::StatusSystemExclusive, MidiMessage::ReservedSystemExclusiveIdRealTime, 1, 3, 3, 7};
+    uint8_t bufSysRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSystemExclusiveIdRealTime, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysRealtime, sizeof(bufSysRealtime) );
 
     std::cout << "-------------- Universal Non-RealtimeSysex msg" << std::endl;
 
-    uint8_t bufSysNonRealtime[10] = {MidiMessage::StatusSystemExclusive, MidiMessage::ReservedSystemExclusiveIdNonRealTime, 1, 3, 3, 7};
+    uint8_t bufSysNonRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::ReservedSystemExclusiveIdNonRealTime, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysNonRealtime, sizeof(bufSysNonRealtime) );
 
     return 0;
