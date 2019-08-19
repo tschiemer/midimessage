@@ -1424,8 +1424,7 @@ namespace MidiMessage {
     inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t * fps ) {
         ASSERT( bytes != NULL );
 
-        //TODO require fixed length?...
-        if ( (len <  MsgLenSysExMidiTimeCodeFullMessage - 1) || (MsgLenSysExMidiTimeCodeFullMessage < len) ){
+        if ( (len !=  MsgLenSysExMidiTimeCodeFullMessage - 1) && (len != MsgLenSysExMidiTimeCodeFullMessage || bytes[MsgLenSysExMidiTimeCodeFullMessage-1] == SystemMessageEndOfSystemExclusive) ){
             return false;
         }
         if (bytes[0] != StatusClassSystemMessage) {
@@ -1495,9 +1494,8 @@ namespace MidiMessage {
 
     inline bool unpackSysExMidiTimeCodeUserBits( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * userBits ) {
         ASSERT( bytes != NULL );
-
-        //TODO require fixed length?...
-        if ( (len < MsgLenSysExMidiTimeCodeUserBits - 1) || (MsgLenSysExMidiTimeCodeUserBits < len) ){
+        
+        if ( (len !=  MsgLenSysExMidiTimeCodeUserBits - 1) && (len != MsgLenSysExMidiTimeCodeUserBits || bytes[MsgLenSysExMidiTimeCodeUserBits-1] == SystemMessageEndOfSystemExclusive) ){
             return false;
         }
         if (bytes[0] != StatusClassSystemMessage) {
