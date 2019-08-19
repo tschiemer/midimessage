@@ -67,8 +67,12 @@ namespace MidiMessage {
         return byte & DataMask;
     }
 
-    inline uint8_t getNibble( uint8_t byte ){
+    inline uint8_t getLsNibble( uint8_t byte ){
         return byte & NibbleMask;
+    }
+
+    inline uint8_t getMsNibble( uint8_t byte ){
+        return (byte >> 4) & NibbleMask;
     }
 
     inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
@@ -104,7 +108,9 @@ namespace MidiMessage {
     const int MsgLenMidiTimeCodeQuarterFrame        = 2;
     const int MsgLenSongPositionPointer             = 3;
     const int MsgLenSongSelect                      = 2;
+
     const int MsgLenSysExMidiTimeCodeFullMessage    = 10;
+    const int MsgLenSysExMidiTimeCodeUserBits       = 15;
 
 
     const uint16_t PitchCenter      = 0x2000;
@@ -1295,7 +1301,7 @@ namespace MidiMessage {
 
         return MsgLenMidiTimeCodeQuarterFrame;
     }
-    
+
     /**
      * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
      */
@@ -1419,7 +1425,7 @@ namespace MidiMessage {
         ASSERT( bytes != NULL );
 
         //TODO require fixed length?...
-        if ( len < 9 || 10 < len ){
+        if ( (len <  MsgLenSysExMidiTimeCodeFullMessage - 1) || (MsgLenSysExMidiTimeCodeFullMessage < len) ){
             return false;
         }
         if (bytes[0] != StatusClassSystemMessage) {
@@ -1462,6 +1468,62 @@ namespace MidiMessage {
         return true;
     }
 
+    inline int packSysExMidiTimeCodeUserBits( uint8_t * bytes, uint8_t deviceId, uint8_t * userBits ) {
+        ASSERT( bytes != NULL );
+        ASSERT((deviceId & DataMask) == deviceId );
+        ASSERT( userBits != NULL );
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = ReservedSysExIdRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = UniversalSysExRtMidiTimeCode;
+        bytes[4] = UniversalSysExRtMidiTimeCodeUserBits;
+        bytes[5] = getLsNibble(userBits[3]);
+        bytes[6] = getMsNibble(userBits[3]);
+        bytes[7] = getLsNibble(userBits[2]);
+        bytes[8] = getMsNibble(userBits[2]);
+        bytes[9] = getLsNibble(userBits[1]);
+        bytes[10] = getMsNibble(userBits[1]);
+        bytes[11] = getLsNibble(userBits[0]);
+        bytes[12] = getMsNibble(userBits[0]);
+        bytes[13] = userBits[4] & 0b00000011; //TODO is this right???
+        bytes[14] = SystemMessageEndOfSystemExclusive;
+
+        return MsgLenSysExMidiTimeCodeUserBits;
+    }
+
+
+    inline bool unpackSysExMidiTimeCodeUserBits( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * userBits ) {
+        ASSERT( bytes != NULL );
+
+        //TODO require fixed length?...
+        if ( (len < MsgLenSysExMidiTimeCodeUserBits - 1) || (MsgLenSysExMidiTimeCodeUserBits < len) ){
+            return false;
+        }
+        if (bytes[0] != StatusClassSystemMessage) {
+            return false;
+        }
+        if (bytes[1] != ReservedSysExIdRealTime ) {
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if (bytes[3] != UniversalSysExRtMidiTimeCode) {
+            return false;
+        }
+        if (bytes[4] != UniversalSysExRtMidiTimeCodeUserBits){
+            return false;
+        }
+
+        userBits[3] = ((bytes[5] & NibbleMask) << 4) | (bytes[6] & NibbleMask);
+        userBits[2] = ((bytes[7] & NibbleMask) << 4) | (bytes[8] & NibbleMask);
+        userBits[1] = ((bytes[9] & NibbleMask) << 4) | (bytes[10] & NibbleMask);
+        userBits[0] = ((bytes[11] & NibbleMask) << 4) | (bytes[12] & NibbleMask);
+        userBits[4] = bytes[13] & 0b00000011; //TODO is this right??
+
+        return true;
+    }
 
 
     /**

@@ -118,9 +118,63 @@ namespace MidiMessage {
 
             if (msg->Data.SysEx.Id == ReservedSysExIdRealTime){
 
-                //TODO
+                switch (msg->Data.SysEx.SubId1) {
 
-                return 0;
+                    case UniversalSysExRtMidiTimeCode:
+
+                        switch (msg->Data.SysEx.SubId2) {
+
+                            case UniversalSysExRtMidiTimeCodeFullMessage:
+                                return packSysExMidiTimeCodeFullMessage( bytes, msg->Channel, &msg->Data.SysEx.Data.MidiTimeCode );
+
+                            case UniversalSysExRtMidiTimeCodeUserBits:
+                                return packSysExMidiTimeCodeUserBits(bytes, msg->Channel, msg->Data.SysEx.Data.Bytes);
+
+                        }
+
+                        return 0;
+
+                    case UniversalSysExRtMidiShowControl:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtDeviceControl:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtRealTimeMtcCueing:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtMidiMachineControlCommands:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtMidiMachineControlResponses:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtMidiTuningStandard:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtControllerDestinationSetting:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtKeybasedInstrumentControl:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtScalablePolyphonyMidiMip:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExRtMobilePhoneControlMessage:
+                        //TODO
+                        return false;
+                }
+
             } // (msg->Data.SysEx.Id == ReservedSysExIdRealTime)
 
             if (msg->Data.SysEx.Id == ReservedSysExIdRealTime){
@@ -309,12 +363,18 @@ namespace MidiMessage {
                                     return false;
                                 }
                                 msg->Data.SysEx.Length = 5;
+
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                                 ASSERT( msg->Data.SysEx.Length > SYSEX_MEMORY_STATIC_SIZE );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                                 msg->Data.SysEx.Data.Bytes = (uint8_t*)calloc(msg->Data.SysEx.Length, 1);
 #endif
-                                memcpy( msg->Data.SysEx.Data.Bytes, &bytes[1], msg->Data.SysEx.Length );
+                                if ( !unpackSysExMidiTimeCodeUserBits(bytes, length, &msg->Channel, msg->Data.SysEx.Data.Bytes) ){
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                                    free(msg->Data.SysEx.Data.Bytes);
+#endif
+                                    return false;
+                                }
 
                                 return true;
                         }
