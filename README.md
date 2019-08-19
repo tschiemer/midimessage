@@ -25,18 +25,23 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
 
     if (!MidiMessage::unpack( buf, len, &msg )) {
+        std::cout << "Discarding invalid message" << std::endl;
         return;
     }
 
     if (!MidiMessage::isChannelVoiceMessage(&msg)){
+
+        std::cout << "Discarding non-ChannelVoice message" << std::endl;
+
         // if above a SysEx message with data content was unpacked, we have to make sure to free the memory again.
         MidiMessage::freeMessage(&msg);
+
         return;
     }
 
     // Struct based approach to create messages
     // (the final message packaging is unified)
-    msg2.Status = MidiMessage::StatusNoteOn;
+    msg2.StatusClass = MidiMessage::StatusClassNoteOn;
     msg2.Channel = msg.Channel;
     msg2.Data.NoteOn.Key = 40 + pitch;
     msg2.Data.NoteOn.Velocity = 100;
@@ -45,9 +50,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
     len2 = MidiMessage::pack( buf2, &msg2 );
     if (len2 > 0){
-
         sendMidiMessageToSomewhere( buf2, len2 );
-
     }
 
     // direct approach
