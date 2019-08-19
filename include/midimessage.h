@@ -54,15 +54,21 @@ namespace MidiMessage {
     const uint8_t DataMask = 0b01111111; // = 127
     const uint16_t DoubleValueMask  = 0b0111111101111111;
 
+    const uint8_t NibbleMask = 0b00001111;
+
     const uint8_t MaxValue          = 127;
     const uint16_t MaxDoubleValue   = 0x3FFF;
 
     inline bool isDataByte( uint8_t byte ){
-        return (byte & DataMask);
+        return byte & DataMask;
     }
 
-    inline uint8_t getData( uint8_t value ){
-        return value & DataMask;
+    inline uint8_t getData( uint8_t byte ){
+        return byte & DataMask;
+    }
+
+    inline uint8_t getNibble( uint8_t byte ){
+        return byte & NibbleMask;
     }
 
     inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
@@ -956,25 +962,22 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-    inline int unpackAllSoundOff( uint8_t * bytes, int len, uint8_t * channel ) {
+    inline bool isAllSoundOff( uint8_t status, uint8_t controller, uint8_t value ){
+        return ((status & StatusClassMask) == StatusClassControlChange) && (controller == ChannelModeControllerAllSoundOff) && (value == 0);
+    }
+
+    inline bool isAllSoundOff( uint8_t * bytes ){
         ASSERT( bytes != NULL );
 
-        if ( len != MsgLenControlChange ) {
-            return false;
-        }
-
-        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
-            return false;
-        }
-
-        if ( (bytes[1] != ChannelModeControllerAllSoundOff) || (bytes[2] != 0) ) {
-            return false;
-        }
-
-        *channel = bytes[0] & ChannelMask;
-
-        return MsgLenControlChange;
+        return isAllSoundOff( bytes[0], bytes[1], bytes[2] );
     }
+
+    inline bool isAllSoundOff( Message_t * msg ){
+        ASSERT( msg != NULL );
+
+        return isAllSoundOff( msg->StatusClass, msg->Data.ControlChange.Controller, msg->Data.ControlChange.Value );
+    }
+
 
     inline int packResetAllControllers( uint8_t * bytes, uint8_t channel ){
         ASSERT( bytes != NULL );
@@ -987,25 +990,22 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-    inline int unpackResetAllControllers( uint8_t * bytes, int len, uint8_t * channel ) {
+    inline bool isResetAllControllers( uint8_t status, uint8_t controller, uint8_t value ){
+        return ((status & StatusClassMask) == StatusClassControlChange) && (controller == ChannelModeControllerResetAllControllers) && (value == 0);
+    }
+
+    inline bool isResetAllControllers( uint8_t * bytes ){
         ASSERT( bytes != NULL );
 
-        if ( len != MsgLenControlChange ) {
-            return false;
-        }
-
-        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
-            return false;
-        }
-
-        if ( (bytes[1] != ChannelModeControllerResetAllControllers) || (bytes[2] != 0) ) {
-            return false;
-        }
-
-        *channel = bytes[0] & ChannelMask;
-
-        return MsgLenControlChange;
+        return isResetAllControllers( bytes[0], bytes[1], bytes[2] );
     }
+
+    inline bool isResetAllControllers( Message_t * msg ){
+        ASSERT( msg != NULL );
+
+        return isResetAllControllers( msg->StatusClass, msg->Data.ControlChange.Controller, msg->Data.ControlChange.Value );
+    }
+
 
     inline int packLocalControl( uint8_t * bytes, uint8_t channel, bool on ){
         ASSERT( bytes != NULL );
@@ -1018,26 +1018,36 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-    inline int unpackLocalControl( uint8_t * bytes, int len, uint8_t * channel, bool * on ) {
+    inline bool isLocalControl( uint8_t status, uint8_t controller ){
+        return ((status & StatusClassMask) == StatusClassControlChange) && (controller == ChannelModeControllerLocalControl);
+    }
+
+    inline bool isLocalControl( uint8_t * bytes ){
         ASSERT( bytes != NULL );
 
-        if ( len != MsgLenControlChange ) {
-            return false;
-        }
-
-        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
-            return false;
-        }
-
-        if ( (bytes[1] != ChannelModeControllerLocalControl) || (bytes[2] != 0 && bytes[2] != 127) ) {
-            return false;
-        }
-
-        *channel = bytes[0] & ChannelMask;
-        *on = bytes[1] == 127;
-
-        return MsgLenControlChange;
+        return isLocalControl( bytes[0], bytes[1] );
     }
+
+    inline bool isLocalControl( Message_t * msg ){
+        ASSERT( msg != NULL );
+
+        return isLocalControl( msg->StatusClass, msg->Data.ControlChange.Controller );
+    }
+
+    inline bool getLocalControlState( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( isLocalControl(bytes) );
+
+        return (bytes[3] & DataMask) > 0;
+    }
+
+    inline bool getLocalControlState( Message_t * msg ){
+        ASSERT( msg != NULL );
+        ASSERT( isLocalControl(msg) );
+
+        return msg->Data.ControlChange.Value > 0;
+    }
+
 
     inline int packAllNotesOff( uint8_t * bytes, uint8_t channel ){
         ASSERT( bytes != NULL );
@@ -1050,25 +1060,22 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-    inline int unpackAllNotesOff( uint8_t * bytes, int len, uint8_t * channel ) {
+    inline bool isAllNotesOff( uint8_t status, uint8_t controller, uint8_t value ){
+        return ((status & StatusClassMask) == StatusClassControlChange) && (controller == ChannelModeControllerAllNotesOff) && (value == 0);
+    }
+
+    inline bool isAllNotesOff( uint8_t * bytes ){
         ASSERT( bytes != NULL );
 
-        if ( len != MsgLenControlChange ) {
-            return false;
-        }
-
-        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
-            return false;
-        }
-
-        if ( (bytes[1] != ChannelModeControllerAllNotesOff) || (bytes[2] != 0) ) {
-            return false;
-        }
-
-        *channel = bytes[0] & ChannelMask;
-
-        return MsgLenControlChange;
+        return isAllNotesOff( bytes[0], bytes[1], bytes[2] );
     }
+
+    inline bool isAllNotesOff( Message_t * msg ){
+        ASSERT( msg != NULL );
+
+        return isAllNotesOff( msg->StatusClass, msg->Data.ControlChange.Controller, msg->Data.ControlChange.Value );
+    }
+
 
     inline int packOmniMode( uint8_t * bytes, uint8_t channel, bool on ){
         ASSERT( bytes != NULL );
@@ -1081,25 +1088,34 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-    inline int unpackOmniMode( uint8_t * bytes, int len, uint8_t * channel, bool * on ) {
+    inline bool isOmniMode( uint8_t status, uint8_t controller ){
+        return ((status & StatusClassMask) == StatusClassControlChange) && (controller == ChannelModeControllerOmniModeOn || controller == ChannelModeControllerOmniModeOff);
+    }
+
+    inline bool isOmniMode( uint8_t * bytes ){
         ASSERT( bytes != NULL );
 
-        if ( len != MsgLenControlChange ) {
-            return false;
-        }
+        return isOmniMode( bytes[0], bytes[1] );
+    }
 
-        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
-            return false;
-        }
+    inline bool isOmniMode( Message_t * msg ){
+        ASSERT( msg != NULL );
 
-        if ( (bytes[1] != ChannelModeControllerOmniModeOn && bytes[1] != ChannelModeControllerOmniModeOff) || (bytes[2] != 0) ) {
-            return false;
-        }
+        return isOmniMode( msg->StatusClass, msg->Data.ControlChange.Controller );
+    }
 
-        *channel = bytes[0] & ChannelMask;
-        *on = bytes[1] == ChannelModeControllerOmniModeOn;
+    inline bool getOmniModeState( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( isOmniMode(bytes) );
 
-        return MsgLenControlChange;
+        return bytes[3] == ChannelModeControllerOmniModeOn;
+    }
+
+    inline bool getOmniModeState( Message_t * msg ){
+        ASSERT( msg != NULL );
+        ASSERT( isOmniMode(msg) );
+
+        return msg->Data.ControlChange.Value == ChannelModeControllerOmniModeOn;
     }
 
 
@@ -1115,27 +1131,34 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-//    inline bool isMonoMode
+    inline bool isMonoMode( uint8_t status, uint8_t controller ){
+        return ((status & StatusClassMask) == StatusClassControlChange) && (controller == ChannelModeControllerMonoModeOn);
+    }
 
-    inline int unpackMonoMode( uint8_t * bytes, int len, uint8_t * channel, uint8_t * numberOfChannels ) {
+    inline bool isMonoMode( uint8_t * bytes ){
         ASSERT( bytes != NULL );
 
-        if ( len != MsgLenControlChange ) {
-            return false;
-        }
+        return isMonoMode( bytes[0], bytes[1] );
+    }
 
-        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
-            return false;
-        }
+    inline bool isMonoMode( Message_t * msg ){
+        ASSERT( msg != NULL );
 
-        if ( (bytes[1] != ChannelModeControllerMonoModeOn) || ((bytes[2] & DataMask) != bytes[2]) ) {
-            return false;
-        }
+        return isMonoMode( msg->StatusClass, msg->Data.ControlChange.Controller );
+    }
 
-        *channel = bytes[0] & ChannelMask;
-        *numberOfChannels = bytes[2];
+    inline uint8_t getMonoModeNumberOfChannels( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( isMonoMode(bytes[0], bytes[1]) );
 
-        return MsgLenControlChange;
+        return bytes[2] & DataMask;
+    }
+
+    inline uint8_t getMonoModeNumberOfChannels( Message_t * msg ){
+        ASSERT( msg != NULL );
+        ASSERT( isMonoMode(msg) );
+
+        return msg->Data.ControlChange.Value;
     }
 
 
@@ -1156,10 +1179,14 @@ namespace MidiMessage {
     }
 
     inline bool isPolyModeOn( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+
         return isPolyModeOn( bytes[0] , bytes[1], bytes[2] );
     }
 
     inline bool isPolyModeOn( Message_t * msg ){
+        ASSERT( msg != NULL );
+
         return isPolyModeOn( msg->Status, msg->Data.ControlChange.Controller, msg->Data.ControlChange.Value );
     }
 
@@ -1174,10 +1201,10 @@ namespace MidiMessage {
         return MsgLenMidiTimeCodeQuarterFrame;
     }
 
-    inline bool unpackMidiTimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * nibble ){
+    inline int unpackMidiTimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * nibble ){
         ASSERT( bytes != NULL );
 
-        if ( len != 2 ) {
+        if ( len != MsgLenMidiTimeCodeQuarterFrame ) {
             return false;
         }
         if (bytes[0] != SystemMessageMidiTimeCodeQuarterFrame) {
@@ -1188,9 +1215,9 @@ namespace MidiMessage {
         }
 
         *messageType = (bytes[1] >> 4) & 0x05;
-        *nibble = bytes[1] & 0x0f;
+        *nibble = bytes[1] & NibbleMask;
 
-        return true;
+        return MsgLenMidiTimeCodeQuarterFrame;
     }
 
     inline int packSongPositionPointer (uint8_t * bytes, uint16_t position ){
@@ -1331,15 +1358,15 @@ namespace MidiMessage {
     /**
      * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
      */
-    inline void MidiTimeCodeFromQuarterFrames( MidiTimeCode_t * mtc, uint8_t * nibbles) {
-        ASSERT( nibbles[0] & 0x0F == nibbles[0] );
-        ASSERT( nibbles[1] & 0x0F == nibbles[1] );
-        ASSERT( nibbles[2] & 0x0F == nibbles[2] );
-        ASSERT( nibbles[3] & 0x0F == nibbles[3] );
-        ASSERT( nibbles[4] & 0x0F == nibbles[4] );
-        ASSERT( nibbles[5] & 0x0F == nibbles[5] );
-        ASSERT( nibbles[6] & 0x0F == nibbles[6] );
-        ASSERT( nibbles[7] & 0x0F == nibbles[7] );
+    inline void MidiTimeCodeFromQuarterFrames( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
+        ASSERT( nibbles[0] & NibbleMask == nibbles[0] );
+        ASSERT( nibbles[1] & NibbleMask == nibbles[1] );
+        ASSERT( nibbles[2] & NibbleMask == nibbles[2] );
+        ASSERT( nibbles[3] & NibbleMask == nibbles[3] );
+        ASSERT( nibbles[4] & NibbleMask == nibbles[4] );
+        ASSERT( nibbles[5] & NibbleMask == nibbles[5] );
+        ASSERT( nibbles[6] & NibbleMask == nibbles[6] );
+        ASSERT( nibbles[7] & NibbleMask == nibbles[7] );
 
         mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
         mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
