@@ -45,8 +45,8 @@ namespace MidiMessage {
      */
     const uint8_t ControlByteMask = 0x80;
 
-    inline bool isControlByte( uint8_t value ) {
-        return (value & ControlByteMask) != 0;
+    inline bool isControlByte( uint8_t byte ) {
+        return (byte & ControlByteMask) != 0;
     }
 
 
@@ -56,6 +56,10 @@ namespace MidiMessage {
 
     const uint8_t MaxValue          = 127;
     const uint16_t MaxDoubleValue   = 0x3FFF;
+
+    inline bool isDataByte( uint8_t byte ){
+        return (byte & DataMask);
+    }
 
     inline uint8_t getData( uint8_t value ){
         return value & DataMask;
