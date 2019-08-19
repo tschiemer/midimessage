@@ -1494,7 +1494,7 @@ namespace MidiMessage {
 
     inline bool unpackSysExMidiTimeCodeUserBits( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * userBits ) {
         ASSERT( bytes != NULL );
-        
+
         if ( (len !=  MsgLenSysExMidiTimeCodeUserBits - 1) && (len != MsgLenSysExMidiTimeCodeUserBits || bytes[MsgLenSysExMidiTimeCodeUserBits-1] == SystemMessageEndOfSystemExclusive) ){
             return false;
         }
