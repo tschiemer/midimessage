@@ -9,6 +9,7 @@ set(SOURCE_FILES
         include/midimessage.h
         include/manufacturerids.h
         include/commonccs.h
+        include/notes.h
         include/mmstdlib.h
         src/midimessage.cpp)
 
