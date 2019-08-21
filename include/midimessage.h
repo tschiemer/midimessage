@@ -655,8 +655,22 @@ namespace MidiMessage {
 
 
     typedef enum {
-        UniversalSysExRtMidiMachineControlCommandsTODO //TODO
-    } UniversalSysExRtMidiMachineControlCommands_t;
+        UniversalSysExRtMidiMachineControlCommandStop           = 0x01,
+        UniversalSysExRtMidiMachineControlCommandPlay           = 0x02,
+        UniversalSysExRtMidiMachineControlCommandDeferredPlay   = 0x03,
+        UniversalSysExRtMidiMachineControlCommandFastForward    = 0x04,
+        UniversalSysExRtMidiMachineControlCommandRewind         = 0x05,
+        UniversalSysExRtMidiMachineControlCommandRecordStrobe   = 0x06,
+        UniversalSysExRtMidiMachineControlCommandRecordExit     = 0x07,
+        UniversalSysExRtMidiMachineControlCommandRecordPause    = 0x08,
+        UniversalSysExRtMidiMachineControlCommandPause          = 0x09,
+        UniversalSysExRtMidiMachineControlCommandEject          = 0x0A,
+        UniversalSysExRtMidiMachineControlCommandChase          = 0x0B,
+        UniversalSysExRtMidiMachineControlCommandMmcReset       = 0x0D,
+        UniversalSysExRtMidiMachineControlCommandWrite          = 0x40,
+        UniversalSysExRtMidiMachineControlCommandGoto           = 0x44,
+        UniversalSysExRtMidiMachineControlCommandShuttle        = 0x47
+    } UniversalSysExRtMidiMachineControlCommand_t;
 
     inline bool isUniversalSysExRtMidiMachineControlCommands( uint8_t value ) {
         return false; //TODO
