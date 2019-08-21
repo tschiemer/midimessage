@@ -33,8 +33,8 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 | MIDI Machine Control | | | TODO |
 | MIDI Show Control | | | TODO |
 | MIDI Tuning Standard | | | TODO |
-| System Exclusive | Experimental (custom) messages | | ok |
-| | Manufacturer messages (+ manufacturer ids) | | ok |
+| System Exclusive | Experimental (custom) messages | | tt |
+| | Manufacturer messages (+ manufacturer ids) | | tt |
 | | Sample Dump | Non-Real Time | TODO |
 | | General Information | Non-Real Time | TODO |
 | | File Dump | Non-Real Time | TODO |
