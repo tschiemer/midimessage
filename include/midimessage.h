@@ -341,12 +341,12 @@ namespace MidiMessage {
         SysExNonRtSampleDataPacket       = 0x02, // 
         SysExNonRtSampleDumpRequest      = 0x03, // 
         SysExNonRtMidiTimeCode           = 0x04, // SubId2 enum SysExNonRtMtc..
-        SysExNonRtSampleDumpExtension    = 0x05, // SubId2 enum SysExNonRtSampleDumpExt..
+        SysExNonRtSampleDumpExtension    = 0x05, // SubId2 enum SysExNonRtSds..
         SysExNonRtGeneralInformation     = 0x06, // SubId2 enum SysExNonRtGenInfo..
         SysExNonRtFileDump               = 0x07, // SubId2 enum SysExNonRtFileDump..
         SysExNonRtMidiTuningStandard     = 0x08, // SubId2 enum SysExNonRtMts..
         SysExNonRtGeneralMidi            = 0x09, // SubId2 enum SysExNonRtGm..
-        SysExNonRtDownloadableSounds     = 0x0A, 
+        SysExNonRtDownloadableSounds     = 0x0A, // SubId2 enum SysExNonRtDls..
         SysExNonRtFileReferenceMessage   = 0x0B, // SubId2 enum SysExNonRtFileRef..
         SysExNonRtMidiVisualControl      = 0x0C, // SubId2 enum SysExNonRtMvc..
         SysExNonRtMidiCapabilityInquiry  = 0x0D, // SubId2 enum SysExNonRtCapInq..
@@ -423,23 +423,23 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        SysExNonRtSampleDumpExtLoopPointsTransmission    = 0x01,
-        SysExNonRtSampleDumpExtLoopPointsRequest         = 0x02,
-        SysExNonRtSampleDumpExtSampleNameTransmission    = 0x03,
-        SysExNonRtSampleDumpExtSampleNameRequest         = 0x04,
-        SysExNonRtSampleDumpExtExtendedDumpHeader        = 0x05,
-        SysExNonRtSampleDumpExtExtendedLoopPointsTransmission    = 0x06,
-        SysExNonRtSampleDumpExtExtendedLoopPointsRequest = 0x07
-    } SysExNonRtSampleDumpExt_t;
+        SysExNonRtSdsLoopPointsTransmission    = 0x01,
+        SysExNonRtSdsLoopPointsRequest         = 0x02,
+        SysExNonRtSdsSampleNameTransmission    = 0x03,
+        SysExNonRtSdsSampleNameRequest         = 0x04,
+        SysExNonRtSdsExtendedDumpHeader        = 0x05,
+        SysExNonRtSdsExtendedLoopPointsTransmission    = 0x06,
+        SysExNonRtSdsExtendedLoopPointsRequest = 0x07
+    } SysExNonRtSds_t;
 
-    inline bool isSysExNonRtSampleDumpExt( uint8_t value ){
-        return (value == SysExNonRtSampleDumpExtLoopPointsTransmission ||
-                value == SysExNonRtSampleDumpExtLoopPointsRequest ||
-                value == SysExNonRtSampleDumpExtSampleNameTransmission ||
-                value == SysExNonRtSampleDumpExtSampleNameRequest ||
-                value == SysExNonRtSampleDumpExtExtendedDumpHeader ||
-                value == SysExNonRtSampleDumpExtExtendedLoopPointsTransmission ||
-                value == SysExNonRtSampleDumpExtExtendedLoopPointsRequest);
+    inline bool isSysExNonRtSds( uint8_t value ){
+        return (value == SysExNonRtSdsLoopPointsTransmission ||
+                value == SysExNonRtSdsLoopPointsRequest ||
+                value == SysExNonRtSdsSampleNameTransmission ||
+                value == SysExNonRtSdsSampleNameRequest ||
+                value == SysExNonRtSdsExtendedDumpHeader ||
+                value == SysExNonRtSdsExtendedLoopPointsTransmission ||
+                value == SysExNonRtSdsExtendedLoopPointsRequest);
     }
 
     typedef enum {
@@ -500,17 +500,17 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        SysExNonRtDownloadableSoundsTurnDlsOn      = 0x01,
-        SysExNonRtDownloadableSoundsTurnDlsOff     = 0x02,
-        SysExNonRtDownloadableSoundsTurnDlsVoiceAllocOff = 0x03,
-        SysExNonRtDownloadableSoundsTurnDlsVoiceAllocOn  = 0x04
-    } SysExNonRtDownloadableSounds_t;
+        SysExNonRtDlsTurnDlsOn      = 0x01,
+        SysExNonRtDlsTurnDlsOff     = 0x02,
+        SysExNonRtDlsTurnDlsVoiceAllocOff = 0x03,
+        SysExNonRtDlsTurnDlsVoiceAllocOn  = 0x04
+    } SysExNonRtDls_t;
 
     inline bool isSysExNonRtDownloadableSounds( uint8_t value ){
-        return (value == SysExNonRtDownloadableSoundsTurnDlsOn ||
-                value == SysExNonRtDownloadableSoundsTurnDlsOff ||
-                value == SysExNonRtDownloadableSoundsTurnDlsVoiceAllocOff ||
-                value == SysExNonRtDownloadableSoundsTurnDlsVoiceAllocOn);
+        return (value == SysExNonRtDlsTurnDlsOn ||
+                value == SysExNonRtDlsTurnDlsOff ||
+                value == SysExNonRtDlsTurnDlsVoiceAllocOff ||
+                value == SysExNonRtDlsTurnDlsVoiceAllocOn);
     }
 
     typedef enum {
