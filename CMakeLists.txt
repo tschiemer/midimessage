@@ -8,6 +8,7 @@ include_directories(include)
 set(SOURCE_FILES
         include/midimessage.h
         include/manufacturerids.h
+        include/commonccs.h
         include/mmstdlib.h
         src/midimessage.cpp)
 
