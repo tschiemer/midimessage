@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-#ifdef USE_ASSERTS
+#ifndef USE_ASSERTS
 #ifndef ASSERT
 #include <cassert>
 #define ASSERT(x) assert(x)
@@ -83,8 +83,8 @@ namespace MidiMessage {
     }
 
     inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
-        ASSERT( bytes[0] & DataMask == bytes[0] );
-        ASSERT( bytes[1] & DataMask == bytes[1] );
+        ASSERT( (bytes[0] & DataMask) == bytes[0] );
+        ASSERT( (bytes[1] & DataMask) == bytes[1] );
 
         *value = (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
     }
@@ -973,14 +973,14 @@ namespace MidiMessage {
      * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
      */
     inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
-        ASSERT( nibbles[0] & NibbleMask == nibbles[0] );
-        ASSERT( nibbles[1] & NibbleMask == nibbles[1] );
-        ASSERT( nibbles[2] & NibbleMask == nibbles[2] );
-        ASSERT( nibbles[3] & NibbleMask == nibbles[3] );
-        ASSERT( nibbles[4] & NibbleMask == nibbles[4] );
-        ASSERT( nibbles[5] & NibbleMask == nibbles[5] );
-        ASSERT( nibbles[6] & NibbleMask == nibbles[6] );
-        ASSERT( nibbles[7] & NibbleMask == nibbles[7] );
+        ASSERT( (nibbles[0] & NibbleMask) == nibbles[0] );
+        ASSERT( (nibbles[1] & NibbleMask) == nibbles[1] );
+        ASSERT( (nibbles[2] & NibbleMask) == nibbles[2] );
+        ASSERT( (nibbles[3] & NibbleMask) == nibbles[3] );
+        ASSERT( (nibbles[4] & NibbleMask) == nibbles[4] );
+        ASSERT( (nibbles[5] & NibbleMask) == nibbles[5] );
+        ASSERT( (nibbles[6] & NibbleMask) == nibbles[6] );
+        ASSERT( (nibbles[7] & NibbleMask) == nibbles[7] );
 
         mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
         mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
@@ -1012,8 +1012,8 @@ namespace MidiMessage {
     inline uint32_t packNoteOff( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
-        ASSERT((key & DataMask) == key );
-        ASSERT((velocity & DataMask) == velocity );
+        ASSERT( (key & DataMask) == key );
+        ASSERT( (velocity & DataMask) == velocity );
 
         bytes[0] = StatusClassNoteOff | (channel & ChannelMask);
         bytes[1] = key & DataMask;
@@ -1049,8 +1049,8 @@ namespace MidiMessage {
     inline uint32_t packNoteOn( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
-        ASSERT((key & DataMask) == key );
-        ASSERT((velocity & DataMask) == velocity );
+        ASSERT( (key & DataMask) == key );
+        ASSERT( (velocity & DataMask) == velocity );
 
         bytes[0] = StatusClassNoteOn | (channel & ChannelMask);
         bytes[1] = key & DataMask;
@@ -1086,8 +1086,8 @@ namespace MidiMessage {
     inline uint32_t packPolyphonicKeyPressure( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t pressure ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
-        ASSERT((key & DataMask) == key );
-        ASSERT((pressure & DataMask) == pressure)
+        ASSERT( (key & DataMask) == key );
+        ASSERT( (pressure & DataMask) == pressure );
 
         bytes[0] = StatusClassPolyphonicKeyPressure | (channel & ChannelMask);
         bytes[1] = key & DataMask;
@@ -1556,7 +1556,7 @@ namespace MidiMessage {
 
     inline uint32_t packSongSelect( uint8_t * bytes, uint8_t song ){
         ASSERT( bytes != NULL );
-        ASSERT( song & DataMask == song );
+        ASSERT( (song & DataMask) == song );
 
         bytes[0] = SystemMessageSystemExclusive | SystemMessageSongSelect;
         bytes[1] = song & DataMask;
@@ -1913,7 +1913,7 @@ namespace MidiMessage {
     }
 
     inline uint32_t packGeneralInformationIdentityRequest( uint8_t * bytes, uint8_t deviceId ){
-        ASSERT( buffer != NULL );
+        ASSERT( bytes != NULL );
         ASSERT( (deviceId & DataMask) == deviceId );
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -1954,7 +1954,7 @@ namespace MidiMessage {
 //    }
 
     inline uint32_t packGeneralInformationIdentityReply( uint8_t * bytes, uint8_t deviceId, uint32_t manufacturerId, uint16_t deviceFamily, uint16_t deviceFamilyMember, uint8_t * softwareRevision ){
-        ASSERT( bytes !== NULL );
+        ASSERT( bytes != NULL );
         ASSERT( (deviceId & DataMask) == deviceId );
         ASSERT( deviceFamily <= MaxDoubleValue );
         ASSERT( deviceFamilyMember <= MaxDoubleValue );
@@ -1986,7 +1986,7 @@ namespace MidiMessage {
     }
 
     inline bool unpackGeneralInformationIdentityReply( uint8_t * bytes,uint32_t len, uint8_t * deviceId, uint32_t * manufacturerId, uint16_t * deviceFamily, uint16_t * deviceFamilyMember, uint8_t * softwareRevision ){
-        ASSERT( bytes !== NULL );
+        ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( manufacturerId != NULL );
         ASSERT( deviceFamily != NULL );
@@ -2167,7 +2167,7 @@ namespace MidiMessage {
 
     inline uint32_t packMmcCommand( uint8_t * bytes, uint8_t deviceId,  SysExRtMmcCommand_t command ){
         ASSERT( bytes != NULL );
-        ASSERT( isSysExRtMidiMachineControlCommand( command) && )
+        ASSERT( isSysExRtMmcCommand( command) );
         return 0;
     }
 
