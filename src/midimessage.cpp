@@ -179,7 +179,7 @@ namespace MidiMessage {
             if (msg->Data.SysEx.Id == ReservedSysExIdNonRealTime){
 
 
-                switch (bytes[3]) {
+                switch (msg->Data.SysEx.SubId1) {
                     case UniversalSysExNonRtSampleDumpHeader:
                         //TODO
                         return false;
@@ -202,7 +202,15 @@ namespace MidiMessage {
                         return false;
 
                     case UniversalSysExNonRtGeneralInformation:
-                        //TODO
+
+                        switch(msg->Data.SysEx.SubId2) {
+                            case UniversalSysExNonRtGeneralInformationIdentityRequest:
+                                return packGeneralInformationIdentityRequest( bytes, msg->Channel );
+
+                            case UniversalSysExNonRtGeneralInformationIdentityReply:
+                                return packGeneralInformationIdentityReply( bytes, msg->Channel, msg->Data.SysEx.Data.GeneralInfo.ManufacturerId, msg->Data.SysEx.Data.GeneralInfo.DeviceFamily, msg->Data.SysEx.Data.GeneralInfo.DeviceFamilyMember, msg->Data.SysEx.Data.GeneralInfo.SoftwareRevision );
+                        }
+
                         return false;
 
                     case UniversalSysExNonRtFileDump:
@@ -343,9 +351,8 @@ namespace MidiMessage {
 
         if (msg->Status == SystemMessageSystemExclusive) {
 
-
+            msg->StatusClass = StatusClassSystemMessage;
             msg->Status = bytes[0];
-
 
             // minimum of status byte and manufacturerid (assuming and optional ending)
             if (length < 2) {
@@ -353,8 +360,10 @@ namespace MidiMessage {
             }
 
             if (bytes[1] == ReservedSysExIdExperimental) {
+
                 msg->Data.SysEx.Id = ReservedSysExIdExperimental;
                 msg->Data.SysEx.Length = length - 2;
+
                 if (length > 2) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                     ASSERT( length - 2 <= SYSEX_MEMORY_STATIC_SIZE );
@@ -397,7 +406,7 @@ namespace MidiMessage {
                     return false;
                 }
                 msg->Data.SysEx.Id = ReservedSysExIdRealTime;
-//                msg->Channel = bytes[2]; // DeviceId
+                msg->Channel = bytes[2]; // DeviceId
                 msg->Data.SysEx.SubId1 = bytes[3];
 
                 switch (bytes[3]) {
@@ -506,7 +515,7 @@ namespace MidiMessage {
                     return false;
                 }
                 msg->Data.SysEx.Id = ReservedSysExIdNonRealTime;
-                msg->Channel = bytes[2];
+                msg->Channel = bytes[2]; // deviceId
                 msg->Data.SysEx.SubId1 = bytes[3];
 
                 switch (bytes[3]) {
@@ -553,7 +562,16 @@ namespace MidiMessage {
                         return false;
 
                     case UniversalSysExNonRtGeneralInformation:
-                        //TODO
+
+                        switch(msg->Data.SysEx.SubId2) {
+                            case UniversalSysExNonRtGeneralInformationIdentityRequest:
+                                // no further data
+                                return true;
+
+                            case UniversalSysExNonRtGeneralInformationIdentityReply:
+                                return unpackGeneralInformationIdentityReply( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.GeneralInfo.ManufacturerId, &msg->Data.SysEx.Data.GeneralInfo.DeviceFamily, &msg->Data.SysEx.Data.GeneralInfo.DeviceFamilyMember, msg->Data.SysEx.Data.GeneralInfo.SoftwareRevision );
+                        }
+
                         return false;
 
                     case UniversalSysExNonRtFileDump:

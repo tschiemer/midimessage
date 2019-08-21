@@ -75,6 +75,18 @@ namespace MidiMessage {
         return (byte >> 4) & NibbleMask;
     }
 
+    inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
+        ASSERT( bytes[0] & DataMask == bytes[0] );
+        ASSERT( bytes[1] & DataMask == bytes[1] );
+
+        *value = (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
+    }
+
+    inline void packDoubleValue( uint8_t * bytes, uint16_t value ) {
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+    }
+
     inline int nibblize( uint8_t * dst, uint8_t * src, int len ){
         for (int i = 0, j = 0; i < len; i++) {
             dst[j++] = getLsNibble( src[i] );
@@ -91,20 +103,6 @@ namespace MidiMessage {
         }
         return len / 2;
     }
-
-    inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
-        ASSERT( bytes[0] & DataMask == bytes[0] );
-        ASSERT( bytes[1] & DataMask == bytes[1] );
-
-        *value = (((uint16_t)bytes[1]) << 8) | ((uint16_t)bytes[0]);
-    }
-
-    inline void packDoubleValue( uint8_t * bytes, uint16_t value ) {
-        bytes[0] = value & DataMask;
-        bytes[1] = (value >> 7) & DataMask;
-    }
-
-
 
     const uint8_t StatusClassMask = 0xF0;
     const uint8_t ChannelMask     = 0x0F;
@@ -130,6 +128,9 @@ namespace MidiMessage {
     const int MsgLenSysExMidiTimeCodeUserBits       = 15;
     const int MsgLenSysExNonRtMidiCueingSetupMessageMin  = 13;
     const int MsgLenSysExRtMidiCueingSetupMessageMin  = 8;
+
+    const int MsgLenSysExNonRtGeneralInformationIdentityRequest = 6;
+    const int MsgLenSysExNonRtGeneralInformationIdentityReply = 15;
 
 
     const uint16_t PitchCenter      = 0x2000;
@@ -276,19 +277,19 @@ namespace MidiMessage {
         return isManufacturerSysExId( (uint8_t)((id >> 16) & DataMask));
     }
 
-    inline bool is1ByteSysExId( uint8_t * bytes ){
+    inline bool is1ByteManufacturerId( uint8_t * bytes ){
         return bytes[0] == ReservedSysExIdManufacturerExtension;
     }
 
-    inline bool is3ByteSysExId( uint8_t * bytes ){
-        return !is1ByteSysExId( bytes );
+    inline bool is3ByteManufacturerId( uint8_t * bytes ){
+        return !is1ByteManufacturerId( bytes );
     }
-    inline bool is1ByteSysExId( uint32_t id ){
+    inline bool is1ByteManufacturerId( uint32_t id ){
         return ((id >> 16) & DataMask) == ReservedSysExIdManufacturerExtension;
     }
 
-    inline bool is3ByteSysExId( uint32_t id ){
-        return !is1ByteSysExId(  id );
+    inline bool is3ByteManufacturerId( uint32_t id ){
+        return !is1ByteManufacturerId(  id );
     }
 
 
@@ -306,17 +307,18 @@ namespace MidiMessage {
         return 1;
     }
 
-    inline uint32_t unpackSysExId( uint8_t * bytes ){
+    inline int unpackSysExId( uint8_t * bytes, uint32_t * id){
         ASSERT( bytes != NULL );
 
-        uint32_t id = ((uint32_t)bytes[0]) << 16;
+        *id = ((uint32_t)bytes[0]) << 16;
 
         if (bytes[0] == ReservedSysExIdManufacturerExtension){
-            id |= ((uint32_t)bytes[1]) << 8;
-            id |= ((uint32_t)bytes[2]);
+            *id |= ((uint32_t)bytes[1]) << 8;
+            *id |= ((uint32_t)bytes[2]);
+            return 3;
         }
 
-        return id;
+        return 1;
     }
 
 
@@ -794,6 +796,13 @@ namespace MidiMessage {
                         MidiTimeCode_t MidiTimeCode;
                         uint16_t EventNumber;
                     } Cueing;
+
+                    struct {
+                        uint32_t ManufacturerId;
+                        uint16_t DeviceFamily;
+                        uint16_t DeviceFamilyMember;
+                        uint8_t SoftwareRevision[4];
+                    } GeneralInfo;
                 } Data;
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
@@ -844,6 +853,12 @@ namespace MidiMessage {
         return isChannelVoiceMessage( msg->Status, msg->Data.ControlChange.Controller );
     }
 
+    inline uint8_t getDeviceId( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( bytes[0] == SystemMessageSystemExclusive );
+
+        return bytes[2] & DataMask;
+    }
 
     /**
      * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
@@ -1495,7 +1510,7 @@ namespace MidiMessage {
         ASSERT( second != NULL );
         ASSERT( frame != NULL );
 
-        if ( (len !=  MsgLenSysExMidiTimeCodeFullMessage - 1) && (len != MsgLenSysExMidiTimeCodeFullMessage || bytes[MsgLenSysExMidiTimeCodeFullMessage-1] == SystemMessageEndOfSystemExclusive) ){
+        if ( (len !=  MsgLenSysExMidiTimeCodeFullMessage - 1) && (len != MsgLenSysExMidiTimeCodeFullMessage || bytes[MsgLenSysExMidiTimeCodeFullMessage-1] != SystemMessageEndOfSystemExclusive) ){
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -1571,7 +1586,7 @@ namespace MidiMessage {
         ASSERT( deviceId != NULL );
         ASSERT( userBits != NULL );
 
-        if ( (len !=  MsgLenSysExMidiTimeCodeUserBits - 1) && (len != MsgLenSysExMidiTimeCodeUserBits || bytes[MsgLenSysExMidiTimeCodeUserBits-1] == SystemMessageEndOfSystemExclusive) ){
+        if ( (len !=  MsgLenSysExMidiTimeCodeUserBits - 1) && (len != MsgLenSysExMidiTimeCodeUserBits || bytes[MsgLenSysExMidiTimeCodeUserBits-1] != SystemMessageEndOfSystemExclusive) ){
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -1784,6 +1799,127 @@ namespace MidiMessage {
 
             *addInfoLen = denibblize( addInfo, &bytes[12], len - MsgLenSysExRtMidiCueingSetupMessageMin );
         }
+
+        return true;
+    }
+
+    inline int packGeneralInformationIdentityRequest( uint8_t * bytes, uint8_t deviceId ){
+        ASSERT( buffer != NULL );
+        ASSERT( (deviceId & DataMask) == deviceId );
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = ReservedSysExIdNonRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = UniversalSysExNonRtGeneralInformation;
+        bytes[4] = UniversalSysExNonRtGeneralInformationIdentityRequest;
+        bytes[5] = SystemMessageEndOfSystemExclusive;
+
+        return MsgLenSysExNonRtGeneralInformationIdentityRequest;
+    }
+
+//    inline bool unpackGeneralInformationIdentityRequest( uint8_t * bytes, int len, uint8_t * deviceId ){
+//        ASSERT( buffer != NULL );
+//
+//        if ( (len !=  MsgLenSysExNonRtGeneralInformationIdentityRequest - 1) && (len != MsgLenSysExNonRtGeneralInformationIdentityRequest || bytes[MsgLenSysExNonRtGeneralInformationIdentityRequest-1] != SystemMessageEndOfSystemExclusive ) ){
+//            return false;
+//        }
+//        if (bytes[0] != SystemMessageSystemExclusive) {
+//            return false;
+//        }
+//        if (bytes[1] != ReservedSysExIdNonRealTime ) {
+//            return false;
+//        }
+//        if ((bytes[2] & DataMask) != bytes[2] ) {
+//            return false;
+//        }
+//        if (bytes[3] != UniversalSysExNonRtGeneralInformation) {
+//            return false;
+//        }
+//        if ( bytes[4] != UniversalSysExNonRtGeneralInformationIdentityRequest ){
+//            return false;
+//        }
+//
+//        *deviceId = bytes[2];
+//
+//        return true;
+//    }
+
+    inline int packGeneralInformationIdentityReply( uint8_t * bytes, uint8_t deviceId, uint32_t manufacturerId, uint16_t deviceFamily, uint16_t deviceFamilyMember, uint8_t * softwareRevision ){
+        ASSERT( bytes !== NULL );
+        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( deviceFamily <= MaxDoubleValue );
+        ASSERT( deviceFamilyMember <= MaxDoubleValue );
+
+        int len = 5;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = ReservedSysExIdNonRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = UniversalSysExNonRtGeneralInformation;
+        bytes[4] = UniversalSysExNonRtGeneralInformationIdentityReply;
+
+        len += packSysExId( &bytes[5], manufacturerId );
+
+        packDoubleValue( &bytes[len], deviceFamily );
+        len += 2;
+
+        packDoubleValue( &bytes[len], deviceFamilyMember );
+        len += 2;
+
+        bytes[len++] = softwareRevision[0];
+        bytes[len++] = softwareRevision[1];
+        bytes[len++] = softwareRevision[2];
+        bytes[len++] = softwareRevision[3];
+
+        bytes[len] = SystemMessageEndOfSystemExclusive;
+
+        return len;
+    }
+
+    inline bool unpackGeneralInformationIdentityReply( uint8_t * bytes, int len, uint8_t * deviceId, uint32_t * manufacturerId, uint16_t * deviceFamily, uint16_t * deviceFamilyMember, uint8_t * softwareRevision ){
+        ASSERT( bytes !== NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( manufacturerId != NULL );
+        ASSERT( deviceFamily != NULL );
+        ASSERT( deviceFamilyMember != NULL );
+        ASSERT( softwareRevision != NULL );
+
+
+        if (len < 13) {
+            return false;
+        }
+        if ( bytes[0] != SystemMessageSystemExclusive ){
+            return false;
+        }
+        if ( bytes[1] != ReservedSysExIdNonRealTime ){
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if (bytes[3] != UniversalSysExNonRtGeneralInformation) {
+            return false;
+        }
+        if ( bytes[4] != UniversalSysExNonRtGeneralInformationIdentityReply ){
+            return false;
+        }
+
+        int l = 4;
+
+        *deviceId = bytes[2] & DataMask;
+
+        l += unpackSysExId( &bytes[5], manufacturerId );
+
+        unpackDoubleValue( &bytes[l], deviceFamily );
+        l += 2;
+
+        unpackDoubleValue( &bytes[l], deviceFamilyMember );
+        l += 2;
+
+        softwareRevision[0] = bytes[l++];
+        softwareRevision[1] = bytes[l++];
+        softwareRevision[2] = bytes[l++];
+        softwareRevision[3] = bytes[l++];
 
         return true;
     }

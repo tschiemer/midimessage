@@ -36,7 +36,7 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 | System Exclusive | Experimental (custom) messages | | tt |
 | | Manufacturer messages (+ manufacturer ids) | | tt |
 | | Sample Dump | Non-Real Time | TODO |
-| | General Information | Non-Real Time | TODO |
+| | General Information | Non-Real Time | tt |
 | | File Dump | Non-Real Time | TODO |
 | | General MIDI System Messages | Non-Real Time | TODO |
 | | Downloadable Sounds | Non-Real Time | TODO |
