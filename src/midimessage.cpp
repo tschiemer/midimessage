@@ -53,8 +53,8 @@ namespace MidiMessage {
 
             switch (msg->Status)
             {
-                case SystemMessageMidiTimeCodeQuarterFrame:
-                    return packMidiTimeCodeQuarterFrame( bytes, msg->Data.MidiTimeCodeQuarterFrame.MessageType, msg->Data.MidiTimeCodeQuarterFrame.Nibble );
+                case SystemMessageMtcQuarterFrame:
+                    return packMtcQuarterFrame( bytes, msg->Data.MtcQuarterFrame.MessageType, msg->Data.MtcQuarterFrame.Nibble );
 
                 case SystemMessageSongPositionPointer:
                     return packSongPositionPointer( bytes, msg->Data.SongPositionPointer.Position );
@@ -63,7 +63,7 @@ namespace MidiMessage {
                     return packSongSelect( bytes, msg->Data.SongSelect.Song );
 
                 case SystemMessageTuneRequest:
-                case SystemMessageEndOfSystemExclusive:
+                case SystemMessageEndOfExclusive:
                 case SystemMessageTimingClock:
                 case SystemMessageStart:
                 case SystemMessageContinue:
@@ -87,9 +87,9 @@ namespace MidiMessage {
 
             bytes[0] = msg->Status;
 
-            if (msg->Data.SysEx.Id == ReservedSysExIdExperimental){
+            if (msg->Data.SysEx.Id == SysExIdExperimental){
 
-                bytes[1] = ReservedSysExIdExperimental;
+                bytes[1] = SysExIdExperimental;
 
                 if (msg->Data.SysEx.Length > 0) {
 
@@ -100,7 +100,7 @@ namespace MidiMessage {
                 }
 
                 return 2 + msg->Data.SysEx.Length;
-            } // (msg->Data.SysEx.Id == ReservedSysExIdExperimental)
+            } // (msg->Data.SysEx.Id == SysExIdExperimental)
 
             if (isManufacturerSysExId( msg->Data.SysEx.Id )){
 
@@ -116,155 +116,155 @@ namespace MidiMessage {
                 return len + msg->Data.SysEx.Length;
             } // (isManufacturerSysExId( msg->Data.SysEx.Id ))
 
-            if (msg->Data.SysEx.Id == ReservedSysExIdRealTime){
+            if (msg->Data.SysEx.Id == SysExIdRealTime){
 
                 switch (msg->Data.SysEx.SubId1) {
 
-                    case UniversalSysExRtMidiTimeCode:
+                    case SysExRtMidiTimeCode:
 
                         switch (msg->Data.SysEx.SubId2) {
 
-                            case UniversalSysExRtMidiTimeCodeFullMessage:
+                            case SysExRtMidiTimeCodeFullMessage:
                                 return packSysExMidiTimeCodeFullMessage( bytes, msg->Channel, &msg->Data.SysEx.Data.MidiTimeCode );
 
-                            case UniversalSysExRtMidiTimeCodeUserBits:
+                            case SysExRtMidiTimeCodeUserBits:
                                 return packSysExMidiTimeCodeUserBits(bytes, msg->Channel, msg->Data.SysEx.ByteData);
 
                         }
 
                         return 0;
 
-                    case UniversalSysExRtMidiShowControl:
+                    case SysExRtMidiShowControl:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtDeviceControl:
+                    case SysExRtDeviceControl:
 
                         switch(msg->Data.SysEx.SubId2) {
-                            case UniversalSysExRtDeviceControlMasterVolume:
-                            case UniversalSysExRtDeviceControlMasterBalance:
-                            case UniversalSysExRtDeviceControlMasterCoarseTuning:
-                            case UniversalSysExRtDeviceControlMasterFineTuning:
-                                return packDeviceControl( bytes, msg->Channel, (UniversalSysExRtDeviceControl_t)msg->Data.SysEx.SubId2, msg->Data.SysEx.Data.DeviceControlValue );
+                            case SysExRtDcMasterVolume:
+                            case SysExRtDcMasterBalance:
+                            case SysExRtDcMasterCoarseTuning:
+                            case SysExRtDcMasterFineTuning:
+                                return packDeviceControl( bytes, msg->Channel, (SysExRtDc_t)msg->Data.SysEx.SubId2, msg->Data.SysEx.Data.DeviceControlValue );
 
-                            case UniversalSysExRtDeviceControlGlobalParameterControl:
+                            case SysExRtDcGlobalParameterControl:
                                 return packGlobalParameterControl( bytes, msg->Channel, &msg->Data.SysEx.Data.GlobalParameterControl);
 
                         }
 
                         return false;
 
-                    case UniversalSysExRtMidiTimeCodeCueing:
-                        return packSysExRtMidiCueingSetupMessage( bytes, (UniversalSysExRtMidiTimeCodeCueing_t)msg->Data.SysEx.SubId2, msg->Channel, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+                    case SysExRtMidiTimeCodeCueing:
+                        return packSysExRtMtcCueingSetupMessage( bytes, (SysExRtMtcCueing_t)msg->Data.SysEx.SubId2, msg->Channel, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
 
-                    case UniversalSysExRtMidiMachineControlCommands:
+                    case SysExRtMidiMachineControlCommand:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtMidiMachineControlResponses:
+                    case SysExRtMidiMachineControlResponse:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtMidiTuningStandard:
+                    case SysExRtMidiTuningStandard:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtControllerDestinationSetting:
+                    case SysExRtControllerDestinationSetting:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtKeybasedInstrumentControl:
+                    case SysExRtKeybasedInstrumentControl:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtScalablePolyphonyMidiMip:
+                    case SysExRtScalablePolyphonyMidiMip:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtMobilePhoneControlMessage:
+                    case SysExRtMobilePhoneControlMessage:
                         //TODO
                         return false;
                 }
 
-            } // (msg->Data.SysEx.Id == ReservedSysExIdRealTime)
+            } // (msg->Data.SysEx.Id == SysExIdRealTime)
 
-            if (msg->Data.SysEx.Id == ReservedSysExIdNonRealTime){
+            if (msg->Data.SysEx.Id == SysExIdNonRealTime){
 
 
                 switch (msg->Data.SysEx.SubId1) {
-                    case UniversalSysExNonRtSampleDumpHeader:
+                    case SysExNonRtSampleDumpHeader:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtSampleDataPacket:
+                    case SysExNonRtSampleDataPacket:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtSampleDumpRequest:
+                    case SysExNonRtSampleDumpRequest:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiTimeCode:
+                    case SysExNonRtMidiTimeCode:
 
-                        return packSysExNonRtMidiCueingSetupMessage( bytes, (UniversalSysExNonRtMidiTimeCode_t)msg->Data.SysEx.SubId2, msg->Channel, &msg->Data.SysEx.Data.Cueing.MidiTimeCode, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+                        return packSysExNonRtMtcCueingSetupMessage( bytes, (SysExNonRtMtc_t)msg->Data.SysEx.SubId2, msg->Channel, &msg->Data.SysEx.Data.Cueing.MidiTimeCode, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
 
 
-                    case UniversalSysExNonRtSampleDumpExtension:
+                    case SysExNonRtSampleDumpExtension:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtGeneralInformation:
+                    case SysExNonRtGeneralInformation:
 
                         switch(msg->Data.SysEx.SubId2) {
-                            case UniversalSysExNonRtGeneralInformationIdentityRequest:
+                            case SysExNonRtGenInfoIdentityRequest:
                                 return packGeneralInformationIdentityRequest( bytes, msg->Channel );
 
-                            case UniversalSysExNonRtGeneralInformationIdentityReply:
+                            case SysExNonRtGenInfoIdentityReply:
                                 return packGeneralInformationIdentityReply( bytes, msg->Channel, msg->Data.SysEx.Data.GeneralInfo.ManufacturerId, msg->Data.SysEx.Data.GeneralInfo.DeviceFamily, msg->Data.SysEx.Data.GeneralInfo.DeviceFamilyMember, msg->Data.SysEx.Data.GeneralInfo.SoftwareRevision );
                         }
 
                         return false;
 
-                    case UniversalSysExNonRtFileDump:
+                    case SysExNonRtFileDump:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiTuningStandard:
+                    case SysExNonRtMidiTuningStandard:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtGeneralMidi:
+                    case SysExNonRtGeneralMidi:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtDownloadableSounds:
+                    case SysExNonRtDownloadableSounds:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtFileReferenceMessage:
+                    case SysExNonRtFileReferenceMessage:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiVisualControl:
+                    case SysExNonRtMidiVisualControl:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiCapabilityInquiry:
+                    case SysExNonRtMidiCapabilityInquiry:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtEndOfFile:
-                    case UniversalSysExNonRtWait:
-                    case UniversalSysExNonRtCancel:
-                    case UniversalSysExNonRtNAK:
-                    case UniversalSysExNonRtACK:
+                    case SysExNonRtEndOfFile:
+                    case SysExNonRtWait:
+                    case SysExNonRtCancel:
+                    case SysExNonRtNAK:
+                    case SysExNonRtACK:
                         // no further data
                         return true;
 
                 }
 
                 return 0;
-            } // (msg->Data.SysEx.Id == ReservedSysExIdNonRealTime)
+            } // (msg->Data.SysEx.Id == SysExIdNonRealTime)
 
 
         } // msg->Status == SystemMessageSystemExclusive
@@ -330,8 +330,8 @@ namespace MidiMessage {
 
             switch( msg->Status){
 
-                case SystemMessageMidiTimeCodeQuarterFrame:
-                    return unpackMidiTimeCodeQuarterFrame( bytes, length, &msg->Data.MidiTimeCodeQuarterFrame.MessageType, &msg->Data.MidiTimeCodeQuarterFrame.Nibble );
+                case SystemMessageMtcQuarterFrame:
+                    return unpackMtcQuarterFrame( bytes, length, &msg->Data.MtcQuarterFrame.MessageType, &msg->Data.MtcQuarterFrame.Nibble );
 
                 case SystemMessageSongPositionPointer:
                     return unpackSongPositionPointer( bytes, length, &msg->Data.SongPositionPointer.Position );
@@ -340,7 +340,7 @@ namespace MidiMessage {
                     return unpackSongSelect( bytes, length, &msg->Data.SongSelect.Song );
 
                 case SystemMessageTuneRequest:
-                case SystemMessageEndOfSystemExclusive:
+                case SystemMessageEndOfExclusive:
                 case SystemMessageTimingClock:
                 case SystemMessageStart:
                 case SystemMessageContinue:
@@ -371,9 +371,9 @@ namespace MidiMessage {
                 return false;
             }
 
-            if (bytes[1] == ReservedSysExIdExperimental) {
+            if (bytes[1] == SysExIdExperimental) {
 
-                msg->Data.SysEx.Id = ReservedSysExIdExperimental;
+                msg->Data.SysEx.Id = SysExIdExperimental;
                 msg->Data.SysEx.Length = length - 2;
 
                 if (length > 2) {
@@ -385,12 +385,12 @@ namespace MidiMessage {
                     memcpy( msg->Data.SysEx.ByteData, &bytes[2], length - 2 );
                 }
                 return true;
-            } // (bytes[1] == ReservedSysExIdExperimental)
+            } // (bytes[1] == SysExIdExperimental)
 
             if (isManufacturerSysExId(bytes[1])){
 
                 // is it a three byte manufacturer id?
-                if (bytes[1] == ReservedSysExIdManufacturerExtension) {
+                if (bytes[1] == SysExIdManufacturerExtension) {
                     if (length < 4) {
                         return false;
                     }
@@ -413,16 +413,16 @@ namespace MidiMessage {
                 return true;
             } // isManufacturerSysExId(bytes[1])
 
-            if (bytes[1] == ReservedSysExIdRealTime) {
+            if (bytes[1] == SysExIdRealTime) {
                 if (length < 4) {
                     return false;
                 }
-                msg->Data.SysEx.Id = ReservedSysExIdRealTime;
+                msg->Data.SysEx.Id = SysExIdRealTime;
                 msg->Channel = bytes[2]; // DeviceId
                 msg->Data.SysEx.SubId1 = bytes[3];
 
                 switch (bytes[3]) {
-                    case UniversalSysExRtMidiTimeCode:
+                    case SysExRtMidiTimeCode:
 
                         if (length < 5) {
                             return false;
@@ -432,10 +432,10 @@ namespace MidiMessage {
 
                         switch (bytes[4]) {
 
-                            case UniversalSysExRtMidiTimeCodeFullMessage:
+                            case SysExRtMidiTimeCodeFullMessage:
                                 return unpackSysExMidiTimeCodeFullMessage( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.MidiTimeCode );
 
-                            case UniversalSysExRtMidiTimeCodeUserBits:
+                            case SysExRtMidiTimeCodeUserBits:
                                 if (length < 13) {
                                     return false;
                                 }
@@ -457,26 +457,26 @@ namespace MidiMessage {
                         }
                         return false;
 
-                    case UniversalSysExRtMidiShowControl:
+                    case SysExRtMidiShowControl:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtDeviceControl:
+                    case SysExRtDeviceControl:
 
-                        if (length < 7 || !isUniversalSysExRtDeviceControl(bytes[4])){
+                        if (length < 7 || !isSysExRtDeviceControl(bytes[4])){
                             return false;
                         }
                         msg->Data.SysEx.SubId2 = bytes[4];
 
                         switch(bytes[4]) {
-                            case UniversalSysExRtDeviceControlMasterVolume:
-                            case UniversalSysExRtDeviceControlMasterBalance:
-                            case UniversalSysExRtDeviceControlMasterCoarseTuning:
-                            case UniversalSysExRtDeviceControlMasterFineTuning:
+                            case SysExRtDcMasterVolume:
+                            case SysExRtDcMasterBalance:
+                            case SysExRtDcMasterCoarseTuning:
+                            case SysExRtDcMasterFineTuning:
 
-                                return unpackDeviceControl( bytes, length, &msg->Channel, (UniversalSysExRtDeviceControl_t*)&msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.DeviceControlValue );
+                                return unpackDeviceControl( bytes, length, &msg->Channel, (SysExRtDc_t*)&msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.DeviceControlValue );
 
-                            case UniversalSysExRtDeviceControlGlobalParameterControl:
+                            case SysExRtDcGlobalParameterControl:
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
                                 ASSERT( length - 8 <= SYSEX_MEMORY_STATIC_SIZE );
@@ -499,23 +499,23 @@ namespace MidiMessage {
 
                         return false;
 
-                    case UniversalSysExRtMidiTimeCodeCueing:
+                    case SysExRtMidiTimeCodeCueing:
 
-                        if (length < MsgLenSysExRtMidiCueingSetupMessageMin - 1) {
+                        if (length < MsgLenSysExRtMtcCueingSetupMessageMin - 1) {
                             return false;
                         }
 
-                        if ( isUniversalSysExRtMidiTimeCodeCueingWithAddInfo(bytes[4]) ){
+                        if ( isSysExRtMtcCueingWithAddInfo(bytes[4]) ){
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                            ASSERT( length - MsgLenSysExRtMidiCueingSetupMessageMin <= SYSEX_MEMORY_STATIC_SIZE );
+                            ASSERT( length - MsgLenSysExRtMtcCueingSetupMessageMin <= SYSEX_MEMORY_STATIC_SIZE );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                            msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - MsgLenSysExRtMidiCueingSetupMessageMin, 1);
+                            msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - MsgLenSysExRtMtcCueingSetupMessageMin, 1);
 #endif
                         }
 
-                        if ( ! unpackSysExRtMidiCueingSetupMessage( bytes, length, (UniversalSysExRtMidiTimeCodeCueing_t*)&msg->Data.SysEx.SubId2, &msg->Channel, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length )){
+                        if ( ! unpackSysExRtMtcCueingSetupMessage( bytes, length, (SysExRtMtcCueing_t*)&msg->Data.SysEx.SubId2, &msg->Channel, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length )){
 #if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                            if ( isUniversalSysExRtMidiTimeCodeCueingWithAddInfo(bytes[4]) ) {
+                            if ( isSysExRtMtcCueingWithAddInfo(bytes[4]) ) {
                                 free(msg->Data.SysEx.ByteData);
                             }
 #endif
@@ -524,76 +524,76 @@ namespace MidiMessage {
 
                         return true;
 
-                    case UniversalSysExRtMidiMachineControlCommands:
+                    case SysExRtMidiMachineControlCommand:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtMidiMachineControlResponses:
+                    case SysExRtMidiMachineControlResponse:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtMidiTuningStandard:
+                    case SysExRtMidiTuningStandard:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtControllerDestinationSetting:
+                    case SysExRtControllerDestinationSetting:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtKeybasedInstrumentControl:
+                    case SysExRtKeybasedInstrumentControl:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtScalablePolyphonyMidiMip:
+                    case SysExRtScalablePolyphonyMidiMip:
                         //TODO
                         return false;
 
-                    case UniversalSysExRtMobilePhoneControlMessage:
+                    case SysExRtMobilePhoneControlMessage:
                         //TODO
                         return false;
                 }
 
                 return false;
-            } // (bytes[1] == ReservedSysExIdRealTime)
+            } // (bytes[1] == SysExIdRealTime)
 
-            if (bytes[1] == ReservedSysExIdNonRealTime) {
+            if (bytes[1] == SysExIdNonRealTime) {
                 if (length < 4) {
                     return false;
                 }
-                msg->Data.SysEx.Id = ReservedSysExIdNonRealTime;
+                msg->Data.SysEx.Id = SysExIdNonRealTime;
                 msg->Channel = bytes[2]; // deviceId
                 msg->Data.SysEx.SubId1 = bytes[3];
 
                 switch (bytes[3]) {
-                    case UniversalSysExNonRtSampleDumpHeader:
+                    case SysExNonRtSampleDumpHeader:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtSampleDataPacket:
+                    case SysExNonRtSampleDataPacket:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtSampleDumpRequest:
+                    case SysExNonRtSampleDumpRequest:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiTimeCode:
+                    case SysExNonRtMidiTimeCode:
 
-                        if (length < MsgLenSysExNonRtMidiCueingSetupMessageMin - 1) {
+                        if (length < MsgLenSysExNonRtMtcCueingSetupMessageMin - 1) {
                             return false;
                         }
 
-                        if ( isUniversalSysExNonRtMidiTimeCodeWithAddInfo(bytes[4]) ){
+                        if ( isSysExNonRtMtcWithAddInfo(bytes[4]) ){
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                            ASSERT( length - MsgLenSysExRtMidiCueingSetupMessageMin <= SYSEX_MEMORY_STATIC_SIZE );
+                            ASSERT( length - MsgLenSysExRtMtcCueingSetupMessageMin <= SYSEX_MEMORY_STATIC_SIZE );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                            msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - MsgLenSysExNonRtMidiCueingSetupMessageMin, 1);
+                            msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - MsgLenSysExNonRtMtcCueingSetupMessageMin, 1);
 #endif
                         }
 
-                        if ( ! unpackSysExNonRtMidiCueingSetupMessage( bytes, length, (UniversalSysExNonRtMidiTimeCode_t*)&msg->Data.SysEx.SubId2, &msg->Channel, &msg->Data.SysEx.Data.Cueing.MidiTimeCode, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length )){
+                        if ( ! unpackSysExNonRtMtcCueingSetupMessage( bytes, length, (SysExNonRtMtc_t*)&msg->Data.SysEx.SubId2, &msg->Channel, &msg->Data.SysEx.Data.Cueing.MidiTimeCode, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length )){
 #if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                            if ( isUniversalSysExNonRtMidiTimeCodeWithAddInfo(bytes[4]) ) {
+                            if ( isSysExNonRtMtcWithAddInfo(bytes[4]) ) {
                                 free(msg->Data.SysEx.ByteData);
                             }
 #endif
@@ -603,56 +603,56 @@ namespace MidiMessage {
                         return true;
                         return false;
 
-                    case UniversalSysExNonRtSampleDumpExtension:
+                    case SysExNonRtSampleDumpExtension:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtGeneralInformation:
+                    case SysExNonRtGeneralInformation:
 
                         switch(msg->Data.SysEx.SubId2) {
-                            case UniversalSysExNonRtGeneralInformationIdentityRequest:
+                            case SysExNonRtGenInfoIdentityRequest:
                                 // no further data
                                 return true;
 
-                            case UniversalSysExNonRtGeneralInformationIdentityReply:
+                            case SysExNonRtGenInfoIdentityReply:
                                 return unpackGeneralInformationIdentityReply( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.GeneralInfo.ManufacturerId, &msg->Data.SysEx.Data.GeneralInfo.DeviceFamily, &msg->Data.SysEx.Data.GeneralInfo.DeviceFamilyMember, msg->Data.SysEx.Data.GeneralInfo.SoftwareRevision );
                         }
 
                         return false;
 
-                    case UniversalSysExNonRtFileDump:
+                    case SysExNonRtFileDump:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiTuningStandard:
+                    case SysExNonRtMidiTuningStandard:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtGeneralMidi:
+                    case SysExNonRtGeneralMidi:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtDownloadableSounds:
+                    case SysExNonRtDownloadableSounds:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtFileReferenceMessage:
+                    case SysExNonRtFileReferenceMessage:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiVisualControl:
+                    case SysExNonRtMidiVisualControl:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtMidiCapabilityInquiry:
+                    case SysExNonRtMidiCapabilityInquiry:
                         //TODO
                         return false;
 
-                    case UniversalSysExNonRtEndOfFile:
-                    case UniversalSysExNonRtWait:
-                    case UniversalSysExNonRtCancel:
-                    case UniversalSysExNonRtNAK:
-                    case UniversalSysExNonRtACK:
+                    case SysExNonRtEndOfFile:
+                    case SysExNonRtWait:
+                    case SysExNonRtCancel:
+                    case SysExNonRtNAK:
+                    case SysExNonRtACK:
                         // no further data
                         return true;
 
@@ -660,7 +660,7 @@ namespace MidiMessage {
 
                 return false;
 
-            } // (bytes[1] == ReservedSysExIdNonRealTime)
+            } // (bytes[1] == SysExIdNonRealTime)
 
         } // (msg->Status == SystemMessageSystemExclusive)
 
