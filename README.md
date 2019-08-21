@@ -40,7 +40,7 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 | | File Dump | Non-Real Time | TODO |
 | | General MIDI System Messages | Non-Real Time | TODO |
 | | Downloadable Sounds | Non-Real Time | TODO |
-| | Device Control (Master volume and balance) | Real Time | TODO |
+| | Device Control (Master volume, balance, coarse/fine tuning, global parameters) | Real Time | tt |
 | | Notation Information | Real Time | TODO |
 
 
@@ -109,6 +109,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 - https://www.midi.org/specifications-old/item/the-midi-1-0-specification
 - https://www.midi.org/specifications-old/category/reference-tables
 - http://www.personal.kent.edu/~sbirch/Music_Production/MP-II/MIDI/an_introduction_to_midi_contents.htm
+- http://www.somascape.org/midi/tech/spec.html
 
 
 ## License MIT

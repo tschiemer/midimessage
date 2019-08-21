@@ -34,6 +34,13 @@
 #endif
 #endif // SYSEX_MEMORY == SYSEX_MEMORY_STATIC
 
+// Require dynamic memory allocaction to support global parameter control
+//#if SYSEX_MEMORY != SYSEX_MEMORY_DYNAMIC
+//#ifndef DISABLE_GLOBAL_PARAMETER_CONTROL
+//#define DISABLE_GLOBAL_PARAMETER_CONTROL
+//#endif
+//#endif
+
 namespace MidiMessage {
 
     // Constants & Enumerations
@@ -132,9 +139,15 @@ namespace MidiMessage {
     const int MsgLenSysExNonRtGeneralInformationIdentityRequest = 6;
     const int MsgLenSysExNonRtGeneralInformationIdentityReply = 15;
 
+    const int MsgLenDeviceControl = 8;
+
 
     const uint16_t PitchCenter      = 0x2000;
 
+    const uint16_t CoarseTuningCenter = 0x0040;
+    const uint16_t CoarseTuningMax    = 0x007F;
+    const uint16_t FineTuningCenter   = 0x2000; // 0xA440 when in two 7bit values
+    const uint16_t FineTuningMax      = 0x3FFF; // 0x7F7F
 
     const uint8_t SysExBroadcastDeviceId = 0x7F; // for Universal SysEx (Non-)Realtime Messages
 
@@ -753,7 +766,49 @@ namespace MidiMessage {
         uint8_t FractionalFrame;
     } MidiTimeCode_t;
 
-    
+
+    typedef struct {
+        uint8_t SlotPathLength;
+        uint8_t ParameterIdWidth;
+        uint8_t ValueWidth;
+        uint32_t DataLength; // In principle, it is a stream terminated with an EOX
+        uint8_t * Data;
+    } GlobalParameterControl_t;
+
+    inline uint8_t getIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i ){
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( i < gpc->SlotPathLength );
+
+        return gpc->Data[i];
+    }
+
+    inline void setIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i, uint8_t value ){
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( i < gpc->SlotPathLength );
+        ASSERT( (value & DataMask) == value );
+
+        gpc->Data[i] = value & DataMask;
+    }
+
+    inline uint8_t * getIthGpcParameterIdAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) < gpc->DataLength );
+
+        return &gpc->Data[ gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) ];
+    }
+
+
+    inline uint8_t * getIthGpcParameterValueAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth < gpc->DataLength );
+
+        return &gpc->Data[ gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth ];
+    }
+
     typedef struct {
         StatusClass_t StatusClass;
         uint8_t Status;
@@ -786,7 +841,7 @@ namespace MidiMessage {
             } PitchBendChange;
             struct {
                 uint32_t Id;
-                uint8_t Length;
+                uint32_t Length;
                 uint8_t SubId1;
                 uint8_t SubId2;
                 union {
@@ -803,6 +858,11 @@ namespace MidiMessage {
                         uint16_t DeviceFamilyMember;
                         uint8_t SoftwareRevision[4];
                     } GeneralInfo;
+
+                    uint16_t DeviceControlValue;
+
+                    GlobalParameterControl_t GlobalParameterControl;
+
                 } Data;
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
@@ -900,7 +960,7 @@ namespace MidiMessage {
 
 
 
-    inline int packNoteOff( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
+    inline uint32_t packNoteOff( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
         ASSERT((key & DataMask) == key );
@@ -913,7 +973,7 @@ namespace MidiMessage {
         return MsgLenNoteOff;
     }
 
-    inline bool unpackNoteOff( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t  * velocity ){
+    inline bool unpackNoteOff( uint8_t * bytes,uint32_t len, uint8_t * channel, uint8_t * key, uint8_t  * velocity ){
         ASSERT( bytes != NULL );
         ASSERT( channel != NULL );
         ASSERT( key != NULL );
@@ -937,7 +997,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packNoteOn( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
+    inline uint32_t packNoteOn( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t velocity ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
         ASSERT((key & DataMask) == key );
@@ -950,7 +1010,7 @@ namespace MidiMessage {
         return MsgLenNoteOn;
     }
 
-    inline bool unpackNoteOn( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * velocity ){
+    inline bool unpackNoteOn( uint8_t * bytes,uint32_t len, uint8_t * channel, uint8_t * key, uint8_t * velocity ){
         ASSERT( bytes != NULL );
         ASSERT( channel != NULL );
         ASSERT( key != NULL );
@@ -974,7 +1034,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packPolyphonicKeyPressure( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t pressure ){
+    inline uint32_t packPolyphonicKeyPressure( uint8_t * bytes, uint8_t channel, uint8_t key, uint8_t pressure ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
         ASSERT((key & DataMask) == key );
@@ -987,7 +1047,7 @@ namespace MidiMessage {
         return MsgLenPolyphonicKeyPressure;
     }
 
-    inline bool unpackPolyphonicKeyPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * pressure ){
+    inline bool unpackPolyphonicKeyPressure( uint8_t * bytes,uint32_t len, uint8_t * channel, uint8_t * key, uint8_t * pressure ){
         ASSERT( bytes != NULL );
         ASSERT( channel != NULL );
         ASSERT( key != NULL );
@@ -1011,7 +1071,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packControlChange( uint8_t * bytes, uint8_t channel, uint8_t controller, uint8_t value ){
+    inline uint32_t packControlChange( uint8_t * bytes, uint8_t channel, uint8_t controller, uint8_t value ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
         ASSERT((controller & DataMask) == controller );
@@ -1024,7 +1084,7 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-    inline bool unpackControlChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * controller, uint8_t * value ){
+    inline bool unpackControlChange( uint8_t * bytes,uint32_t len, uint8_t * channel, uint8_t * controller, uint8_t * value ){
         ASSERT( bytes != NULL );
         ASSERT( channel != NULL );
         ASSERT( controller != NULL );
@@ -1048,7 +1108,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packProgramChange( uint8_t * bytes, uint8_t channel, uint8_t program ){
+    inline uint32_t packProgramChange( uint8_t * bytes, uint8_t channel, uint8_t program ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
         ASSERT((program & DataMask) == program );
@@ -1059,7 +1119,7 @@ namespace MidiMessage {
         return MsgLenProgramChange;
     }
 
-    inline bool unpackProgramChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * program ){
+    inline bool unpackProgramChange( uint8_t * bytes,uint32_t len, uint8_t * channel, uint8_t * program ){
         ASSERT( bytes != NULL );
         ASSERT( channel != NULL );
         ASSERT( program != NULL );
@@ -1081,7 +1141,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packChannelPressure( uint8_t * bytes, uint8_t channel, uint8_t pressure ){
+    inline uint32_t packChannelPressure( uint8_t * bytes, uint8_t channel, uint8_t pressure ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1091,7 +1151,7 @@ namespace MidiMessage {
         return MsgLenChannelPressure;
     }
 
-    inline bool unpackChannelPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * pressure ){
+    inline bool unpackChannelPressure( uint8_t * bytes,uint32_t len, uint8_t * channel, uint8_t * pressure ){
         ASSERT( bytes != NULL );
         ASSERT( channel != NULL );
         ASSERT( pressure != NULL );
@@ -1113,7 +1173,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packPitchBendChange( uint8_t * bytes, uint8_t channel, uint16_t pitch ){
+    inline uint32_t packPitchBendChange( uint8_t * bytes, uint8_t channel, uint16_t pitch ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
         ASSERT( pitch <= MaxDoubleValue );
@@ -1124,7 +1184,7 @@ namespace MidiMessage {
         return MsgLenPitchBendChange;
     }
 
-    inline bool unpackPitchBendChange( uint8_t * bytes, int len, uint8_t * channel, uint16_t * pitch ){
+    inline bool unpackPitchBendChange( uint8_t * bytes,uint32_t len, uint8_t * channel, uint16_t * pitch ){
         ASSERT( bytes != NULL );
         ASSERT( channel != NULL );
         ASSERT( pitch != NULL );
@@ -1147,7 +1207,7 @@ namespace MidiMessage {
 
 
 
-    inline int packAllSoundOff( uint8_t * bytes, uint8_t channel ){
+    inline uint32_t packAllSoundOff( uint8_t * bytes, uint8_t channel ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1175,7 +1235,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packResetAllControllers( uint8_t * bytes, uint8_t channel ){
+    inline uint32_t packResetAllControllers( uint8_t * bytes, uint8_t channel ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1203,7 +1263,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packLocalControl( uint8_t * bytes, uint8_t channel, bool on ){
+    inline uint32_t packLocalControl( uint8_t * bytes, uint8_t channel, bool on ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1245,7 +1305,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packAllNotesOff( uint8_t * bytes, uint8_t channel ){
+    inline uint32_t packAllNotesOff( uint8_t * bytes, uint8_t channel ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1273,7 +1333,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packOmniMode( uint8_t * bytes, uint8_t channel, bool on ){
+    inline uint32_t packOmniMode( uint8_t * bytes, uint8_t channel, bool on ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1316,7 +1376,7 @@ namespace MidiMessage {
 
 
 
-    inline int packMonoMode( uint8_t * bytes, uint8_t channel, uint8_t numberOfChannels ){
+    inline uint32_t packMonoMode( uint8_t * bytes, uint8_t channel, uint8_t numberOfChannels ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1359,7 +1419,7 @@ namespace MidiMessage {
 
 
 
-    inline int packPolyModeOn( uint8_t * bytes, uint8_t channel){
+    inline uint32_t packPolyModeOn( uint8_t * bytes, uint8_t channel){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
 
@@ -1388,7 +1448,7 @@ namespace MidiMessage {
 
 
 
-    inline int packMidiTimeCodeQuarterFrame( uint8_t * bytes, uint8_t messageType, uint8_t nibble ){
+    inline uint32_t packMidiTimeCodeQuarterFrame( uint8_t * bytes, uint8_t messageType, uint8_t nibble ){
         ASSERT( bytes != NULL );
 
         bytes[0] = SystemMessageMidiTimeCodeQuarterFrame;
@@ -1397,7 +1457,7 @@ namespace MidiMessage {
         return MsgLenMidiTimeCodeQuarterFrame;
     }
 
-    inline bool unpackMidiTimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * nibble ){
+    inline bool unpackMidiTimeCodeQuarterFrame( uint8_t * bytes,uint32_t len, uint8_t * messageType, uint8_t * nibble ){
         ASSERT( bytes != NULL );
         ASSERT( messageType != NULL );
         ASSERT( nibble != NULL );
@@ -1419,7 +1479,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packSongPositionPointer (uint8_t * bytes, uint16_t position ){
+    inline uint32_t packSongPositionPointer (uint8_t * bytes, uint16_t position ){
         ASSERT( bytes != NULL );
         ASSERT( position <= MaxDoubleValue );
 
@@ -1429,7 +1489,7 @@ namespace MidiMessage {
         return MsgLenSongPositionPointer;
     }
 
-    inline bool unpackSongPositionPointer( uint8_t * bytes, int len, uint16_t * position ){
+    inline bool unpackSongPositionPointer( uint8_t * bytes,uint32_t len, uint16_t * position ){
         ASSERT( bytes != NULL );
         ASSERT( position != NULL );
 
@@ -1445,7 +1505,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline int packSongSelect( uint8_t * bytes, uint8_t song ){
+    inline uint32_t packSongSelect( uint8_t * bytes, uint8_t song ){
         ASSERT( bytes != NULL );
         ASSERT( song & DataMask == song );
 
@@ -1455,7 +1515,7 @@ namespace MidiMessage {
         return MsgLenSongSelect;
     }
 
-    inline bool unpackSongSelect( uint8_t * bytes, int len, uint8_t * song){
+    inline bool unpackSongSelect( uint8_t * bytes,uint32_t len, uint8_t * song){
         ASSERT( bytes != NULL );
         ASSERT( song != NULL );
 
@@ -1471,7 +1531,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline int packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fps ) {
+    inline uint32_t packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fps ) {
         ASSERT( bytes != NULL );
         ASSERT( (deviceId & DataMask) == deviceId );
         ASSERT( isMidiTimeCodeFrameRate(fps) );
@@ -1494,14 +1554,14 @@ namespace MidiMessage {
         return MsgLenSysExMidiTimeCodeFullMessage;
     }
 
-    inline int packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, MidiTimeCode_t * mtc){
+    inline uint32_t packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, MidiTimeCode_t * mtc){
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
         return packSysExMidiTimeCodeFullMessage( bytes, deviceId, getFps(mtc->FpsHour), getHour(mtc->FpsHour), mtc->Minute, mtc->Second, mtc->Frame );
     }
 
-    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame ) {
+    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes,uint32_t len, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame ) {
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( fps != NULL );
@@ -1540,7 +1600,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, MidiTimeCode_t * mtc ){
+    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes,uint32_t len, uint8_t * deviceId, MidiTimeCode_t * mtc ){
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( mtc != NULL );
@@ -1557,7 +1617,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline int packSysExMidiTimeCodeUserBits( uint8_t * bytes, uint8_t deviceId, uint8_t * userBits ) {
+    inline uint32_t packSysExMidiTimeCodeUserBits( uint8_t * bytes, uint8_t deviceId, uint8_t * userBits ) {
         ASSERT( bytes != NULL );
         ASSERT((deviceId & DataMask) == deviceId );
         ASSERT( userBits != NULL );
@@ -1581,7 +1641,7 @@ namespace MidiMessage {
         return MsgLenSysExMidiTimeCodeUserBits;
     }
 
-    inline int unpackSysExMidiTimeCodeUserBits( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * userBits ) {
+    inline uint32_t unpackSysExMidiTimeCodeUserBits( uint8_t * bytes,uint32_t len, uint8_t * deviceId, uint8_t * userBits ) {
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( userBits != NULL );
@@ -1615,7 +1675,7 @@ namespace MidiMessage {
         return len;
     }
 
-    inline int packSysExNonRtMidiCueingSetupMessage( UniversalSysExNonRtMidiTimeCode_t msgType, uint8_t * bytes, uint8_t deviceId, uint8_t fps, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fractionalFrame, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen) {
+    inline uint32_t packSysExNonRtMidiCueingSetupMessage( UniversalSysExNonRtMidiTimeCode_t msgType, uint8_t * bytes, uint8_t deviceId, uint8_t fps, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fractionalFrame, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen) {
         ASSERT( isUniversalSysExNonRtMidiTimeCode( msgType ) );
         ASSERT( !isUniversalSysExNonRtMidiTimeCodeWithAddInfo( msgType ) || addInfoLen == 0 );
         ASSERT( bytes != NULL );
@@ -1652,14 +1712,14 @@ namespace MidiMessage {
         return msgLen;
     }
 
-    inline int packSysExNonRtMidiCueingSetupMessage(  uint8_t * bytes, UniversalSysExNonRtMidiTimeCode_t msgType, uint8_t deviceId, MidiTimeCode_t * mtc, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen ){
+    inline uint32_t packSysExNonRtMidiCueingSetupMessage(  uint8_t * bytes, UniversalSysExNonRtMidiTimeCode_t msgType, uint8_t deviceId, MidiTimeCode_t * mtc, uint16_t eventNumber, uint8_t * addInfo, uint32_t addInfoLen ){
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
         return packSysExNonRtMidiCueingSetupMessage( msgType, bytes, deviceId, getFps(mtc->FpsHour), mtc->FpsHour & HourMask, mtc->Minute, mtc->Second, mtc->Frame, mtc->FractionalFrame, eventNumber, addInfo, addInfoLen );
     }
 
-    inline bool unpackSysExNonRtMidiCueingSetupMessage( uint8_t * bytes, int len, UniversalSysExNonRtMidiTimeCode_t * msgType, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t  * fractionalFrame, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen ) {
+    inline bool unpackSysExNonRtMidiCueingSetupMessage( uint8_t * bytes,uint32_t len, UniversalSysExNonRtMidiTimeCode_t * msgType, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t  * fractionalFrame, uint16_t  * eventNumber, uint8_t * addInfo, uint32_t * addInfoLen ) {
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( fps != NULL );
@@ -1715,7 +1775,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtMidiCueingSetupMessage( uint8_t * bytes, int len, UniversalSysExNonRtMidiTimeCode_t * msgType, uint8_t * deviceId, MidiTimeCode_t * mtc, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen  ){
+    inline bool unpackSysExNonRtMidiCueingSetupMessage( uint8_t * bytes,uint32_t len, UniversalSysExNonRtMidiTimeCode_t * msgType, uint8_t * deviceId, MidiTimeCode_t * mtc, uint16_t  * eventNumber, uint8_t * addInfo, uint32_t * addInfoLen  ){
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
@@ -1731,7 +1791,7 @@ namespace MidiMessage {
     }
 
 
-    inline int packSysExRtMidiCueingSetupMessage( uint8_t * bytes, UniversalSysExRtMidiTimeCodeCueing_t msgType, uint8_t deviceId, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen) {
+    inline uint32_t packSysExRtMidiCueingSetupMessage( uint8_t * bytes, UniversalSysExRtMidiTimeCodeCueing_t msgType, uint8_t deviceId, uint16_t eventNumber, uint8_t * addInfo, uint32_t addInfoLen) {
         ASSERT( isUniversalSysExRtMidiTimeCodeCueing( msgType ) );
         ASSERT( !isUniversalSysExRtMidiTimeCodeCueing( msgType ) || addInfoLen == 0 );
         ASSERT( bytes != NULL );
@@ -1758,7 +1818,7 @@ namespace MidiMessage {
     }
 
 
-    inline bool unpackSysExRtMidiCueingSetupMessage( uint8_t * bytes, int len, UniversalSysExRtMidiTimeCodeCueing_t * msgType, uint8_t * deviceId, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen ) {
+    inline bool unpackSysExRtMidiCueingSetupMessage( uint8_t * bytes,uint32_t len, UniversalSysExRtMidiTimeCodeCueing_t * msgType, uint8_t * deviceId, uint16_t  * eventNumber, uint8_t * addInfo, uint32_t * addInfoLen ) {
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( eventNumber != NULL );
@@ -1803,7 +1863,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline int packGeneralInformationIdentityRequest( uint8_t * bytes, uint8_t deviceId ){
+    inline uint32_t packGeneralInformationIdentityRequest( uint8_t * bytes, uint8_t deviceId ){
         ASSERT( buffer != NULL );
         ASSERT( (deviceId & DataMask) == deviceId );
 
@@ -1817,7 +1877,7 @@ namespace MidiMessage {
         return MsgLenSysExNonRtGeneralInformationIdentityRequest;
     }
 
-//    inline bool unpackGeneralInformationIdentityRequest( uint8_t * bytes, int len, uint8_t * deviceId ){
+//    inline bool unpackGeneralInformationIdentityRequest( uint8_t * bytes,uint32_t len, uint8_t * deviceId ){
 //        ASSERT( buffer != NULL );
 //
 //        if ( (len !=  MsgLenSysExNonRtGeneralInformationIdentityRequest - 1) && (len != MsgLenSysExNonRtGeneralInformationIdentityRequest || bytes[MsgLenSysExNonRtGeneralInformationIdentityRequest-1] != SystemMessageEndOfSystemExclusive ) ){
@@ -1844,13 +1904,13 @@ namespace MidiMessage {
 //        return true;
 //    }
 
-    inline int packGeneralInformationIdentityReply( uint8_t * bytes, uint8_t deviceId, uint32_t manufacturerId, uint16_t deviceFamily, uint16_t deviceFamilyMember, uint8_t * softwareRevision ){
+    inline uint32_t packGeneralInformationIdentityReply( uint8_t * bytes, uint8_t deviceId, uint32_t manufacturerId, uint16_t deviceFamily, uint16_t deviceFamilyMember, uint8_t * softwareRevision ){
         ASSERT( bytes !== NULL );
         ASSERT( (deviceId & DataMask) == deviceId );
         ASSERT( deviceFamily <= MaxDoubleValue );
         ASSERT( deviceFamilyMember <= MaxDoubleValue );
 
-        int len = 5;
+       uint32_t len = 5;
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = ReservedSysExIdNonRealTime;
@@ -1876,7 +1936,7 @@ namespace MidiMessage {
         return len;
     }
 
-    inline bool unpackGeneralInformationIdentityReply( uint8_t * bytes, int len, uint8_t * deviceId, uint32_t * manufacturerId, uint16_t * deviceFamily, uint16_t * deviceFamilyMember, uint8_t * softwareRevision ){
+    inline bool unpackGeneralInformationIdentityReply( uint8_t * bytes,uint32_t len, uint8_t * deviceId, uint32_t * manufacturerId, uint16_t * deviceFamily, uint16_t * deviceFamilyMember, uint8_t * softwareRevision ){
         ASSERT( bytes !== NULL );
         ASSERT( deviceId != NULL );
         ASSERT( manufacturerId != NULL );
@@ -1924,6 +1984,137 @@ namespace MidiMessage {
         return true;
     }
 
+    inline uint32_t packDeviceControl( uint8_t * bytes, uint8_t deviceId, UniversalSysExRtDeviceControl_t type, uint16_t value ){
+        ASSERT( bytes != NULL );
+        ASSERT( isUniversalSysExRtDeviceControl(type) && type != UniversalSysExRtDeviceControlGlobalParameterControl );
+        ASSERT( type != UniversalSysExRtDeviceControlMasterVolume || value <= MaxDoubleValue );
+        ASSERT( type != UniversalSysExRtDeviceControlMasterBalance || value <= MaxDoubleValue );
+        ASSERT( type != UniversalSysExRtDeviceControlMasterCoarseTuning || value <= CoarseTuningMax ); // MaxDoubleValue
+        ASSERT( type != UniversalSysExRtDeviceControlMasterFineTuning || value <= FineTuningMax );
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = ReservedSysExIdRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = UniversalSysExRtDeviceControl;
+        bytes[4] = type;
+
+        packDoubleValue( &bytes[5], value );
+
+        bytes[7] = SystemMessageEndOfSystemExclusive;
+
+        return MsgLenDeviceControl;
+    }
+
+    inline bool unpackDeviceControl( uint8_t * bytes, uint32_t len, uint8_t * deviceId, UniversalSysExRtDeviceControl_t * type, uint16_t * value ){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( type != NULL );
+        ASSERT( value != NULL );
+
+        if ( (len != MsgLenDeviceControl - 1) && (len != MsgLenDeviceControl || bytes[len-1] == SystemMessageEndOfSystemExclusive) ){
+            return false;
+        }
+        if ( bytes[0] != SystemMessageSystemExclusive ){
+            return false;
+        }
+        if ( bytes[1] != ReservedSysExIdRealTime ){
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if (bytes[3] != UniversalSysExRtDeviceControl) {
+            return false;
+        }
+        if ( ! isUniversalSysExRtDeviceControl( bytes[4] ) || bytes[4] == UniversalSysExRtDeviceControlGlobalParameterControl ){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *type = (UniversalSysExRtDeviceControl_t)bytes[4];
+
+        unpackDoubleValue( &bytes[5], value );
+
+        return true;
+    }
+
+    inline uint32_t packGlobalParameterControl( uint8_t * bytes, uint8_t deviceId, GlobalParameterControl_t * gpc ){
+        ASSERT( bytes != NULL );
+        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+
+        uint32_t len = 8;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = ReservedSysExIdRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = UniversalSysExRtDeviceControl;
+        bytes[4] = UniversalSysExRtDeviceControlGlobalParameterControl;
+        bytes[5] = gpc->SlotPathLength;
+        bytes[6] = gpc->ParameterIdWidth;
+        bytes[7] = gpc->ValueWidth;
+
+        for (int i = 0; i < gpc->SlotPathLength; i++){
+            bytes[len++] = getMsNibble( gpc->Data[i] );
+            bytes[len++] = getLsNibble( gpc->Data[i] );
+        }
+
+        for (int i = gpc->SlotPathLength; i < gpc->DataLength; i++){
+            bytes[len++] = gpc->Data[i];
+        }
+
+        bytes[len++] = SystemMessageEndOfSystemExclusive;
+
+        return len;
+    }
+
+    inline bool unpackGlobalParameterControl( uint8_t * bytes, uint32_t len, uint8_t * deviceId, GlobalParameterControl_t * gpc ){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( gpc != NULL );
+
+        if ( len < 8 ){
+            return false;
+        }
+
+        if ( bytes[0] != SystemMessageSystemExclusive ){
+            return false;
+        }
+        if ( bytes[1] != ReservedSysExIdRealTime ){
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if (bytes[3] != UniversalSysExRtDeviceControl) {
+            return false;
+        }
+        if ( bytes[4] != UniversalSysExRtDeviceControlGlobalParameterControl ){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        gpc->SlotPathLength = bytes[5];
+        gpc->ParameterIdWidth = bytes[6];
+        gpc->ValueWidth = bytes[7];
+
+        uint32_t l = 0;
+
+        // s acts merely as counter (identical to l..)
+        for( int s = 0, i = 8; s < gpc->SlotPathLength; s++, l++ ){
+            gpc->Data[l] = (bytes[i++] & NibbleMask) << 4;
+            gpc->Data[l] |= bytes[i++] & NibbleMask;
+        }
+
+        for (int i = 8 + 2 * gpc->SlotPathLength; i < len && bytes[i] != SystemMessageEndOfSystemExclusive; i++, l++){
+            gpc->Data[l] = bytes[i];
+        }
+
+        gpc->DataLength = l;
+
+        return true;
+    }
 
     /**
      *  Tries to pack a given midi <msg> into the corresponding sequence of raw bytes.
@@ -1932,7 +2123,7 @@ namespace MidiMessage {
      *  @param  msg     midi message to pack into array
      *  @return         number of relevant bytes, zero on invalid message
      */
-    int pack( uint8_t * bytes, Message_t * msg );
+    uint32_t pack( uint8_t * bytes, Message_t * msg );
 
     /**
      * Tries to parse/unpack a raw byte sequence assumed to be a midi message.
@@ -1946,7 +2137,7 @@ namespace MidiMessage {
      * @return          true iff valid midi message was read
      * @see freeMessage()
      */
-    bool unpack( uint8_t * bytes, int len, Message_t * msg );
+    bool unpack( uint8_t * bytes,uint32_t len, Message_t * msg );
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
 

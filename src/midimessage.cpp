@@ -10,7 +10,7 @@
 
 namespace MidiMessage {
 
-    int pack( uint8_t * bytes, Message_t * msg ){
+    uint32_t pack( uint8_t * bytes, Message_t * msg ){
         ASSERT( bytes != NULL);
         ASSERT( msg != NULL );
 
@@ -139,7 +139,19 @@ namespace MidiMessage {
                         return false;
 
                     case UniversalSysExRtDeviceControl:
-                        //TODO
+
+                        switch(msg->Data.SysEx.SubId2) {
+                            case UniversalSysExRtDeviceControlMasterVolume:
+                            case UniversalSysExRtDeviceControlMasterBalance:
+                            case UniversalSysExRtDeviceControlMasterCoarseTuning:
+                            case UniversalSysExRtDeviceControlMasterFineTuning:
+                                return packDeviceControl( bytes, msg->Channel, (UniversalSysExRtDeviceControl_t)msg->Data.SysEx.SubId2, msg->Data.SysEx.Data.DeviceControlValue );
+
+                            case UniversalSysExRtDeviceControlGlobalParameterControl:
+                                return packGlobalParameterControl( bytes, msg->Channel, &msg->Data.SysEx.Data.GlobalParameterControl);
+
+                        }
+
                         return false;
 
                     case UniversalSysExRtMidiTimeCodeCueing:
@@ -264,7 +276,7 @@ namespace MidiMessage {
         return 0;
     }
 
-    bool unpack( uint8_t * bytes, int length, Message_t * msg ){
+    bool unpack( uint8_t * bytes, uint32_t length, Message_t * msg ){
 
         ASSERT( bytes != NULL);
         ASSERT( msg != NULL );
@@ -450,7 +462,41 @@ namespace MidiMessage {
                         return false;
 
                     case UniversalSysExRtDeviceControl:
-                        //TODO
+
+                        if (length < 7 || !isUniversalSysExRtDeviceControl(bytes[4])){
+                            return false;
+                        }
+                        msg->Data.SysEx.SubId2 = bytes[4];
+
+                        switch(bytes[4]) {
+                            case UniversalSysExRtDeviceControlMasterVolume:
+                            case UniversalSysExRtDeviceControlMasterBalance:
+                            case UniversalSysExRtDeviceControlMasterCoarseTuning:
+                            case UniversalSysExRtDeviceControlMasterFineTuning:
+
+                                return unpackDeviceControl( bytes, length, &msg->Channel, (UniversalSysExRtDeviceControl_t*)&msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.DeviceControlValue );
+
+                            case UniversalSysExRtDeviceControlGlobalParameterControl:
+
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                                ASSERT( length - 8 <= SYSEX_MEMORY_STATIC_SIZE );
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                                msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - 8, 1);
+#endif
+                                // use sysex raw byte data container for gpc
+                                msg->Data.SysEx.Data.GlobalParameterControl.Data = msg->Data.SysEx.ByteData;
+
+                                if ( ! unpackGlobalParameterControl( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.GlobalParameterControl )){
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                                    free( msg->Data.SysEx.ByteData );
+#endif
+                                }
+
+                                msg->Data.SysEx.Length = msg->Data.SysEx.Data.GlobalParameterControl.DataLength;
+
+                                return true;
+                        }
+
                         return false;
 
                     case UniversalSysExRtMidiTimeCodeCueing:
