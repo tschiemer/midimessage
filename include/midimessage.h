@@ -127,19 +127,20 @@ namespace MidiMessage {
     const int MsgLenProgramChange                   = 2;
     const int MsgLenChannelPressure                 = 2;
     const int MsgLenPitchBendChange                 = 3;
-    const int MsgLenMtcQuarterFrame        = 2;
+    const int MsgLenMtcQuarterFrame                 = 2;
     const int MsgLenSongPositionPointer             = 3;
     const int MsgLenSongSelect                      = 2;
 
-    const int MsgLenSysExMidiTimeCodeFullMessage    = 10;
-    const int MsgLenSysExMidiTimeCodeUserBits       = 15;
     const int MsgLenSysExNonRtMtcCueingSetupMessageMin  = 13;
-    const int MsgLenSysExRtMtcCueingSetupMessageMin  = 8;
-
     const int MsgLenSysExNonRtGenInfoIdentityRequest = 6;
     const int MsgLenSysExNonRtGenInfoIdentityReply = 15;
+    const int MsgLenSysExNonRtDeviceControl = 8;
 
-    const int MsgLenDeviceControl = 8;
+    const int MsgLenSysExRtMtcFullMessage    = 10;
+    const int MsgLenSysExRtMtcUserBits       = 15;
+    const int MsgLenSysExRtMtcCueingSetupMessageMin  = 8;
+    const int MsgLenSysExRtMmcCommandWithoutInfo = 6;
+
 
 
     const uint16_t PitchCenter      = 0x2000;
@@ -655,21 +656,43 @@ namespace MidiMessage {
 
 
     typedef enum {
-        SysExRtMmcCommandtop           = 0x01,
-        SysExRtMmcCommandPlay           = 0x02,
-        SysExRtMmcCommandDeferredPlay   = 0x03,
-        SysExRtMmcCommandFastForward    = 0x04,
-        SysExRtMmcCommandRewind         = 0x05,
-        SysExRtMmcCommandRecordStrobe   = 0x06,
-        SysExRtMmcCommandRecordExit     = 0x07,
-        SysExRtMmcCommandRecordPause    = 0x08,
-        SysExRtMmcCommandPause          = 0x09,
-        SysExRtMmcCommandEject          = 0x0A,
-        SysExRtMmcCommandChase          = 0x0B,
-        SysExRtMmcCommandMmcReset       = 0x0D,
-        SysExRtMmcCommandWrite          = 0x40,
-        SysExRtMmcCommandGoto           = 0x44,
-        SysExRtMmcCommandhuttle        = 0x47
+        SysExRtMmcCommandtop                = 0x01,
+        SysExRtMmcCommandPlay               = 0x02,
+        SysExRtMmcCommandDeferredPlay       = 0x03,
+        SysExRtMmcCommandFastForward        = 0x04,
+        SysExRtMmcCommandRewind             = 0x05,
+        SysExRtMmcCommandRecordStrobe       = 0x06,
+        SysExRtMmcCommandRecordExit         = 0x07,
+        SysExRtMmcCommandRecordPause        = 0x08,
+        SysExRtMmcCommandPause              = 0x09,
+        SysExRtMmcCommandEject              = 0x0A,
+        SysExRtMmcCommandChase              = 0x0B,
+        SysExRtMmcCommandCommandErrorReset  = 0x0C,
+        SysExRtMmcCommandMmcReset           = 0x0D,
+        SysExRtMmcCommandWrite              = 0x40,
+        SysExRtMmcCommandMaskedWrite        = 0x41,
+        SysExRtMmcCommandRead               = 0x42,
+        SysExRtMmcCommandUpdate             = 0x43,
+        SysExRtMmcCommandLocate             = 0x44,
+        SysExRtMmcCommandVariablePlay       = 0x45,
+        SysExRtMmcCommandSearch             = 0x46,
+        SysExRtMmcCommandhuttle             = 0x47,
+        SysExRtMmcCommandStep               = 0x48,
+        SysExRtMmcCommandAssignSystemMaster = 0x49,
+        SysExRtMmcCommandGeneratorCommand   = 0x4A,
+        SysExRtMmcCommandMtcCommand         = 0x4B,
+        SysExRtMmcCommandMove               = 0x4C,
+        SysExRtMmcCommandAdd                = 0x4D,
+        SysExRtMmcCommandSubstract          = 0x4E,
+        SysExRtMmcCommandDropFrameAdjust    = 0x4F,
+        SysExRtMmcCommandProcedure          = 0x50,
+        SysExRtMmcCommandEvent              = 0x51,
+        SysExRtMmcCommandGroup              = 0x52,
+        SysExRtMmcCommandCommandSegment     = 0x53,
+        SysExRtMmcCommandDeferredVariablePlay = 0x54,
+        SysExRtMmcCommandRecordStrobeVariable = 0x55,
+        SysExRtMmcCommandWait               = 0x7C,
+        SysExRtMmcCommandResume             = 0x7F
     } SysExRtMmcCommand_t;
 
     inline bool isSysExRtMmcCommand( uint8_t value ) {
@@ -684,13 +707,36 @@ namespace MidiMessage {
                 value == SysExRtMmcCommandPause ||
                 value == SysExRtMmcCommandEject ||
                 value == SysExRtMmcCommandChase ||
+                value == SysExRtMmcCommandCommandErrorReset ||
                 value == SysExRtMmcCommandMmcReset ||
                 value == SysExRtMmcCommandWrite ||
-                value == SysExRtMmcCommandGoto ||
-                value == SysExRtMmcCommandhuttle);
+                value == SysExRtMmcCommandMaskedWrite ||
+                value == SysExRtMmcCommandRead ||
+                value == SysExRtMmcCommandUpdate ||
+                value == SysExRtMmcCommandLocate ||
+                value == SysExRtMmcCommandVariablePlay ||
+                value == SysExRtMmcCommandSearch ||
+                value == SysExRtMmcCommandhuttle ||
+                value == SysExRtMmcCommandStep ||
+                value == SysExRtMmcCommandAssignSystemMaster ||
+                value == SysExRtMmcCommandGeneratorCommand ||
+                value == SysExRtMmcCommandMtcCommand ||
+                value == SysExRtMmcCommandMove ||
+                value == SysExRtMmcCommandAdd ||
+                value == SysExRtMmcCommandSubstract ||
+                value == SysExRtMmcCommandDropFrameAdjust ||
+                value == SysExRtMmcCommandProcedure ||
+                value == SysExRtMmcCommandEvent ||
+                value == SysExRtMmcCommandGroup ||
+                value == SysExRtMmcCommandCommandSegment ||
+                value == SysExRtMmcCommandDeferredVariablePlay ||
+                value == SysExRtMmcCommandRecordStrobeVariable ||
+                value == SysExRtMmcCommandWait ||
+                value == SysExRtMmcCommandResume);
     }
 
-    inline bool isSysExRtMmcCommandWithoutInfo( uint8_t value ){
+
+    inline bool isSysExRtMmcCommandCtrl( uint8_t value ) {
         return (value == SysExRtMmcCommandtop ||
                 value == SysExRtMmcCommandPlay ||
                 value == SysExRtMmcCommandDeferredPlay ||
@@ -701,19 +747,120 @@ namespace MidiMessage {
                 value == SysExRtMmcCommandRecordPause ||
                 value == SysExRtMmcCommandPause ||
                 value == SysExRtMmcCommandEject ||
-                value == SysExRtMmcCommandChase ||
-                value == SysExRtMmcCommandMmcReset);
+                value == SysExRtMmcCommandMmcReset ||
+                value == SysExRtMmcCommandLocate ||
+                value == SysExRtMmcCommandVariablePlay ||
+                value == SysExRtMmcCommandSearch ||
+                value == SysExRtMmcCommandhuttle ||
+                value == SysExRtMmcCommandStep ||
+                value == SysExRtMmcCommandDeferredVariablePlay ||
+                value == SysExRtMmcCommandRecordStrobeVariable);
     }
 
-    inline bool isSysExRtMmcCommandWithInfo( uint8_t value ) {
-        return (value == SysExRtMmcCommandWrite ||
-                value == SysExRtMmcCommandGoto ||
-                value == SysExRtMmcCommandhuttle);
+
+    inline bool isSysExRtMmcCommandSync( uint8_t value ) {
+        return (value == SysExRtMmcCommandChase ||
+                value == SysExRtMmcCommandAssignSystemMaster);
+    }
+
+
+    inline bool isSysExRtMmcCommandIO( uint8_t value ) {
+        return (value == SysExRtMmcCommandCommandErrorReset ||
+                value == SysExRtMmcCommandWrite ||
+                value == SysExRtMmcCommandMaskedWrite ||
+                value == SysExRtMmcCommandRead ||
+                value == SysExRtMmcCommandUpdate);
+    }
+
+
+    inline bool isSysExRtMmcCommandGen( uint8_t value ) {
+        return (value == SysExRtMmcCommandGeneratorCommand);
+    }
+
+    inline bool isSysExRtMmcCommandMtc( uint8_t value ) {
+        return (value == SysExRtMmcCommandMtcCommand);
+    }
+
+    inline bool isSysExRtMmcCommandMath( uint8_t value ) {
+        return (value == SysExRtMmcCommandMove ||
+                value == SysExRtMmcCommandAdd ||
+                value == SysExRtMmcCommandSubstract ||
+                value == SysExRtMmcCommandDropFrameAdjust);
+    }
+
+    inline bool isSysExRtMmcCommandProc( uint8_t value ) {
+        return (value == SysExRtMmcCommandProcedure);
+    }
+
+    inline bool isSysExRtMmcCommandEvnt( uint8_t value ) {
+        return (value == SysExRtMmcCommandEvent);
+    }
+
+    inline bool isSysExRtMmcCommandComm( uint8_t value ) {
+        return (value == SysExRtMmcCommandGroup ||
+                value == SysExRtMmcCommandCommandSegment ||
+                value == SysExRtMmcCommandWait ||
+                value == SysExRtMmcCommandResume);
     }
 
     typedef enum {
-        SysExRtMidiMachineControlResponseTODO //TODO
-    } SysExRtMidiMachineControlResponse_t;
+        SysExRtMmcResponseSelectedTimeCode                  = 0x01,
+        SysExRtMmcResponseSelectedMasterCode                = 0x02,
+        SysExRtMmcResponseRequestedOffset                   = 0x03,
+        SysExRtMmcResponseActualOffset                      = 0x04,
+        SysExRtMmcResponseLockDeviation                     = 0x05,
+        SysExRtMmcResponseGeneratorTimeCode                 = 0x06,
+        SysExRtMmcResponseMidiTimeCodeInput                 = 0x07,
+        SysExRtMmcResponseGP0                               = 0x08,
+        SysExRtMmcResponseLocatePoint                       = SysExRtMmcResponseGP0,
+        SysExRtMmcResponseGP1                               = 0x09,
+        SysExRtMmcResponseGP2                               = 0x0A,
+        SysExRtMmcResponseGP3                               = 0x0B,
+        SysExRtMmcResponseGP4                               = 0x0C,
+        SysExRtMmcResponseGP5                               = 0x0D,
+        SysExRtMmcResponseGP6                               = 0x0E,
+        SysExRtMmcResponseGP7                               = 0x0F,
+        SysExRtMmcResponseSignature                         = 0x40,
+        SysExRtMmcResponseUpdateRate                        = 0x41,
+        SysExRtMmcResponseResponseError                     = 0x42,
+        SysExRtMmcResponseCommandError                      = 0x43,
+        SysExRtMmcResponseCommandErrorLevel                 = 0x44,
+        SysExRtMmcResponseTimeStandard                      = 0x45,
+        SysExRtMmcResponseSelectedTimeCodeSource            = 0x46,
+        SysExRtMmcResponseSelectedTimeCodeUserbits          = 0x47,
+        SysExRtMmcResponseMotionControlTally                = 0x48,
+        SysExRtMmcResponseVelocityTally                     = 0x49,
+        SysExRtMmcResponseStopMode                          = 0x4A,
+        SysExRtMmcResponseFastMode                          = 0x4B,
+        SysExRtMmcResponseRecordMode                        = 0x4C,
+        SysExRtMmcResponseRecordStatus                      = 0x4D,
+        SysExRtMmcResponseTrackRecordStatus                 = 0x4E,
+        SysExRtMmcResponseTrackRecordReady                  = 0x4F,
+        SysExRtMmcResponseGlobalMonitor                     = 0x50,
+        SysExRtMmcResponseRecordMonitor                     = 0x51,
+        SysExRtMmcResponseTrackSyncMonitor                  = 0x52,
+        SysExRtMmcResponseTrackInputMonitor                 = 0x53,
+        SysExRtMmcResponseStepLength                        = 0x54,
+        SysExRtMmcResponsePlaySpeedReference                = 0x55,
+        SysExRtMmcResponseFixedSpeed                        = 0x56,
+        SysExRtMmcResponseLifterDefeat                      = 0x57,
+        SysExRtMmcResponseControlDisable                    = 0x58,
+        SysExRtMmcResponseResolvedPlayMode                  = 0x59,
+        SysExRtMmcResponseChaseMode                         = 0x5A,
+        SysExRtMmcResponseGeneratorCommandTally             = 0x5B,
+        SysExRtMmcResponseGeneratorSetup                    = 0x5C,
+        SysExRtMmcResponseGeneratorUserbits                 = 0x5D,
+        SysExRtMmcResponseMidiTimeCodeCommandTally          = 0x5E,
+        SysExRtMmcResponseMidiTimeCodeSetup                 = 0x5F,
+        SysExRtMmcResponseProcedureResponse                 = 0x60,
+        SysExRtMmcResponseEventResponse                     = 0x61,
+        SysExRtMmcResponseTrackMute                         = 0x62,
+        SysExRtMmcResponseVitcInsertEnable                  = 0x63,
+        SysExRtMmcResponseResponseSegment                   = 0x64,
+        SysExRtMmcResponseFailure                           = 0x65,
+        SysExRtMmcResponseWait                              = 0x7C,
+        SysExRtMmcResponseResume                            = 0x7F
+    } SysExRtMmcResponse_t;
 
     inline bool isSysExRtMidiMachineControlResponse( uint8_t value ) {
         return false; //TODO
@@ -890,7 +1037,7 @@ namespace MidiMessage {
             } PitchBendChange;
             struct {
                 uint32_t Id;
-                uint32_t Length;
+                uint8_t Length;
                 uint8_t SubId1;
                 uint8_t SubId2;
                 union {
@@ -1600,7 +1747,7 @@ namespace MidiMessage {
         bytes[8] = frame & FrameMask;
         bytes[9] = SystemMessageEndOfExclusive;
 
-        return MsgLenSysExMidiTimeCodeFullMessage;
+        return MsgLenSysExRtMtcFullMessage;
     }
 
     inline uint32_t packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, MidiTimeCode_t * mtc){
@@ -1619,7 +1766,7 @@ namespace MidiMessage {
         ASSERT( second != NULL );
         ASSERT( frame != NULL );
 
-        if ( (len !=  MsgLenSysExMidiTimeCodeFullMessage - 1) && (len != MsgLenSysExMidiTimeCodeFullMessage || bytes[MsgLenSysExMidiTimeCodeFullMessage-1] != SystemMessageEndOfExclusive) ){
+        if ( (len !=  MsgLenSysExRtMtcFullMessage - 1) && (len != MsgLenSysExRtMtcFullMessage || bytes[MsgLenSysExRtMtcFullMessage-1] != SystemMessageEndOfExclusive) ){
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -1687,7 +1834,7 @@ namespace MidiMessage {
         bytes[13] = userBits[4] & 0b00000011; //TODO is this right???
         bytes[14] = SystemMessageEndOfExclusive;
 
-        return MsgLenSysExMidiTimeCodeUserBits;
+        return MsgLenSysExRtMtcUserBits;
     }
 
     inline uint32_t unpackSysExMidiTimeCodeUserBits( uint8_t * bytes,uint32_t len, uint8_t * deviceId, uint8_t * userBits ) {
@@ -1695,7 +1842,7 @@ namespace MidiMessage {
         ASSERT( deviceId != NULL );
         ASSERT( userBits != NULL );
 
-        if ( (len !=  MsgLenSysExMidiTimeCodeUserBits - 1) && (len != MsgLenSysExMidiTimeCodeUserBits || bytes[MsgLenSysExMidiTimeCodeUserBits-1] != SystemMessageEndOfExclusive) ){
+        if ( (len !=  MsgLenSysExRtMtcUserBits - 1) && (len != MsgLenSysExRtMtcUserBits || bytes[MsgLenSysExRtMtcUserBits-1] != SystemMessageEndOfExclusive) ){
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -1761,14 +1908,14 @@ namespace MidiMessage {
         return msgLen;
     }
 
-    inline uint32_t packSysExNonRtMtcCueingSetupMessage(  uint8_t * bytes, SysExNonRtMtc_t msgType, uint8_t deviceId, MidiTimeCode_t * mtc, uint16_t eventNumber, uint8_t * addInfo, uint32_t addInfoLen ){
+    inline uint32_t packSysExNonRtMtcCueingSetupMessage(  uint8_t * bytes, SysExNonRtMtc_t msgType, uint8_t deviceId, MidiTimeCode_t * mtc, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen ){
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
         return packSysExNonRtMtcCueingSetupMessage( msgType, bytes, deviceId, getFps(mtc->FpsHour), mtc->FpsHour & HourMask, mtc->Minute, mtc->Second, mtc->Frame, mtc->FractionalFrame, eventNumber, addInfo, addInfoLen );
     }
 
-    inline bool unpackSysExNonRtMtcCueingSetupMessage( uint8_t * bytes,uint32_t len, SysExNonRtMtc_t * msgType, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t  * fractionalFrame, uint16_t  * eventNumber, uint8_t * addInfo, uint32_t * addInfoLen ) {
+    inline bool unpackSysExNonRtMtcCueingSetupMessage( uint8_t * bytes,uint32_t len, SysExNonRtMtc_t * msgType, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t  * fractionalFrame, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen ) {
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( fps != NULL );
@@ -1824,7 +1971,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtMtcCueingSetupMessage( uint8_t * bytes,uint32_t len, SysExNonRtMtc_t * msgType, uint8_t * deviceId, MidiTimeCode_t * mtc, uint16_t  * eventNumber, uint8_t * addInfo, uint32_t * addInfoLen  ){
+    inline bool unpackSysExNonRtMtcCueingSetupMessage( uint8_t * bytes,uint32_t len, SysExNonRtMtc_t * msgType, uint8_t * deviceId, MidiTimeCode_t * mtc, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen  ){
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
@@ -1867,7 +2014,7 @@ namespace MidiMessage {
     }
 
 
-    inline bool unpackSysExRtMtcCueingSetupMessage( uint8_t * bytes,uint32_t len, SysExRtMtcCueing_t * msgType, uint8_t * deviceId, uint16_t  * eventNumber, uint8_t * addInfo, uint32_t * addInfoLen ) {
+    inline bool unpackSysExRtMtcCueingSetupMessage( uint8_t * bytes,uint32_t len, SysExRtMtcCueing_t * msgType, uint8_t * deviceId, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen ) {
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( eventNumber != NULL );
@@ -2051,7 +2198,7 @@ namespace MidiMessage {
 
         bytes[7] = SystemMessageEndOfExclusive;
 
-        return MsgLenDeviceControl;
+        return MsgLenSysExNonRtDeviceControl;
     }
 
     inline bool unpackDeviceControl( uint8_t * bytes, uint32_t len, uint8_t * deviceId, SysExRtDc_t * type, uint16_t * value ){
@@ -2060,7 +2207,7 @@ namespace MidiMessage {
         ASSERT( type != NULL );
         ASSERT( value != NULL );
 
-        if ( (len != MsgLenDeviceControl - 1) && (len != MsgLenDeviceControl || bytes[len-1] == SystemMessageEndOfExclusive) ){
+        if ( (len != MsgLenSysExNonRtDeviceControl - 1) && (len != MsgLenSysExNonRtDeviceControl || bytes[len-1] == SystemMessageEndOfExclusive) ){
             return false;
         }
         if ( bytes[0] != SystemMessageSystemExclusive ){
@@ -2165,10 +2312,70 @@ namespace MidiMessage {
         return true;
     }
 
-    inline uint32_t packMmcCommand( uint8_t * bytes, uint8_t deviceId,  SysExRtMmcCommand_t command ){
+    inline uint32_t packMmcCommand( uint8_t * bytes, uint8_t deviceId, SysExRtMmcCommand_t command, uint8_t * data, uint8_t dataLen ){
         ASSERT( bytes != NULL );
-        ASSERT( isSysExRtMmcCommand( command) );
-        return 0;
+        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( isSysExRtMmcCommand( command ) );
+        ASSERT( (dataLen == 0) || (data != NULL) );
+
+        uint32_t len = 5;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = SysExRtMidiMachineControlCommand;
+        bytes[4] = command;
+
+        for(int i = 0; i < dataLen; i++){
+            bytes[len++] = data[i];
+        }
+
+        bytes[len++] = SystemMessageEndOfExclusive;
+
+        return len;
+    }
+
+    inline bool unpackMmcCommand( uint8_t * bytes, uint32_t len, uint8_t * deviceId,  SysExRtMmcCommand_t * command, uint8_t * data, uint8_t * dataLen ) {
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( command != NULL );
+        ASSERT( data != NULL );
+        ASSERT( dataLen != NULL );
+
+
+        if ( len < MsgLenSysExRtMmcCommandWithoutInfo - 1 ){
+            return false;
+        }
+        if ( bytes[0] != SystemMessageSystemExclusive ){
+            return false;
+        }
+        if ( bytes[1] != SysExIdRealTime ){
+            return false;
+        }
+        if ( (bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if ( bytes[3] != SysExRtMidiMachineControlCommand ) {
+            return false;
+        }
+        if ( ! isSysExRtMmcCommand(bytes[4]) ){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *command = (SysExRtMmcCommand_t)bytes[4];
+
+        if (bytes[len-1] == SystemMessageEndOfExclusive){
+            len--;
+        }
+        if ( len > 5 ){
+            *dataLen = 0;
+            for(int i = 5; i < len; i++, (*dataLen)++){
+                data[(*dataLen)++] = bytes[i];
+            }
+        }
+
+        return true;
     }
 
     /**

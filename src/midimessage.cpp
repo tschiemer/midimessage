@@ -158,8 +158,7 @@ namespace MidiMessage {
                         return packSysExRtMtcCueingSetupMessage( bytes, (SysExRtMtcCueing_t)msg->Data.SysEx.SubId2, msg->Channel, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
 
                     case SysExRtMidiMachineControlCommand:
-                        //TODO
-                        return false;
+                        return packMmcCommand( bytes, msg->Channel, (SysExRtMmcCommand_t)msg->Data.SysEx.SubId2, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
 
                     case SysExRtMidiMachineControlResponse:
                         //TODO
@@ -504,6 +503,7 @@ namespace MidiMessage {
                         if (length < MsgLenSysExRtMtcCueingSetupMessageMin - 1) {
                             return false;
                         }
+                        msg->Data.SysEx.SubId2 = bytes[4];
 
                         if ( isSysExRtMtcCueingWithAddInfo(bytes[4]) ){
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
@@ -525,8 +525,33 @@ namespace MidiMessage {
                         return true;
 
                     case SysExRtMidiMachineControlCommand:
-                        //TODO
-                        return false;
+
+                        if (length < MsgLenSysExRtMmcCommandWithoutInfo){
+                            return false;
+                        }
+
+                        if (length > MsgLenSysExRtMmcCommandWithoutInfo){
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                            ASSERT( length - MsgLenSysExRtMmcCommandWithoutInfo <= SYSEX_MEMORY_STATIC_SIZE );
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                            msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - MsgLenSysExRtMmcCommandWithoutInfo, 1);
+#endif
+                        }
+
+                        msg->Data.SysEx.SubId2 = bytes[4];
+
+                        if ( ! unpackMmcCommand( bytes, length, &msg->Channel, (SysExRtMmcCommand_t*)&msg->Data.SysEx.SubId2, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
+
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                            if (length > MsgLenSysExRtMmcCommandWithoutInfo){
+                                free( msg->Data.SysEx.ByteData );
+                            }
+#endif
+
+                            return true;
+                        }
+
+                        return true;
 
                     case SysExRtMidiMachineControlResponse:
                         //TODO

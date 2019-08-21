@@ -33,7 +33,7 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 | | Full Message + User Bits| SysEx Real Time | tt |
 | | Real Time MTC Cueing | SysEx Real Time | tt |
 | | Non Real Time MTC Cueing | SysEx Non-Real Time | tt |
-| MIDI Machine Control | | | TODO |
+| MIDI Machine Control | Basics | | tt |
 | MIDI Show Control | | | TODO |
 | MIDI Tuning Standard | | | TODO |
 | System Exclusive | Experimental (custom) messages | | tt |
