@@ -75,6 +75,23 @@ namespace MidiMessage {
         return (byte >> 4) & NibbleMask;
     }
 
+    inline int nibblize( uint8_t * dst, uint8_t * src, int len ){
+        for (int i = 0, j = 0; i < len; i++) {
+            dst[j++] = getLsNibble( src[i] );
+            dst[j++] = getMsNibble( src[i] );
+        }
+        return 2 * len;
+    }
+
+    inline int denibblize( uint8_t * dst, uint8_t * src, int len ){
+        ASSERT( len % 2 == 0 );
+        for (int i = 0, j = 0; i < len; ){
+            dst[j] = src[i++] & NibbleMask;
+            dst[j] |= (src[i++] & NibbleMask) << 4;
+        }
+        return len / 2;
+    }
+
     inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
         ASSERT( bytes[0] & DataMask == bytes[0] );
         ASSERT( bytes[1] & DataMask == bytes[1] );
@@ -111,6 +128,8 @@ namespace MidiMessage {
 
     const int MsgLenSysExMidiTimeCodeFullMessage    = 10;
     const int MsgLenSysExMidiTimeCodeUserBits       = 15;
+    const int MsgLenSysExNonRtMidiCueingSetupMessageMin  = 13;
+    const int MsgLenSysExRtMidiCueingSetupMessageMin  = 8;
 
 
     const uint16_t PitchCenter      = 0x2000;
@@ -125,12 +144,15 @@ namespace MidiMessage {
     const uint8_t MinuteMask    = 0b00111111;
     const uint8_t SecondMask    = 0b00111111;
     const uint8_t FrameMask     = 0b00011111;
+    const uint8_t FractionalFrameMask = 0b01111111;
 
     const uint8_t MaxHour = 23;
     const uint8_t MaxMinute = 59;
     const uint8_t MaxSecond = 59;
     const uint8_t MaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MidiTimeCodeFrameRate_t
+    const uint8_t MaxFractionalFrame = 99;
 
+    const uint16_t MaxEventNumber = 0x3FFF; // 14 bit value
 
     typedef enum {
         StatusClassNoteOff                  = 0x80,
@@ -377,6 +399,13 @@ namespace MidiMessage {
                 value == UniversalSysExNonRtMidiTimeCodeEventNameInInfo);
     }
 
+    inline bool isUniversalSysExNonRtMidiTimeCodeWithAddInfo( uint8_t value ){
+        return (value == UniversalSysExNonRtMidiTimeCodeEventStartPointsWithInfo ||
+                value == UniversalSysExNonRtMidiTimeCodeEventStopPointsWithInfo ||
+                value == UniversalSysExNonRtMidiTimeCodeCuePointsWithInfo ||
+                value == UniversalSysExNonRtMidiTimeCodeEventNameInInfo);
+    }
+
     typedef enum {
         UniversalSysExNonRtSampleDumpExtensionLoopPointsTransmission    = 0x01,
         UniversalSysExNonRtSampleDumpExtensionLoopPointsRequest         = 0x02,
@@ -502,7 +531,7 @@ namespace MidiMessage {
         UniversalSysExRtMidiTimeCode                  = 0x01,
         UniversalSysExRtMidiShowControl               = 0x02,
         UniversalSysExRtDeviceControl                 = 0x04,
-        UniversalSysExRtRealTimeMtcCueing             = 0x05,
+        UniversalSysExRtMidiTimeCodeCueing             = 0x05,
         UniversalSysExRtMidiMachineControlCommands    = 0x06,
         UniversalSysExRtMidiMachineControlResponses   = 0x07,
         UniversalSysExRtMidiTuningStandard            = 0x08,
@@ -516,7 +545,7 @@ namespace MidiMessage {
         return (value == UniversalSysExRtMidiTimeCode ||
                 value == UniversalSysExRtMidiShowControl ||
                 value == UniversalSysExRtDeviceControl ||
-                value == UniversalSysExRtRealTimeMtcCueing ||
+                value == UniversalSysExRtMidiTimeCodeCueing ||
                 value == UniversalSysExRtMidiMachineControlCommands ||
                 value == UniversalSysExRtMidiMachineControlResponses ||
                 value == UniversalSysExRtMidiTuningStandard ||
@@ -574,33 +603,41 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        UniversalSysExRtRealTimeMtcCueingSpecial                    = 0x00, // ??
-        UniversalSysExRtRealTimeMtcCueingPunchInPoints              = 0x01,
-        UniversalSysExRtRealTimeMtcCueingPunchOutPoints             = 0x02,
+        UniversalSysExRtMidiTimeCodeCueingSpecial                    = 0x00, // ??
+        UniversalSysExRtMidiTimeCodeCueingPunchInPoints              = 0x01,
+        UniversalSysExRtMidiTimeCodeCueingPunchOutPoints             = 0x02,
         // 3 - 4 reserved
-        UniversalSysExRtRealTimeMtcCueingEventStartPoints           = 0x05,
-        UniversalSysExRtRealTimeMtcCueingEventStopPoints            = 0x06,
-        UniversalSysExRtRealTimeMtcCueingEvenStartPointsWithInfo    = 0x07,
-        UniversalSysExRtRealTimeMtcCueingEventStopPointsWithInfo    = 0x08,
+        UniversalSysExRtMidiTimeCodeCueingEventStartPoints           = 0x05,
+        UniversalSysExRtMidiTimeCodeCueingEventStopPoints            = 0x06,
+        UniversalSysExRtMidiTimeCodeCueingEvenStartPointsWithInfo    = 0x07,
+        UniversalSysExRtMidiTimeCodeCueingEventStopPointsWithInfo    = 0x08,
         // 9 - A reserved
-        UniversalSysExRtRealTimeMtcCueingCuePoints                  = 0x0B,
-        UniversalSysExRtRealTimeMtcCueingCuePointsWithInfo          = 0x0C,
+        UniversalSysExRtMidiTimeCodeCueingCuePoints                  = 0x0B,
+        UniversalSysExRtMidiTimeCodeCueingCuePointsWithInfo          = 0x0C,
         // D reserved
-        UniversalSysExRtRealTimeMtcCueingEventNameInInfo            = 0x0E
-    } UniversalSysExRtRealTimeMtcCueing_t;
+        UniversalSysExRtMidiTimeCodeCueingEventNameInInfo            = 0x0E
+    } UniversalSysExRtMidiTimeCodeCueing_t;
 
-    inline bool isUniversalSysExRtRealTimeMtcCueing( uint8_t value ){
-        return (value == UniversalSysExRtRealTimeMtcCueingSpecial ||
-                value == UniversalSysExRtRealTimeMtcCueingPunchInPoints ||
-                value == UniversalSysExRtRealTimeMtcCueingPunchOutPoints ||
-                value == UniversalSysExRtRealTimeMtcCueingEventStartPoints ||
-                value == UniversalSysExRtRealTimeMtcCueingEventStopPoints ||
-                value == UniversalSysExRtRealTimeMtcCueingEvenStartPointsWithInfo ||
-                value == UniversalSysExRtRealTimeMtcCueingEventStopPointsWithInfo ||
-                value == UniversalSysExRtRealTimeMtcCueingCuePoints ||
-                value == UniversalSysExRtRealTimeMtcCueingCuePointsWithInfo ||
-                value == UniversalSysExRtRealTimeMtcCueingEventNameInInfo);
+    inline bool isUniversalSysExRtMidiTimeCodeCueing( uint8_t value ){
+        return (value == UniversalSysExRtMidiTimeCodeCueingSpecial ||
+                value == UniversalSysExRtMidiTimeCodeCueingPunchInPoints ||
+                value == UniversalSysExRtMidiTimeCodeCueingPunchOutPoints ||
+                value == UniversalSysExRtMidiTimeCodeCueingEventStartPoints ||
+                value == UniversalSysExRtMidiTimeCodeCueingEventStopPoints ||
+                value == UniversalSysExRtMidiTimeCodeCueingEvenStartPointsWithInfo ||
+                value == UniversalSysExRtMidiTimeCodeCueingEventStopPointsWithInfo ||
+                value == UniversalSysExRtMidiTimeCodeCueingCuePoints ||
+                value == UniversalSysExRtMidiTimeCodeCueingCuePointsWithInfo ||
+                value == UniversalSysExRtMidiTimeCodeCueingEventNameInInfo);
     }
+
+    inline bool isUniversalSysExRtMidiTimeCodeCueingWithAddInfo( uint8_t value ){
+        return (value == UniversalSysExRtMidiTimeCodeCueingEvenStartPointsWithInfo ||
+                value == UniversalSysExRtMidiTimeCodeCueingEventStopPointsWithInfo ||
+                value == UniversalSysExRtMidiTimeCodeCueingCuePointsWithInfo ||
+                value == UniversalSysExRtMidiTimeCodeCueingEventNameInInfo);
+    }
+
 
     typedef enum {
         UniversalSysExRtMidiMachineControlCommandsTODO //TODO
@@ -711,6 +748,7 @@ namespace MidiMessage {
         uint8_t Minute;
         uint8_t Second;
         uint8_t Frame;
+        uint8_t FractionalFrame;
     } MidiTimeCode_t;
 
     
@@ -750,13 +788,19 @@ namespace MidiMessage {
                 uint8_t SubId1;
                 uint8_t SubId2;
                 union {
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                    uint8_t Bytes[SYSEX_MEMORY_STATIC_SIZE];
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    uint8_t * Bytes;
-#endif
                     MidiTimeCode_t MidiTimeCode;
+
+                    struct {
+                        MidiTimeCode_t MidiTimeCode;
+                        uint16_t EventNumber;
+                    } Cueing;
                 } Data;
+
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                uint8_t ByteData[SYSEX_MEMORY_STATIC_SIZE];
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                uint8_t * ByteData;
+#endif
             } SysEx;
 
             MidiTimeCodeQuarterFrame_t MidiTimeCodeQuarterFrame;
@@ -801,6 +845,43 @@ namespace MidiMessage {
     }
 
 
+    /**
+     * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
+     */
+    inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
+        ASSERT( nibbles[0] & NibbleMask == nibbles[0] );
+        ASSERT( nibbles[1] & NibbleMask == nibbles[1] );
+        ASSERT( nibbles[2] & NibbleMask == nibbles[2] );
+        ASSERT( nibbles[3] & NibbleMask == nibbles[3] );
+        ASSERT( nibbles[4] & NibbleMask == nibbles[4] );
+        ASSERT( nibbles[5] & NibbleMask == nibbles[5] );
+        ASSERT( nibbles[6] & NibbleMask == nibbles[6] );
+        ASSERT( nibbles[7] & NibbleMask == nibbles[7] );
+
+        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
+        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
+        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
+        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
+        mtc->FractionalFrame = 0;
+    }
+
+    inline uint8_t MidiQuarterFrameNibbleFromTimeCode( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrameMessageType_t type ) {
+        ASSERT( mtc != NULL );
+        ASSERT( isMidiTimeCodeQuarterMessageType(type) );
+
+        switch(type){
+            MidiTimeCodeQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
+            MidiTimeCodeQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
+            MidiTimeCodeQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
+            MidiTimeCodeQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
+            MidiTimeCodeQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
+        }
+
+        return (uint8_t) ~0;
+    }
 
 
 
@@ -817,8 +898,11 @@ namespace MidiMessage {
         return MsgLenNoteOff;
     }
 
-    inline int unpackNoteOff( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t  * velocity ){
+    inline bool unpackNoteOff( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t  * velocity ){
         ASSERT( bytes != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( key != NULL );
+        ASSERT( velocity != NULL );
 
         if (len != MsgLenNoteOff) {
             return false;
@@ -834,7 +918,7 @@ namespace MidiMessage {
         *key = bytes[1];
         *velocity = bytes[2];
 
-        return MsgLenNoteOff;
+        return true;
     }
 
 
@@ -851,8 +935,11 @@ namespace MidiMessage {
         return MsgLenNoteOn;
     }
 
-    inline int unpackNoteOn( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * velocity ){
+    inline bool unpackNoteOn( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * velocity ){
         ASSERT( bytes != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( key != NULL );
+        ASSERT( velocity != NULL );
 
         if ( len != MsgLenNoteOn ) {
             return false;
@@ -868,7 +955,7 @@ namespace MidiMessage {
         *key = bytes[1];
         *velocity = bytes[2];
 
-        return MsgLenNoteOn;
+        return true;
     }
 
 
@@ -885,8 +972,11 @@ namespace MidiMessage {
         return MsgLenPolyphonicKeyPressure;
     }
 
-    inline int unpackPolyphonicKeyPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * pressure ){
+    inline bool unpackPolyphonicKeyPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * key, uint8_t * pressure ){
         ASSERT( bytes != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( key != NULL );
+        ASSERT( pressure != NULL );
 
         if ( len != MsgLenPolyphonicKeyPressure ) {
             return false;
@@ -902,7 +992,7 @@ namespace MidiMessage {
         *key = bytes[1];
         *pressure = bytes[2];
 
-        return MsgLenPolyphonicKeyPressure;
+        return true;
     }
 
 
@@ -919,8 +1009,11 @@ namespace MidiMessage {
         return MsgLenControlChange;
     }
 
-    inline int unpackControlChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * controller, uint8_t * value ){
+    inline bool unpackControlChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * controller, uint8_t * value ){
         ASSERT( bytes != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( controller != NULL );
+        ASSERT( value != NULL );
 
         if ( len != MsgLenControlChange ) {
             return false;
@@ -936,7 +1029,7 @@ namespace MidiMessage {
         *controller = bytes[1];
         *value = bytes[2];
 
-        return MsgLenControlChange;
+        return true;
     }
 
 
@@ -951,8 +1044,10 @@ namespace MidiMessage {
         return MsgLenProgramChange;
     }
 
-    inline int unpackProgramChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * program ){
+    inline bool unpackProgramChange( uint8_t * bytes, int len, uint8_t * channel, uint8_t * program ){
         ASSERT( bytes != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( program != NULL );
 
         if ( len != MsgLenProgramChange ) {
             return false;
@@ -967,7 +1062,7 @@ namespace MidiMessage {
         *channel = bytes[0] & ChannelMask;
         *program = bytes[1];
 
-        return MsgLenProgramChange;
+        return true;
     }
 
 
@@ -981,8 +1076,10 @@ namespace MidiMessage {
         return MsgLenChannelPressure;
     }
 
-    inline int unpackChannelPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * pressure ){
+    inline bool unpackChannelPressure( uint8_t * bytes, int len, uint8_t * channel, uint8_t * pressure ){
         ASSERT( bytes != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( pressure != NULL );
 
         if ( len != MsgLenChannelPressure ) {
             return false;
@@ -997,7 +1094,7 @@ namespace MidiMessage {
         *channel = bytes[0];
         *pressure = bytes[1];
 
-        return MsgLenChannelPressure;
+        return true;
     }
 
 
@@ -1012,8 +1109,10 @@ namespace MidiMessage {
         return MsgLenPitchBendChange;
     }
 
-    inline int unpackPitchBendChange( uint8_t * bytes, int len, uint8_t * channel, uint16_t * pitch ){
+    inline bool unpackPitchBendChange( uint8_t * bytes, int len, uint8_t * channel, uint16_t * pitch ){
         ASSERT( bytes != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( pitch != NULL );
 
         if ( len != MsgLenPitchBendChange ) {
             return false;
@@ -1028,7 +1127,7 @@ namespace MidiMessage {
         *channel = bytes[0] & ChannelMask;
         unpackDoubleValue( &bytes[1], pitch );
 
-        return MsgLenPitchBendChange;
+        return true;
     }
 
 
@@ -1283,8 +1382,10 @@ namespace MidiMessage {
         return MsgLenMidiTimeCodeQuarterFrame;
     }
 
-    inline int unpackMidiTimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * nibble ){
+    inline bool unpackMidiTimeCodeQuarterFrame( uint8_t * bytes, int len, uint8_t * messageType, uint8_t * nibble ){
         ASSERT( bytes != NULL );
+        ASSERT( messageType != NULL );
+        ASSERT( nibble != NULL );
 
         if ( len != MsgLenMidiTimeCodeQuarterFrame ) {
             return false;
@@ -1299,44 +1400,7 @@ namespace MidiMessage {
         *messageType = (bytes[1] >> 4) & 0x05;
         *nibble = bytes[1] & NibbleMask;
 
-        return MsgLenMidiTimeCodeQuarterFrame;
-    }
-
-    /**
-     * Extract Time Code from 8 QuarterFrames given in the order expected message type order.
-     */
-    inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
-        ASSERT( nibbles[0] & NibbleMask == nibbles[0] );
-        ASSERT( nibbles[1] & NibbleMask == nibbles[1] );
-        ASSERT( nibbles[2] & NibbleMask == nibbles[2] );
-        ASSERT( nibbles[3] & NibbleMask == nibbles[3] );
-        ASSERT( nibbles[4] & NibbleMask == nibbles[4] );
-        ASSERT( nibbles[5] & NibbleMask == nibbles[5] );
-        ASSERT( nibbles[6] & NibbleMask == nibbles[6] );
-        ASSERT( nibbles[7] & NibbleMask == nibbles[7] );
-
-        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
-        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
-        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
-        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
-    }
-
-    inline uint8_t MidiQuarterFrameNibbleFromTimeCode( MidiTimeCode_t * mtc, MidiTimeCodeQuarterFrameMessageType_t type ) {
-        ASSERT( mtc != NULL );
-        ASSERT( isMidiTimeCodeQuarterMessageType(type) );
-
-        switch(type){
-            MidiTimeCodeQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
-            MidiTimeCodeQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
-            MidiTimeCodeQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
-            MidiTimeCodeQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
-            MidiTimeCodeQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
-        }
-
-        return (uint8_t) ~0;
+        return true;
     }
 
 
@@ -1352,6 +1416,7 @@ namespace MidiMessage {
 
     inline bool unpackSongPositionPointer( uint8_t * bytes, int len, uint16_t * position ){
         ASSERT( bytes != NULL );
+        ASSERT( position != NULL );
 
         if (len != MsgLenSongPositionPointer){
             return false;
@@ -1377,7 +1442,7 @@ namespace MidiMessage {
 
     inline bool unpackSongSelect( uint8_t * bytes, int len, uint8_t * song){
         ASSERT( bytes != NULL );
-        ASSERT(bytes[0] == SystemMessageSongSelect);
+        ASSERT( song != NULL );
 
         if (len != MsgLenSongSelect){
             return false;
@@ -1393,11 +1458,11 @@ namespace MidiMessage {
 
     inline int packSysExMidiTimeCodeFullMessage( uint8_t * bytes, uint8_t deviceId, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fps ) {
         ASSERT( bytes != NULL );
-        ASSERT((deviceId & DataMask) == deviceId );
+        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( isMidiTimeCodeFrameRate(fps) );
         ASSERT( hour <= MaxHour );
         ASSERT( minute <= MaxMinute );
         ASSERT( second <= MaxSecond );
-        ASSERT( isMidiTimeCodeFrameRate(fps) );
         ASSERT( frame <= MaxFps[fps] );
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -1418,16 +1483,22 @@ namespace MidiMessage {
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
-        return packSysExMidiTimeCodeFullMessage( bytes, deviceId, mtc->FpsHour & HourMask, mtc->Minute, mtc->Second, mtc->Frame, getFps(mtc->FpsHour) );
+        return packSysExMidiTimeCodeFullMessage( bytes, deviceId, getFps(mtc->FpsHour), getHour(mtc->FpsHour), mtc->Minute, mtc->Second, mtc->Frame );
     }
 
-    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t * fps ) {
+    inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame ) {
         ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( fps != NULL );
+        ASSERT( hour != NULL );
+        ASSERT( minute != NULL );
+        ASSERT( second != NULL );
+        ASSERT( frame != NULL );
 
         if ( (len !=  MsgLenSysExMidiTimeCodeFullMessage - 1) && (len != MsgLenSysExMidiTimeCodeFullMessage || bytes[MsgLenSysExMidiTimeCodeFullMessage-1] == SystemMessageEndOfSystemExclusive) ){
             return false;
         }
-        if (bytes[0] != StatusClassSystemMessage) {
+        if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
         if (bytes[1] != ReservedSysExIdRealTime ) {
@@ -1443,26 +1514,30 @@ namespace MidiMessage {
             return false;
         }
 
+        *deviceId = bytes[2] & DataMask;
         *fps = (bytes[5] >> 5) & 0b11;
         *hour = bytes[5] & 0b00011111;
         *minute = bytes[6] & 0b00111111;
         *second = bytes[7] & 0b00111111;
         *frame = bytes[8] & 0b00011111;
 
+
         return true;
     }
 
     inline bool unpackSysExMidiTimeCodeFullMessage( uint8_t * bytes, int len, uint8_t * deviceId, MidiTimeCode_t * mtc ){
         ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
         ASSERT( mtc != NULL );
 
         MidiTimeCodeFrameRate_t fps = MidiTimeCodeFrameRate24fps;
 
-        if ( ! unpackSysExMidiTimeCodeFullMessage( bytes, len, deviceId, &mtc->FpsHour, &mtc->Minute, &mtc->Second, &mtc->Frame, (uint8_t*)&fps)) {
+        if ( ! unpackSysExMidiTimeCodeFullMessage( bytes, len, deviceId, (uint8_t*)&fps, &mtc->FpsHour, &mtc->Minute, &mtc->Second, &mtc->Frame) ) {
             return false;
         }
 
         mtc->FpsHour |= setFps(fps);
+        mtc->FractionalFrame = 0;
 
         return true;
     }
@@ -1491,14 +1566,15 @@ namespace MidiMessage {
         return MsgLenSysExMidiTimeCodeUserBits;
     }
 
-
-    inline bool unpackSysExMidiTimeCodeUserBits( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * userBits ) {
+    inline int unpackSysExMidiTimeCodeUserBits( uint8_t * bytes, int len, uint8_t * deviceId, uint8_t * userBits ) {
         ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( userBits != NULL );
 
         if ( (len !=  MsgLenSysExMidiTimeCodeUserBits - 1) && (len != MsgLenSysExMidiTimeCodeUserBits || bytes[MsgLenSysExMidiTimeCodeUserBits-1] == SystemMessageEndOfSystemExclusive) ){
             return false;
         }
-        if (bytes[0] != StatusClassSystemMessage) {
+        if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
         if (bytes[1] != ReservedSysExIdRealTime ) {
@@ -1514,11 +1590,200 @@ namespace MidiMessage {
             return false;
         }
 
+        *deviceId = bytes[2] & DataMask;
         userBits[3] = ((bytes[5] & NibbleMask) << 4) | (bytes[6] & NibbleMask);
         userBits[2] = ((bytes[7] & NibbleMask) << 4) | (bytes[8] & NibbleMask);
         userBits[1] = ((bytes[9] & NibbleMask) << 4) | (bytes[10] & NibbleMask);
         userBits[0] = ((bytes[11] & NibbleMask) << 4) | (bytes[12] & NibbleMask);
         userBits[4] = bytes[13] & 0b00000011; //TODO is this right??
+
+        return len;
+    }
+
+    inline int packSysExNonRtMidiCueingSetupMessage( UniversalSysExNonRtMidiTimeCode_t msgType, uint8_t * bytes, uint8_t deviceId, uint8_t fps, uint8_t hour, uint8_t minute, uint8_t second, uint8_t frame, uint8_t fractionalFrame, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen) {
+        ASSERT( isUniversalSysExNonRtMidiTimeCode( msgType ) );
+        ASSERT( !isUniversalSysExNonRtMidiTimeCodeWithAddInfo( msgType ) || addInfoLen == 0 );
+        ASSERT( bytes != NULL );
+        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( isMidiTimeCodeFrameRate(fps) );
+        ASSERT( hour <= MaxHour );
+        ASSERT( minute <= MaxMinute );
+        ASSERT( second <= MaxSecond );
+        ASSERT( frame <= MaxFps[fps] );
+        ASSERT( fractionalFrame <= MaxFractionalFrame );
+        ASSERT( eventNumber <= MaxEventNumber );
+
+        int msgLen = MsgLenSysExNonRtMidiCueingSetupMessageMin - 1; // min message length (w/o EOX)
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = ReservedSysExIdNonRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = UniversalSysExNonRtMidiTimeCode;
+        bytes[4] = msgType;
+        bytes[5] = ((fps << FpsOffset) & FpsMask) | (hour & HourMask);
+        bytes[6] = minute & MinuteMask;
+        bytes[7] = second & SecondMask;
+        bytes[8] = frame & FrameMask;
+        bytes[9] = fractionalFrame & FractionalFrameMask;
+
+        packDoubleValue( &bytes[10], eventNumber );
+
+        if ( isUniversalSysExNonRtMidiTimeCodeWithAddInfo( msgType ) ) {
+            msgLen += nibblize(&bytes[7], addInfo, addInfoLen);
+        }
+
+        bytes[msgLen++] = SystemMessageEndOfSystemExclusive;
+
+        return msgLen;
+    }
+
+    inline int packSysExNonRtMidiCueingSetupMessage(  uint8_t * bytes, UniversalSysExNonRtMidiTimeCode_t msgType, uint8_t deviceId, MidiTimeCode_t * mtc, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        return packSysExNonRtMidiCueingSetupMessage( msgType, bytes, deviceId, getFps(mtc->FpsHour), mtc->FpsHour & HourMask, mtc->Minute, mtc->Second, mtc->Frame, mtc->FractionalFrame, eventNumber, addInfo, addInfoLen );
+    }
+
+    inline bool unpackSysExNonRtMidiCueingSetupMessage( uint8_t * bytes, int len, UniversalSysExNonRtMidiTimeCode_t * msgType, uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute, uint8_t * second, uint8_t * frame, uint8_t  * fractionalFrame, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen ) {
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( fps != NULL );
+        ASSERT( hour != NULL );
+        ASSERT( minute != NULL );
+        ASSERT( second != NULL );
+        ASSERT( frame != NULL );
+        ASSERT( fractionalFrame != NULL );
+        ASSERT( eventNumber != NULL );
+        ASSERT( addInfo != NULL );
+        ASSERT( addInfoLen != NULL );
+
+
+        if ( len <  MsgLenSysExNonRtMidiCueingSetupMessageMin - 1 ){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive) {
+            return false;
+        }
+        if (bytes[1] != ReservedSysExIdNonRealTime ) {
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if (bytes[3] != UniversalSysExNonRtMidiTimeCode) {
+            return false;
+        }
+        if ( ! isUniversalSysExNonRtMidiTimeCode( bytes[4] ) ){
+            return false;
+        }
+
+        *deviceId = bytes[2] & DataMask;
+        *msgType = (UniversalSysExNonRtMidiTimeCode_t)(bytes[4]);
+        *fps = (bytes[5] >> 5) & 0b11;
+        *hour = bytes[5] & HourMask;
+        *minute = bytes[6] & MinuteMask;
+        *second = bytes[7] & SecondMask;
+        *frame = bytes[8] & FrameMask;
+        *fractionalFrame = bytes[9] & FractionalFrameMask;
+
+        unpackDoubleValue( &bytes[10], eventNumber );
+
+        if (isUniversalSysExNonRtMidiTimeCodeWithAddInfo(bytes[4])){
+
+            if (bytes[len - 1] != SystemMessageEndOfSystemExclusive){
+                len++;
+            }
+
+            *addInfoLen = denibblize( addInfo, &bytes[12], len - MsgLenSysExNonRtMidiCueingSetupMessageMin );
+        }
+
+        return true;
+    }
+
+    inline bool unpackSysExNonRtMidiCueingSetupMessage( uint8_t * bytes, int len, UniversalSysExNonRtMidiTimeCode_t * msgType, uint8_t * deviceId, MidiTimeCode_t * mtc, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen  ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        MidiTimeCodeFrameRate_t fps = MidiTimeCodeFrameRate24fps;
+
+        if ( ! unpackSysExNonRtMidiCueingSetupMessage( bytes, len, msgType, deviceId, (uint8_t*)&fps, &mtc->FpsHour, &mtc->Minute, &mtc->Second, &mtc->Frame, &mtc->FractionalFrame, eventNumber, addInfo, addInfoLen ) ) {
+            return false;
+        }
+
+        mtc->FpsHour |= setFps(fps);
+
+        return true;
+    }
+
+
+    inline int packSysExRtMidiCueingSetupMessage( uint8_t * bytes, UniversalSysExRtMidiTimeCodeCueing_t msgType, uint8_t deviceId, uint16_t eventNumber, uint8_t * addInfo, uint8_t addInfoLen) {
+        ASSERT( isUniversalSysExRtMidiTimeCodeCueing( msgType ) );
+        ASSERT( !isUniversalSysExRtMidiTimeCodeCueing( msgType ) || addInfoLen == 0 );
+        ASSERT( bytes != NULL );
+        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( eventNumber <= MaxEventNumber );
+
+        int msgLen = MsgLenSysExRtMidiCueingSetupMessageMin - 1; // min message length (w/o EOX)
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = ReservedSysExIdRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = UniversalSysExNonRtMidiTimeCode;
+        bytes[4] = msgType;
+
+        packDoubleValue( &bytes[5], eventNumber );
+
+        if ( isUniversalSysExRtMidiTimeCodeCueingWithAddInfo( msgType ) ) {
+            msgLen += nibblize(&bytes[7], addInfo, addInfoLen);
+        }
+
+        bytes[msgLen++] = SystemMessageEndOfSystemExclusive;
+
+        return msgLen;
+    }
+
+
+    inline bool unpackSysExRtMidiCueingSetupMessage( uint8_t * bytes, int len, UniversalSysExRtMidiTimeCodeCueing_t * msgType, uint8_t * deviceId, uint16_t  * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen ) {
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( eventNumber != NULL );
+        ASSERT( addInfo != NULL );
+        ASSERT( addInfoLen != NULL );
+
+
+        if ( len <  MsgLenSysExRtMidiCueingSetupMessageMin - 1 ){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive) {
+            return false;
+        }
+        if (bytes[1] != ReservedSysExIdRealTime ) {
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2] ) {
+            return false;
+        }
+        if (bytes[3] != UniversalSysExRtMidiTimeCode) {
+            return false;
+        }
+        if ( ! isUniversalSysExRtMidiTimeCodeCueing( bytes[4] ) ){
+            return false;
+        }
+
+
+        *deviceId = bytes[2] & DataMask;
+        *msgType = (UniversalSysExRtMidiTimeCodeCueing_t)(bytes[4]);
+
+        unpackDoubleValue( &bytes[10], eventNumber );
+
+        if ( isUniversalSysExRtMidiTimeCodeCueingWithAddInfo(bytes[4]) ){
+
+            if (bytes[len - 1] != SystemMessageEndOfSystemExclusive){
+                len++;
+            }
+
+            *addInfoLen = denibblize( addInfo, &bytes[12], len - MsgLenSysExRtMidiCueingSetupMessageMin );
+        }
 
         return true;
     }

@@ -94,9 +94,9 @@ namespace MidiMessage {
                 if (msg->Data.SysEx.Length > 0) {
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    ASSERT( msg->Data.SysEx.Data.Bytes != NULL );
+                    ASSERT( msg->Data.SysEx.ByteData != NULL );
 #endif
-                    memcpy(&bytes[2], msg->Data.SysEx.Data.Bytes, msg->Data.SysEx.Length);
+                    memcpy(&bytes[2], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
                 }
 
                 return 2 + msg->Data.SysEx.Length;
@@ -108,9 +108,9 @@ namespace MidiMessage {
 
                 if (msg->Data.SysEx.Length > 0) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    ASSERT( msg->Data.SysEx.Data.Bytes != NULL );
+                    ASSERT( msg->Data.SysEx.ByteData != NULL );
 #endif
-                    memcpy(&bytes[2], msg->Data.SysEx.Data.Bytes, msg->Data.SysEx.Length);
+                    memcpy(&bytes[2], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
                 }
 
                 return len + msg->Data.SysEx.Length;
@@ -128,7 +128,7 @@ namespace MidiMessage {
                                 return packSysExMidiTimeCodeFullMessage( bytes, msg->Channel, &msg->Data.SysEx.Data.MidiTimeCode );
 
                             case UniversalSysExRtMidiTimeCodeUserBits:
-                                return packSysExMidiTimeCodeUserBits(bytes, msg->Channel, msg->Data.SysEx.Data.Bytes);
+                                return packSysExMidiTimeCodeUserBits(bytes, msg->Channel, msg->Data.SysEx.ByteData);
 
                         }
 
@@ -142,9 +142,8 @@ namespace MidiMessage {
                         //TODO
                         return false;
 
-                    case UniversalSysExRtRealTimeMtcCueing:
-                        //TODO
-                        return false;
+                    case UniversalSysExRtMidiTimeCodeCueing:
+                        return packSysExRtMidiCueingSetupMessage( bytes, (UniversalSysExRtMidiTimeCodeCueing_t)msg->Data.SysEx.SubId2, msg->Channel, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
 
                     case UniversalSysExRtMidiMachineControlCommands:
                         //TODO
@@ -177,12 +176,75 @@ namespace MidiMessage {
 
             } // (msg->Data.SysEx.Id == ReservedSysExIdRealTime)
 
-            if (msg->Data.SysEx.Id == ReservedSysExIdRealTime){
+            if (msg->Data.SysEx.Id == ReservedSysExIdNonRealTime){
 
-                //TODO
+
+                switch (bytes[3]) {
+                    case UniversalSysExNonRtSampleDumpHeader:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtSampleDataPacket:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtSampleDumpRequest:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtMidiTimeCode:
+
+                        return packSysExNonRtMidiCueingSetupMessage( bytes, (UniversalSysExNonRtMidiTimeCode_t)msg->Data.SysEx.SubId2, msg->Channel, &msg->Data.SysEx.Data.Cueing.MidiTimeCode, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+
+
+                    case UniversalSysExNonRtSampleDumpExtension:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtGeneralInformation:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtFileDump:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtMidiTuningStandard:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtGeneralMidi:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtDownloadableSounds:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtFileReferenceMessage:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtMidiVisualControl:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtMidiCapabilityInquiry:
+                        //TODO
+                        return false;
+
+                    case UniversalSysExNonRtEndOfFile:
+                    case UniversalSysExNonRtWait:
+                    case UniversalSysExNonRtCancel:
+                    case UniversalSysExNonRtNAK:
+                    case UniversalSysExNonRtACK:
+                        // no further data
+                        return true;
+
+                }
 
                 return 0;
-            } // (msg->Data.SysEx.Id == ReservedSysExIdRealTime)
+            } // (msg->Data.SysEx.Id == ReservedSysExIdNonRealTime)
 
 
         } // msg->Status == SystemMessageSystemExclusive
@@ -295,14 +357,11 @@ namespace MidiMessage {
                 msg->Data.SysEx.Length = length - 2;
                 if (length > 2) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                    ASSERT( length - 2 > SYSEX_MEMORY_STATIC_SIZE );
-//                    if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
-//                        return false;
-//                    }
+                    ASSERT( length - 2 <= SYSEX_MEMORY_STATIC_SIZE );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    msg->Data.SysEx.Data.Bytes = (uint8_t*)calloc((length - 2), 1);
+                    msg->Data.SysEx.ByteData = (uint8_t*)calloc((length - 2), 1);
 #endif
-                    memcpy( msg->Data.SysEx.Data.Bytes, &bytes[2], length - 2 );
+                    memcpy( msg->Data.SysEx.ByteData, &bytes[2], length - 2 );
                 }
                 return true;
             } // (bytes[1] == ReservedSysExIdExperimental)
@@ -324,14 +383,11 @@ namespace MidiMessage {
 
                 if (msg->Data.SysEx.Length > 0) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                    ASSERT( msg->Data.SysEx.Length > SYSEX_MEMORY_STATIC_SIZE );
-//                if (length - 2 > SYSEX_MEMORY_STATIC_SIZE){
-//                    return false;
-//                }
+                    ASSERT( msg->Data.SysEx.Length <= SYSEX_MEMORY_STATIC_SIZE );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                    msg->Data.SysEx.Data.Bytes = (uint8_t*)calloc(msg->Data.SysEx.Length, 1);
+                    msg->Data.SysEx.ByteData = (uint8_t*)calloc(msg->Data.SysEx.Length, 1);
 #endif
-                    memcpy( msg->Data.SysEx.Data.Bytes, &bytes[1], msg->Data.SysEx.Length);
+                    memcpy( msg->Data.SysEx.ByteData, &bytes[1], msg->Data.SysEx.Length);
                 }
                 return true;
             } // isManufacturerSysExId(bytes[1])
@@ -365,13 +421,13 @@ namespace MidiMessage {
                                 msg->Data.SysEx.Length = 5;
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                                ASSERT( msg->Data.SysEx.Length > SYSEX_MEMORY_STATIC_SIZE );
+                                ASSERT( msg->Data.SysEx.Length <= SYSEX_MEMORY_STATIC_SIZE );
 #elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                                msg->Data.SysEx.Data.Bytes = (uint8_t*)calloc(msg->Data.SysEx.Length, 1);
+                                msg->Data.SysEx.ByteData = (uint8_t*)calloc(msg->Data.SysEx.Length, 1);
 #endif
-                                if ( !unpackSysExMidiTimeCodeUserBits(bytes, length, &msg->Channel, msg->Data.SysEx.Data.Bytes) ){
+                                if ( !unpackSysExMidiTimeCodeUserBits(bytes, length, &msg->Channel, msg->Data.SysEx.ByteData) ){
 #if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                                    free(msg->Data.SysEx.Data.Bytes);
+                                    free(msg->Data.SysEx.ByteData);
 #endif
                                     return false;
                                 }
@@ -388,9 +444,30 @@ namespace MidiMessage {
                         //TODO
                         return false;
 
-                    case UniversalSysExRtRealTimeMtcCueing:
-                        //TODO
-                        return false;
+                    case UniversalSysExRtMidiTimeCodeCueing:
+
+                        if (length < MsgLenSysExRtMidiCueingSetupMessageMin - 1) {
+                            return false;
+                        }
+
+                        if ( isUniversalSysExRtMidiTimeCodeCueingWithAddInfo(bytes[4]) ){
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                            ASSERT( length - MsgLenSysExRtMidiCueingSetupMessageMin <= SYSEX_MEMORY_STATIC_SIZE );
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                            msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - MsgLenSysExRtMidiCueingSetupMessageMin, 1);
+#endif
+                        }
+
+                        if ( ! unpackSysExRtMidiCueingSetupMessage( bytes, length, (UniversalSysExRtMidiTimeCodeCueing_t*)&msg->Data.SysEx.SubId2, &msg->Channel, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length )){
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                            if ( isUniversalSysExRtMidiTimeCodeCueingWithAddInfo(bytes[4]) ) {
+                                free(msg->Data.SysEx.ByteData);
+                            }
+#endif
+                            return false;
+                        }
+
+                        return true;
 
                     case UniversalSysExRtMidiMachineControlCommands:
                         //TODO
@@ -446,7 +523,29 @@ namespace MidiMessage {
                         return false;
 
                     case UniversalSysExNonRtMidiTimeCode:
-                        //TODO
+
+                        if (length < MsgLenSysExNonRtMidiCueingSetupMessageMin - 1) {
+                            return false;
+                        }
+
+                        if ( isUniversalSysExNonRtMidiTimeCodeWithAddInfo(bytes[4]) ){
+#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
+                            ASSERT( length - MsgLenSysExRtMidiCueingSetupMessageMin <= SYSEX_MEMORY_STATIC_SIZE );
+#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                            msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - MsgLenSysExNonRtMidiCueingSetupMessageMin, 1);
+#endif
+                        }
+
+                        if ( ! unpackSysExNonRtMidiCueingSetupMessage( bytes, length, (UniversalSysExNonRtMidiTimeCode_t*)&msg->Data.SysEx.SubId2, &msg->Channel, &msg->Data.SysEx.Data.Cueing.MidiTimeCode, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length )){
+#if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
+                            if ( isUniversalSysExNonRtMidiTimeCodeWithAddInfo(bytes[4]) ) {
+                                free(msg->Data.SysEx.ByteData);
+                            }
+#endif
+                            return false;
+                        }
+
+                        return true;
                         return false;
 
                     case UniversalSysExNonRtSampleDumpExtension:
@@ -509,12 +608,12 @@ namespace MidiMessage {
 
         if (msg->Status == SystemMessageSystemExclusive &&
                 msg->Data.SysEx.Length > 0 &&
-                msg->Data.SysEx.Data.Bytes != NULL){
+                msg->Data.SysEx.ByteData != NULL){
 
-            free(msg->Data.SysEx.Data.Bytes);
+            free(msg->Data.SysEx.ByteData);
 
             msg->Data.SysEx.Length = 0;
-            msg->Data.SysEx.Data.Bytes = NULL;
+            msg->Data.SysEx.ByteData = NULL;
         }
     }
 #endif

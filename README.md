@@ -6,28 +6,30 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 
 ## Contained contants & un-/packers
 
-| Feature Set |  Feature / Message | Message Family | Status |
+* tt = to test
+
+| Feature Set |  Feature / Message | Message Family | Status* |
 |-----|-----|----|:-----:|
-| Channel Voice Message | Note On / Off | |  ok |
-| | Polyphonic Key Pressure (Aftertouch) | | ok |
-| | Control Change | | ok |
-| | Program Change | | ok |
-| | Channel Pressure (Aftertouch) | | ok |
-| | Pitch Bend Change | | ok |
-| Channel Mode Messages | Specific Control Change (All Sound Off, Reset All Controllers, etc) | Control Change | |
-| System Common Messages | Song position pointer | | ok |
-| | Song select | | ok |
-| | Tune request | | ok |
-| System Real Time Messages | Timing clock | | ok |
-| | Start | | ok |
-| | Continue | | ok |
-| | Stop | | ok |
-| | Active Sensing | | ok |
-| | Reset | | ok |
-| MIDI Time Code | Quarter Frames | System Common | ok |
-| | Full Message + User Bits| SysEx Real Time | ok |
-| |  | SysEx Non-Real Time | TODO |
-| | Real Time MTC Cueing | SysEx Real Time | TODO |
+| Channel Voice Message | Note On / Off | |  tt |
+| | Polyphonic Key Pressure (Aftertouch) | | tt |
+| | Control Change | | tt |
+| | Program Change | | tt |
+| | Channel Pressure (Aftertouch) | | tt |
+| | Pitch Bend Change | | tt |
+| Channel Mode Messages | Specific Control Change (All Sound Off, Reset All Controllers, etc) | Control Change | tt |
+| System Common Messages | Song position pointer | | tt |
+| | Song select | | tt |
+| | Tune request | | tt |
+| System Real Time Messages | Timing clock | | tt |
+| | Start | | tt |
+| | Continue | | tt |
+| | Stop | | tt |
+| | Active Sensing | | tt |
+| | Reset | | tt |
+| MIDI Time Code | Quarter Frames | System Common | tt |
+| | Full Message + User Bits| SysEx Real Time | tt |
+| | Real Time MTC Cueing | SysEx Real Time | tt |
+| | Non Real Time MTC Cueing | SysEx Non-Real Time | tt |
 | MIDI Machine Control | | | TODO |
 | MIDI Show Control | | | TODO |
 | MIDI Tuning Standard | | | TODO |
@@ -40,6 +42,7 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 | | Downloadable Sounds | Non-Real Time | TODO |
 | | Device Control (Master volume and balance) | Real Time | TODO |
 | | Notation Information | Real Time | TODO |
+
 
 
 

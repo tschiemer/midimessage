@@ -120,7 +120,7 @@ void receivedSysExMessageFromSomewhere( uint8_t * buf, int len ) {
     }
 
     for (int i = 0; i < msg.Data.SysEx.Length; i++) {
-        std::cout << (int)msg.Data.SysEx.Data.Bytes[i] << " ";
+        std::cout << (int)msg.Data.SysEx.ByteData[i] << " ";
     }
 
     std::cout << std::endl;
