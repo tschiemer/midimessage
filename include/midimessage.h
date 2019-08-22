@@ -1181,11 +1181,7 @@ namespace MidiMessage {
             struct {
                 uint8_t Key;
                 uint8_t Velocity;
-            } NoteOn;
-            struct {
-                uint8_t Key;
-                uint8_t Velocity;
-            } NoteOff;
+            } Note;
             struct {
                 uint8_t Key;
                 uint8_t Pressure;
@@ -1383,7 +1379,7 @@ namespace MidiMessage {
         if ( len != MsgLenNoteOn ) {
             return false;
         }
-        if ((bytes[0] & StatusClassMask) == StatusClassNoteOn) {
+        if ( (bytes[0] & StatusClassMask) != StatusClassNoteOn ) {
             return false;
         }
         if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
@@ -1420,7 +1416,7 @@ namespace MidiMessage {
         if ( len != MsgLenPolyphonicKeyPressure ) {
             return false;
         }
-        if ((bytes[0] & StatusClassMask) == StatusClassPolyphonicKeyPressure) {
+        if ((bytes[0] & StatusClassMask) != StatusClassPolyphonicKeyPressure) {
             return false;
         }
         if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
@@ -1438,8 +1434,8 @@ namespace MidiMessage {
     inline uint8_t packControlChange( uint8_t * bytes, uint8_t channel, uint8_t controller, uint8_t value ){
         ASSERT( bytes != NULL );
         ASSERT( (channel & ChannelMask) == channel );
-        ASSERT((controller & DataMask) == controller );
-        ASSERT((value & DataMask) == value );
+        ASSERT( (controller & DataMask) == controller );
+        ASSERT( (value & DataMask) == value );
 
         bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = controller & DataMask;
@@ -1457,7 +1453,7 @@ namespace MidiMessage {
         if ( len != MsgLenControlChange ) {
             return false;
         }
-        if ((bytes[0] & StatusClassMask) == StatusClassControlChange) {
+        if ((bytes[0] & StatusClassMask) != StatusClassControlChange) {
             return false;
         }
         if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
@@ -1491,7 +1487,7 @@ namespace MidiMessage {
         if ( len != MsgLenProgramChange ) {
             return false;
         }
-        if ((bytes[0] & StatusClassMask) == StatusClassProgramChange) {
+        if ((bytes[0] & StatusClassMask) != StatusClassProgramChange) {
             return false;
         }
         if ((bytes[1] & DataMask) != bytes[1] ) {
@@ -1523,14 +1519,14 @@ namespace MidiMessage {
         if ( len != MsgLenChannelPressure ) {
             return false;
         }
-        if ((bytes[0] & StatusClassMask) == StatusClassChannelPressure) {
+        if ( (bytes[0] & StatusClassMask) != StatusClassChannelPressure ) {
             return false;
         }
         if ((bytes[1] & DataMask) != bytes[1] ) {
             return false;
         }
 
-        *channel = bytes[0];
+        *channel = bytes[0] & ChannelMask;
         *pressure = bytes[1];
 
         return true;
@@ -1556,7 +1552,7 @@ namespace MidiMessage {
         if ( len != MsgLenPitchBendChange ) {
             return false;
         }
-        if ((bytes[0] & StatusClassMask) == StatusClassPitchBendChange) {
+        if ((bytes[0] & StatusClassMask) != StatusClassPitchBendChange) {
             return false;
         }
         if (((bytes[1] & DataMask) != bytes[1]) || ((bytes[2] & DataMask) != bytes[2]) ) {
@@ -1886,7 +1882,7 @@ namespace MidiMessage {
         if (len != MsgLenSongSelect){
             return false;
         }
-        if (bytes[0] != SystemMessageSongPositionPointer) {
+        if (bytes[0] != SystemMessageSongSelect) {
             return false;
         }
 

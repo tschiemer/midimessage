@@ -20,10 +20,10 @@ namespace MidiMessage {
             switch (msg->StatusClass) {
 
                 case StatusClassNoteOff:
-                    return packNoteOff(bytes, msg->Channel, msg->Data.NoteOff.Key, msg->Data.NoteOff.Velocity);
+                    return packNoteOff(bytes, msg->Channel, msg->Data.Note.Key, msg->Data.Note.Velocity);
 
                 case StatusClassNoteOn:
-                    return packNoteOn(bytes, msg->Channel, msg->Data.NoteOn.Key, msg->Data.NoteOn.Velocity);
+                    return packNoteOn(bytes, msg->Channel, msg->Data.Note.Key, msg->Data.Note.Velocity);
 
                 case StatusClassPolyphonicKeyPressure:
                     return packPolyphonicKeyPressure(bytes, msg->Channel, msg->Data.PolyphonicKeyPressure.Key, msg->Data.PolyphonicKeyPressure.Pressure);
@@ -287,15 +287,16 @@ namespace MidiMessage {
         msg->Status = bytes[0];
 
         if (isStatusClass(msg->StatusClass) && msg->StatusClass != StatusClassSystemMessage) {
+
             switch (msg->StatusClass) {
 
                 case StatusClassNoteOff:
-                    return unpackNoteOff(bytes, length, &msg->Channel, &msg->Data.NoteOff.Key,
-                                         &msg->Data.NoteOff.Velocity);
+                    return unpackNoteOff(bytes, length, &msg->Channel, &msg->Data.Note.Key,
+                                         &msg->Data.Note.Velocity);
 
                 case StatusClassNoteOn:
-                    return unpackNoteOn(bytes, length, &msg->Channel, &msg->Data.NoteOn.Key,
-                                        &msg->Data.NoteOn.Velocity);
+                    return unpackNoteOn(bytes, length, &msg->Channel, &msg->Data.Note.Key,
+                                        &msg->Data.Note.Velocity);
 
                 case StatusClassPolyphonicKeyPressure:
                     return unpackPolyphonicKeyPressure(bytes, length, &msg->Channel,

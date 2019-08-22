@@ -42,8 +42,8 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
     // (the final message packaging is unified)
     msg2.StatusClass = MidiMessage::StatusClassNoteOn;
     msg2.Channel = msg.Channel;
-    msg2.Data.NoteOn.Key = 40 + pitch;
-    msg2.Data.NoteOn.Velocity = 100;
+    msg2.Data.Note.Key = 40 + pitch;
+    msg2.Data.Note.Velocity = 100;
 
     pitch = (pitch + 1) % 13;
 
@@ -53,7 +53,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
     }
 
     // direct approach
-    len2 = MidiMessage::packNoteOff( buf2, msg2.Channel, msg2.Data.NoteOn.Key, 50 );
+    len2 = MidiMessage::packNoteOff( buf2, msg2.Channel, msg2.Data.Note.Key, 50 );
     if (len2 > 0){
         sendMidiMessageToSomewhere( buf2, len2 );
     }
