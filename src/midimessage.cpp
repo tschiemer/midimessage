@@ -10,7 +10,7 @@
 
 namespace MidiMessage {
 
-    uint32_t pack( uint8_t * bytes, Message_t * msg ){
+    uint8_t pack( uint8_t * bytes, Message_t * msg ){
         ASSERT( bytes != NULL);
         ASSERT( msg != NULL );
 
@@ -102,7 +102,7 @@ namespace MidiMessage {
                 return 2 + msg->Data.SysEx.Length;
             } // (msg->Data.SysEx.Id == SysExIdExperimental)
 
-            if (isManufacturerSysExId( msg->Data.SysEx.Id )){
+            if (isSysExManufacturerId( msg->Data.SysEx.Id )){
 
                 len = 1 + packSysExId( bytes, msg->Data.SysEx.Id );
 
@@ -114,7 +114,7 @@ namespace MidiMessage {
                 }
 
                 return len + msg->Data.SysEx.Length;
-            } // (isManufacturerSysExId( msg->Data.SysEx.Id ))
+            } // (isSysExManufacturerId( msg->Data.SysEx.Id ))
 
             if (msg->Data.SysEx.Id == SysExIdRealTime){
 
@@ -275,7 +275,7 @@ namespace MidiMessage {
         return 0;
     }
 
-    bool unpack( uint8_t * bytes, uint32_t length, Message_t * msg ){
+    bool unpack( uint8_t * bytes, uint8_t length, Message_t * msg ){
 
         ASSERT( bytes != NULL);
         ASSERT( msg != NULL );
@@ -386,20 +386,16 @@ namespace MidiMessage {
                 return true;
             } // (bytes[1] == SysExIdExperimental)
 
-            if (isManufacturerSysExId(bytes[1])){
+            if (isSysExManufacturerId(bytes[1])){
 
                 // is it a three byte manufacturer id?
                 if (bytes[1] == SysExIdManufacturerExtension) {
                     if (length < 4) {
                         return false;
                     }
-                    msg->Data.SysEx.Id = ((uint32_t) bytes[2]) << 8;
-                    msg->Data.SysEx.Id += (uint32_t) bytes[3];
-                    msg->Data.SysEx.Length = length - 3;
-                } else {
-                    msg->Data.SysEx.Id = (uint32_t) bytes[2];
-                    msg->Data.SysEx.Length = length - 2;
                 }
+
+                msg->Data.SysEx.Length = length - unpackSysExId( &bytes[1], &msg->Data.SysEx.Id );
 
                 if (msg->Data.SysEx.Length > 0) {
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
@@ -410,7 +406,7 @@ namespace MidiMessage {
                     memcpy( msg->Data.SysEx.ByteData, &bytes[1], msg->Data.SysEx.Length);
                 }
                 return true;
-            } // isManufacturerSysExId(bytes[1])
+            } // isSysExManufacturerId(bytes[1])
 
             if (bytes[1] == SysExIdRealTime) {
                 if (length < 4) {
