@@ -172,7 +172,12 @@ namespace MidiMessage {
     const uint8_t MinuteMask    = 0b00111111;
     const uint8_t SecondMask    = 0b00111111;
     const uint8_t FrameMask     = 0b00011111;
-    const uint8_t FractionalFrameMask = 0b01111111;
+    const uint8_t FrameSignBit  = 0b01000000;
+    const uint8_t FrameFinalByteIdBit   = 0b00100000;
+    const uint8_t FractionalFrameMask   = 0b01111111;
+    const uint8_t StatusCodeFlagBit     = 0b01000000;
+    const uint8_t StatusInvalidCodeBit  = 0b00100000;
+    const uint8_t StatusVideoIdBit      = 0b00010000;
 
     const uint8_t MaxHour = 23;
     const uint8_t MaxMinute = 59;
@@ -595,13 +600,139 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        SysExRtMidiShowControlTODO //TODO
-    } SysExRtMidiShowControl_t;
+        SysExRtMscLighting                      = 0x01,
+        SysExRtMscMovingLights                  = 0x02,
+        SysExRtMscColorChangers                 = 0x03,
+        SysExRtMscStrobes                       = 0x04,
+        SysExRtMscLasers                        = 0x05,
+        SysExRtMscChasers                       = 0x06,
+
+        SysExRtMscSound                         = 0x10,
+        SysExRtMscMusic                         = 0x11,
+        SysExRtMscCdPlayers                     = 0x12,
+        SysExRtMscEpromPlayback                 = 0x13,
+        SysExRtMscAudioTapeMachines             = 0x14,
+        SysExRtMscIntercoms                     = 0x15,
+        SysExRtMscAmplifiers                    = 0x16,
+        SysExRtMscAudioEffectsDevices           = 0x17,
+        SysExRtMscEqualizers                    = 0x18,
+
+        SysExRtMscMachinery                     = 0x20,
+        SysExRtMscRigging                       = 0x21,
+        SysExRtMscFlys                          = 0x22,
+        SysExRtMscLifts                         = 0x23,
+        SysExRtMscTurntables                    = 0x24,
+        SysExRtMscTrusses                       = 0x25,
+        SysExRtMscRobots                        = 0x26,
+        SysExRtMscAnimation                     = 0x27,
+        SysExRtMscFloats                        = 0x28,
+        SysExRtMscBreakaways                    = 0x29,
+        SysExRtMscBarges                        = 0x2A,
+
+        SysExRtMscVideo                         = 0x30,
+        SysExRtMscVideoTapeMachines             = 0x31,
+        SysExRtMscVideoCassetteMachines         = 0x32,
+        SysExRtMscVideoDiscPlayers              = 0x33,
+        SysExRtMscVideoSwitchers                = 0x34,
+        SysExRtMscVideoEffects                  = 0x35,
+        SysExRtMscVideoCharacterGenerators      = 0x36,
+        SysExRtMscVideoStillStores              = 0x37,
+        SysExRtMscVideoMonitors                 = 0x38,
+
+        SysExRtMscProjection                    = 0x40,
+        SysExRtMscFilmProjectors                = 0x41,
+        SysExRtMscSlideProjectors               = 0x42,
+        SysExRtMscVideoProjectors               = 0x43,
+        SysExRtMscDissolvers                    = 0x44,
+        SysExRtMscShutterControls               = 0x45,
+
+        SysExRtMscProcessControl                = 0x50,
+        SysExRtMscHydraulicOil                  = 0x51,
+        SysExRtMscH2O                           = 0x52,
+        SysExRtMscWater                         = SysExRtMscH2O,
+        SysExRtMscCO2                           = 0x53,
+        SysExRtMscDryIce                        = SysExRtMscCO2,
+        SysExRtMscCompressedAir                 = 0x54,
+        SysExRtMscNaturalGas                    = 0x55,
+        SysExRtMscFog                           = 0x56,
+        SysExRtMscSmoke                         = 0x57,
+        SysExRtMscCrackedHaze                   = 0x58,
+
+        SysExRtMscPyro                          = 0x60,
+        SysExRtMscFireworks                     = 0x61,
+        SysExRtMscExplosions                    = 0x62,
+        SysExRtMscFlame                         = 0x63,
+        SysExRtMscSmokePots                     = 0x64,
+
+        SysExRtMscAllTypes                      = 0x7F
+
+    } SysExRtMsc_t;
 
     inline bool isSysExRtMidiShowControl( uint8_t value ){
-        return false; //TODO
+        return (value == SysExRtMscLighting ||
+                value == SysExRtMscMovingLights ||
+                value == SysExRtMscColorChangers ||
+                value == SysExRtMscStrobes ||
+                value == SysExRtMscLasers ||
+                value == SysExRtMscChasers ||
+                value == SysExRtMscMusic ||
+                value == SysExRtMscCdPlayers ||
+                value == SysExRtMscEpromPlayback ||
+                value == SysExRtMscAudioTapeMachines ||
+                value == SysExRtMscIntercoms ||
+                value == SysExRtMscAmplifiers ||
+                value == SysExRtMscAudioEffectsDevices ||
+                value == SysExRtMscEqualizers ||
+                value == SysExRtMscMachinery ||
+                value == SysExRtMscRigging ||
+                value == SysExRtMscFlys ||
+                value == SysExRtMscLifts ||
+                value == SysExRtMscTurntables ||
+                value == SysExRtMscTrusses ||
+                value == SysExRtMscRobots ||
+                value == SysExRtMscAnimation ||
+                value == SysExRtMscFloats ||
+                value == SysExRtMscBreakaways ||
+                value == SysExRtMscBarges ||
+                value == SysExRtMscVideo ||
+                value == SysExRtMscVideoTapeMachines ||
+                value == SysExRtMscVideoCassetteMachines ||
+                value == SysExRtMscVideoDiscPlayers ||
+                value == SysExRtMscVideoSwitchers ||
+                value == SysExRtMscVideoEffects ||
+                value == SysExRtMscVideoCharacterGenerators ||
+                value == SysExRtMscVideoStillStores ||
+                value == SysExRtMscVideoMonitors ||
+                value == SysExRtMscProjection ||
+                value == SysExRtMscFilmProjectors ||
+                value == SysExRtMscSlideProjectors ||
+                value == SysExRtMscVideoProjectors ||
+                value == SysExRtMscDissolvers ||
+                value == SysExRtMscShutterControls ||
+                value == SysExRtMscProcessControl ||
+                value == SysExRtMscHydraulicOil ||
+                value == SysExRtMscH2O ||
+                value == SysExRtMscCO2 ||
+                value == SysExRtMscCompressedAir ||
+                value == SysExRtMscNaturalGas ||
+                value == SysExRtMscFog ||
+                value == SysExRtMscSmoke ||
+                value == SysExRtMscCrackedHaze ||
+                value == SysExRtMscPyro ||
+                value == SysExRtMscFireworks ||
+                value == SysExRtMscExplosions ||
+                value == SysExRtMscFlame ||
+                value == SysExRtMscSmokePots ||
+                value == SysExRtMscAllTypes);
     }
 
+    inline uint8_t getSysExRtMscCategory( uint8_t value ){
+        return (value & 0x70);
+    }
+
+    inline bool isSysExRtMsgCategory( uint8_t value, uint8_t category){
+        return (value & 0x70) == category;
+    }
 
     typedef enum {
         SysExRtNotationInformationBarNumber                = 0x01,
