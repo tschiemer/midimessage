@@ -799,48 +799,55 @@ namespace MidiMessage {
     }
 
 
+    /**
+     * Guideline sets:
+     * #1   Simple transport, no time code, open loop communications only
+     * #2   Basic transport, no time code reader, closed loop communications possible
+     * #3   Advanced transport, time code reader included, closed loop communications, event triggering, track by track record control
+     * #4   Basic Synchronizer, closed loop communications
+     */
     typedef enum {
-        SysExRtMmcCommandtop                = 0x01,
-        SysExRtMmcCommandPlay               = 0x02,
-        SysExRtMmcCommandDeferredPlay       = 0x03,
-        SysExRtMmcCommandFastForward        = 0x04,
-        SysExRtMmcCommandRewind             = 0x05,
-        SysExRtMmcCommandRecordStrobe       = 0x06,
-        SysExRtMmcCommandRecordExit         = 0x07,
-        SysExRtMmcCommandRecordPause        = 0x08,
-        SysExRtMmcCommandPause              = 0x09,
-        SysExRtMmcCommandEject              = 0x0A,
-        SysExRtMmcCommandChase              = 0x0B,
-        SysExRtMmcCommandCommandErrorReset  = 0x0C,
-        SysExRtMmcCommandMmcReset           = 0x0D,
-        SysExRtMmcCommandWrite              = 0x40,
-        SysExRtMmcCommandMaskedWrite        = 0x41,
-        SysExRtMmcCommandRead               = 0x42,
-        SysExRtMmcCommandUpdate             = 0x43,
-        SysExRtMmcCommandLocate             = 0x44,
-        SysExRtMmcCommandVariablePlay       = 0x45,
-        SysExRtMmcCommandSearch             = 0x46,
-        SysExRtMmcCommandhuttle             = 0x47,
-        SysExRtMmcCommandStep               = 0x48,
-        SysExRtMmcCommandAssignSystemMaster = 0x49,
-        SysExRtMmcCommandGeneratorCommand   = 0x4A,
-        SysExRtMmcCommandMtcCommand         = 0x4B,
-        SysExRtMmcCommandMove               = 0x4C,
-        SysExRtMmcCommandAdd                = 0x4D,
-        SysExRtMmcCommandSubstract          = 0x4E,
-        SysExRtMmcCommandDropFrameAdjust    = 0x4F,
-        SysExRtMmcCommandProcedure          = 0x50,
-        SysExRtMmcCommandEvent              = 0x51,
-        SysExRtMmcCommandGroup              = 0x52,
-        SysExRtMmcCommandCommandSegment     = 0x53,
-        SysExRtMmcCommandDeferredVariablePlay = 0x54,
-        SysExRtMmcCommandRecordStrobeVariable = 0x55,
-        SysExRtMmcCommandWait               = 0x7C,
-        SysExRtMmcCommandResume             = 0x7F
+        SysExRtMmcCommandStop               = 0x01, // 1234 (guideline min sets)
+        SysExRtMmcCommandPlay               = 0x02, // -234
+        SysExRtMmcCommandDeferredPlay       = 0x03, // 1234
+        SysExRtMmcCommandFastForward        = 0x04, // 1234
+        SysExRtMmcCommandRewind             = 0x05, // 1234
+        SysExRtMmcCommandRecordStrobe       = 0x06, // 1234
+        SysExRtMmcCommandRecordExit         = 0x07, // 1234
+        SysExRtMmcCommandRecordPause        = 0x08, // ----
+        SysExRtMmcCommandPause              = 0x09, // ----
+        SysExRtMmcCommandEject              = 0x0A, // ----
+        SysExRtMmcCommandChase              = 0x0B, // ---4
+        SysExRtMmcCommandCommandErrorReset  = 0x0C, // -234
+        SysExRtMmcCommandMmcReset           = 0x0D, // 1234
+        SysExRtMmcCommandWrite              = 0x40, // 1234
+        SysExRtMmcCommandMaskedWrite        = 0x41, // --3-
+        SysExRtMmcCommandRead               = 0x42, // -234
+        SysExRtMmcCommandUpdate             = 0x43, // -234
+        SysExRtMmcCommandLocate             = 0x44, // 1234
+        SysExRtMmcCommandVariablePlay       = 0x45, // -234
+        SysExRtMmcCommandSearch             = 0x46, // --34
+        SysExRtMmcCommandhuttle             = 0x47, // ----
+        SysExRtMmcCommandStep               = 0x48, // ----
+        SysExRtMmcCommandAssignSystemMaster = 0x49, // ----
+        SysExRtMmcCommandGeneratorCommand   = 0x4A, // ----
+        SysExRtMmcCommandMtcCommand         = 0x4B, // ----
+        SysExRtMmcCommandMove               = 0x4C, // 1234
+        SysExRtMmcCommandAdd                = 0x4D, // -234
+        SysExRtMmcCommandSubstract          = 0x4E, // -234
+        SysExRtMmcCommandDropFrameAdjust    = 0x4F, // --34
+        SysExRtMmcCommandProcedure          = 0x50, // --34
+        SysExRtMmcCommandEvent              = 0x51, // --34
+        SysExRtMmcCommandGroup              = 0x52, // -234
+        SysExRtMmcCommandCommandSegment     = 0x53, // -234
+        SysExRtMmcCommandDeferredVariablePlay = 0x54, // -234
+        SysExRtMmcCommandRecordStrobeVariable = 0x55, // ----
+        SysExRtMmcCommandWait               = 0x7C, // -234
+        SysExRtMmcCommandResume             = 0x7F // -234
     } SysExRtMmcCommand_t;
 
     inline bool isSysExRtMmcCommand( uint8_t value ) {
-        return (value == SysExRtMmcCommandtop ||
+        return (value == SysExRtMmcCommandStop ||
                 value == SysExRtMmcCommandPlay ||
                 value == SysExRtMmcCommandDeferredPlay ||
                 value == SysExRtMmcCommandFastForward ||
