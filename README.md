@@ -6,7 +6,7 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 
 No particular structures are enforced such that you can take from it what you want.
 
-## Contained contants & un-/packers
+## Features
 
 - (many) MIDI Message constants + enumerations
 - Manufacturer Id list (see `include/manufacturerids.h`)
@@ -16,9 +16,11 @@ No particular structures are enforced such that you can take from it what you wa
 - *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination)
 - packers and unpackers are always complementary and are available as literal-based and struct-based variants
 - *structs* and *types* help to create a unified interface and make handling easier
+ - for variable size (sysex) messages static or dynamic memory allocation is realised (default = dynamic, see preprocessor define `SYSEX_MEMORY` in `include/midimessageh`)
 - *Command line utility* to turn human-readable commands into corresponding byte sequence and vice versa (see `src/cli.cpp` and below)
+- allo
 
-* tt = to test
+tt = to test
 
 | Feature Set |  Feature / Message | Message Family | Status* |
 |-----|-----|----|:-----:|
@@ -63,6 +65,17 @@ No particular structures are enforced such that you can take from it what you wa
 `libmidimessage` relies on wrapper functions (as defined in `mmstdlib.h`) that have to be implemented by you.
 
  To use the stdlib implementations you can use the example implementation `mmstdlib.cpp`.
+
+## Building
+
+- `midimessage-cli` requires on getopt
+
+```bash
+
+cmake .
+make
+make examples
+make manufacturerids
 
 ## Code Example
 
