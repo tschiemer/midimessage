@@ -26,7 +26,7 @@ void printHelp( void ) {
     printf("If no <data> or <cmd>.. is given reads from STDIN assuming one input per line separated by a NL\n");
 }
 
-void generate(uint8_t argc, uint8_t * argv[]);
+void generate(uint8_t argc,  char  * argv[]);
 uint8_t parse(uint8_t length, uint8_t bytes[]);
 
 int main(int argc, char * argv[], char * env[]){
@@ -89,7 +89,7 @@ int main(int argc, char * argv[], char * env[]){
     if (optind < argc) {
 
         if (mode == ModeGenerate){
-            generate( (uint8_t)(argc - optind), (uint8_t**)&argv[optind] );
+            generate( (uint8_t)(argc - optind), &argv[optind] );
         } else {
             while(optind < argc) {
                 parse( (uint8_t)strlen(argv[optind]), (uint8_t*)argv[optind] );
@@ -108,9 +108,12 @@ int main(int argc, char * argv[], char * env[]){
 
     args[0] = &line[0];
 
-    while( ! feof(stdin) ){
+    int ch;
 
-        uint8_t in = fgetc(stdin);
+    while( (ch = fgetc(stdin)) != EOF ){
+
+        uint8_t in = (uint8_t)ch;
+
 
         if (pos >= MAX_LEN){
             printf("Buffer overflow!\n");
@@ -144,7 +147,7 @@ int main(int argc, char * argv[], char * env[]){
                     argsCount--;
                 }
 
-                generate( argsCount, args );
+                generate( argsCount, (char**)args );
 
                 pos = 0;
                 line[0] = '\0';
@@ -153,24 +156,17 @@ int main(int argc, char * argv[], char * env[]){
             }
 
         }
-        if (mode == ModeParse){
+        if (mode == ModeParse) {
+
+            // wait for control byte
+            if (pos == 0 && !isControlByte(in) && in != SystemMessageEndOfExclusive) {
+                continue;
+            }
 
             line[pos++] = in;
 
-            uint8_t consumed = parse( pos, (uint8_t*)line );
-
-            // if part of stream were consumed, move bytes up the stream
-            if (consumed > 0){
-                for(int i = 0, p = pos; i < pos - consumed; i++, p++){
-                    line[i] = line[p];
-                }
-            }
-
-            // if receiving a control byte (that isnt a EOX) something went wrong, readjust
-            else if (isControlByte(in) && in != SystemMessageEndOfExclusive && pos > 0){
-                for( int i = 0, p = pos - 1; i < pos; i++,p++){
-                    line[i] = line[p];
-                }
+            if ( parse(pos, (uint8_t *) line) ) {
+                pos = 0;
             }
         }
     }
@@ -178,15 +174,233 @@ int main(int argc, char * argv[], char * env[]){
     return EXIT_SUCCESS;
 }
 
-void generate(uint8_t argc, uint8_t * argv[]){
-    printf("Generating for %d\n", argc);
-    for(int i = 0; i < argc; i++){
-        printf(" %d %s\n", i, argv[i]);
+
+void generate(uint8_t argc, char * argv[]){
+
+    Message_t msg;
+    uint8_t bytes[128];
+    uint8_t length = 0;
+
+    if (argc == 0){
+        return;
+    }
+
+//    for(int i = 0; i < argc; i++){
+//        printf("%s ", argv[i]);
+//    }
+//    printf("\n");
+//    fflush(stdout);
+
+    if (strcmp(argv[0], "note") == 0){
+        if (argc != 5){
+            return;
+        }
+        msg.Data.Note.Key = atoi(argv[2]);
+        msg.Data.Note.Velocity = atoi(argv[3]);
+        if (strcmp(argv[1], "on") == 0){
+            msg.StatusClass = StatusClassNoteOn;
+        }
+        else if (strcmp(argv[1], "off") == 0){
+            msg.StatusClass = StatusClassNoteOff;
+        }
+        else {
+            return;
+        }
+        msg.Channel = atoi(argv[4]);
+    }
+
+    else if (strcmp(argv[0], "cc") == 0){
+        if (argc != 4){
+            return;
+        }
+        msg.StatusClass = StatusClassControlChange;
+        msg.Data.ControlChange.Controller = atoi(argv[1]);
+        msg.Data.ControlChange.Value = atoi(argv[2]);
+        msg.Channel = atoi(argv[3]);
+    }
+
+    else if (strcmp(argv[0], "pc") == 0){
+        if (argc != 3){
+            return;
+        }
+        msg.StatusClass = StatusClassProgramChange;
+        msg.Data.ProgramChange.Program = atoi(argv[1]);
+        msg.Channel = atoi(argv[2]);
+    }
+
+    else if (strcmp(argv[0], "pressure") == 0){
+        if (argc != 3){
+            return;
+        }
+        msg.StatusClass = StatusClassChannelPressure;
+        msg.Data.ChannelPressure.Pressure = atoi(argv[1]);
+        msg.Channel = atoi(argv[2]);
+    }
+
+    else if (strcmp(argv[0], "pitch") == 0){
+        if (argc != 3){
+            return;
+        }
+        msg.StatusClass = StatusClassPitchBendChange;
+        msg.Data.PitchBendChange.Pitch = atoi(argv[1]);
+        msg.Channel = atoi(argv[2]);
+    }
+
+    else if (strcmp(argv[0], "poly") == 0){
+        if (argc != 4){
+            return;
+        }
+        msg.StatusClass = StatusClassPolyphonicKeyPressure;
+        msg.Data.PolyphonicKeyPressure.Key = atoi(argv[1]);
+        msg.Data.PolyphonicKeyPressure.Pressure = atoi(argv[2]);
+        msg.Channel = atoi(argv[3]);
+    }
+
+    else if (strcmp(argv[0], "quarter-frame") == 0){
+        if (argc != 3){
+            return;
+        }
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageMtcQuarterFrame;
+        msg.Data.MtcQuarterFrame.MessageType = atoi(argv[1]);
+        msg.Data.MtcQuarterFrame.Nibble = atoi(argv[2]);
+    }
+    else if (strcmp(argv[0], "song-position") == 0){
+        if (argc != 2){
+            return;
+        }
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageSongPositionPointer;
+        msg.Data.SongPositionPointer.Position = atoi(argv[1]);
+    }
+    else if (strcmp(argv[0], "song-select") == 0){
+        if (argc != 2){
+            return;
+        }
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageSongSelect;
+        msg.Data.SongSelect.Song = atoi(argv[1]);
+    }
+    else if (strcmp(argv[0], "start") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageStart;
+    }
+    else if (strcmp(argv[0], "stop") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageStop;
+    }
+    else if (strcmp(argv[0], "continue") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageContinue;
+    }
+    else if (strcmp(argv[0], "active-sensing") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageActiveSensing;
+    }
+    else if (strcmp(argv[0], "reset") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageReset;
+    }
+    else if (strcmp(argv[0], "timing-clock") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageTimingClock;
+    }
+    else if (strcmp(argv[0], "tune-request") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageTuneRequest;
+    }
+    else if (strcmp(argv[0], "sysex") == 0){
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.Status = SystemMessageSystemExclusive;
+        return;
+    } else {
+        return;
+    }
+
+//    printf("packing..\n");
+//    fflush(stdout);
+
+    length = pack( bytes, &msg );
+
+    if (length > 0){
+        fwrite(bytes, 1, length, stdout);
+        fflush(stdout);
     }
 }
 
 uint8_t parse(uint8_t length, uint8_t bytes[]){
 
+    Message_t msg;
+
+//    for(int i = 0; i < length; i++){
+//        printf("%02x ", bytes[i]);
+//    }
+//    printf("\n");
+
+    if ( ! unpack(bytes, length, &msg) ){
+        return 0;
+    }
+
+//    printf("parsed! %d\n", msg.StatusClass);
+
+    if (msg.StatusClass == StatusClassNoteOn){
+        printf("note on %d %d %d\n", msg.Data.Note.Key, msg.Data.Note.Velocity, msg.Channel);
+    }
+    if (msg.StatusClass == StatusClassNoteOff){
+        printf("note off %d %d %d\n", msg.Data.Note.Key, msg.Data.Note.Velocity, msg.Channel);
+    }
+    if (msg.StatusClass == StatusClassControlChange){
+        printf("cc %d %d %d\n", msg.Data.ControlChange.Controller, msg.Data.ControlChange.Value, msg.Channel);
+    }
+    if (msg.StatusClass == StatusClassProgramChange){
+        printf("pc %d %d\n", msg.Data.ProgramChange.Program, msg.Channel);
+    }
+    if (msg.StatusClass == StatusClassChannelPressure){
+        printf("pressure %d %d\n", msg.Data.ChannelPressure.Pressure, msg.Channel);
+    }
+    if (msg.StatusClass == StatusClassPitchBendChange){
+        printf("pitch %d %d\n", msg.Data.PitchBendChange.Pitch, msg.Channel);
+    }
+    if (msg.StatusClass == StatusClassPolyphonicKeyPressure){
+        printf("poly %d %d %d\n", msg.Data.PolyphonicKeyPressure.Key, msg.Data.PolyphonicKeyPressure.Pressure, msg.Channel);
+    }
+
+    if (msg.StatusClass == StatusClassSystemMessage){
+
+        if (msg.Status == SystemMessageMtcQuarterFrame){
+            printf("quarter-frame %d %d\n", msg.Data.MtcQuarterFrame.MessageType, msg.Data.MtcQuarterFrame.Nibble);
+        }
+        if (msg.Status == SystemMessageSongPositionPointer){
+            printf("song-position %d\n", msg.Data.SongPositionPointer.Position);
+        }
+        if (msg.Status == SystemMessageSongSelect){
+            printf("song-select %d\n", msg.Data.SongSelect.Song);
+        }
+        if (msg.Status == SystemMessageStart){
+            printf("start\n");
+        }
+        if (msg.Status == SystemMessageStop){
+            printf("stop\n");
+        }
+        if (msg.Status == SystemMessageContinue){
+            printf("continue\n");
+        }
+        if (msg.Status == SystemMessageActiveSensing){
+            printf("active-sensing\n");
+        }
+        if (msg.Status == SystemMessageReset){
+            printf("reset\n");
+        }
+        if (msg.Status == SystemMessageTimingClock){
+            printf("timing-clock\n");
+        }
+        if (msg.Status == SystemMessageTuneRequest){
+            printf("tune-request\n");
+        }
+        if (msg.Status == SystemMessageSystemExclusive){
+            printf("SysEx\n");
+        }
+    }
 
     return length;
 }
