@@ -107,12 +107,13 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
 ```
 
-## command line utility
+## Command Line Utility
 
+```
 Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate [<cmd> ...]]
 If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line
 Output to STDOUT (when generating this will be binary).
-Note: parsed message output format is identical to the required generation format.
+Note: parsed message output format is identical to the required generation format ;)
 
 Voice Commands:
 	 note (on|off) <key> <velocity> <channel>
@@ -137,6 +138,7 @@ System Commands:
 Examples:
 	 ./midimessage-cli -g note on 60 40 1
 	 ./midimessage-cli -g | ./midimessage-cli -p
+```
 
 ## References
 
