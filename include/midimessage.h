@@ -599,140 +599,223 @@ namespace MidiMessage {
                 value == SysExRtMidiTimeCodeUserBits);
     }
 
+    /**
+     * MIDI Show Control
+     *
+     * F0 7F <device_ID> <msc> <command_format> <command> <data> F7
+     *
+     * <msc>                SubId1 := 0x02
+     * <command_format>     SysExRtMscCmdFmt_t
+     * <command>            SysExRtMscCmd_t
+     *
+     * Notes:
+     * 1. No more than once command can be transmitted in a SysEx.
+     * 2. The total number of byte sin a Show Control message should not exceed 128.
+     * 3. SysEx messages must always be closed with an F7H as soon as all currently prepared information has been transmitted.
+     *
+     * <command_format> and <command> have two possible extension sets that are indicated by 0x00 which indicates that the next byte is part of the
+     *
+     * Que Numbers
+     *
+     * <Q_number> 00 <Q_list> 00 <Q_path> F7 (or alternatively)
+     * <Q_number> 00 <Q_list>  F7 (or alternatively)
+     * <Q_number> F7
+     *
+     * <Q_number> | <Q_list> | <Q_path> are formatted as as ASCII number 0 - 9 (0x30 - 0x39) and can be sectioned using ASCII decimal point . (0x2E), ex
+     *
+     * "235.6" == 0x3233352E36
+     *
+     * Standard MIDI Time Code is used.
+     */
+
     typedef enum {
-        SysExRtMscLighting                      = 0x01,
-        SysExRtMscMovingLights                  = 0x02,
-        SysExRtMscColorChangers                 = 0x03,
-        SysExRtMscStrobes                       = 0x04,
-        SysExRtMscLasers                        = 0x05,
-        SysExRtMscChasers                       = 0x06,
+        SysExRtMscCmdFmtExtension                     = 0x00,
+        SysExRtMscCmdFmtLighting                      = 0x01,
+        SysExRtMscCmdFmtMovingLights                  = 0x02,
+        SysExRtMscCmdFmtColorChangers                 = 0x03,
+        SysExRtMscCmdFmtStrobes                       = 0x04,
+        SysExRtMscCmdFmtLasers                        = 0x05,
+        SysExRtMscCmdFmtChasers                       = 0x06,
 
-        SysExRtMscSound                         = 0x10,
-        SysExRtMscMusic                         = 0x11,
-        SysExRtMscCdPlayers                     = 0x12,
-        SysExRtMscEpromPlayback                 = 0x13,
-        SysExRtMscAudioTapeMachines             = 0x14,
-        SysExRtMscIntercoms                     = 0x15,
-        SysExRtMscAmplifiers                    = 0x16,
-        SysExRtMscAudioEffectsDevices           = 0x17,
-        SysExRtMscEqualizers                    = 0x18,
+        SysExRtMscCmdFmtSound                         = 0x10,
+        SysExRtMscCmdFmtMusic                         = 0x11,
+        SysExRtMscCmdFmtCdPlayers                     = 0x12,
+        SysExRtMscCmdFmtEpromPlayback                 = 0x13,
+        SysExRtMscCmdFmtAudioTapeMachines             = 0x14,
+        SysExRtMscCmdFmtIntercoms                     = 0x15,
+        SysExRtMscCmdFmtAmplifiers                    = 0x16,
+        SysExRtMscCmdFmtAudioEffectsDevices           = 0x17,
+        SysExRtMscCmdFmtEqualizers                    = 0x18,
 
-        SysExRtMscMachinery                     = 0x20,
-        SysExRtMscRigging                       = 0x21,
-        SysExRtMscFlys                          = 0x22,
-        SysExRtMscLifts                         = 0x23,
-        SysExRtMscTurntables                    = 0x24,
-        SysExRtMscTrusses                       = 0x25,
-        SysExRtMscRobots                        = 0x26,
-        SysExRtMscAnimation                     = 0x27,
-        SysExRtMscFloats                        = 0x28,
-        SysExRtMscBreakaways                    = 0x29,
-        SysExRtMscBarges                        = 0x2A,
+        SysExRtMscCmdFmtMachinery                     = 0x20,
+        SysExRtMscCmdFmtRigging                       = 0x21,
+        SysExRtMscCmdFmtFlys                          = 0x22,
+        SysExRtMscCmdFmtLifts                         = 0x23,
+        SysExRtMscCmdFmtTurntables                    = 0x24,
+        SysExRtMscCmdFmtTrusses                       = 0x25,
+        SysExRtMscCmdFmtRobots                        = 0x26,
+        SysExRtMscCmdFmtAnimation                     = 0x27,
+        SysExRtMscCmdFmtFloats                        = 0x28,
+        SysExRtMscCmdFmtBreakaways                    = 0x29,
+        SysExRtMscCmdFmtBarges                        = 0x2A,
 
-        SysExRtMscVideo                         = 0x30,
-        SysExRtMscVideoTapeMachines             = 0x31,
-        SysExRtMscVideoCassetteMachines         = 0x32,
-        SysExRtMscVideoDiscPlayers              = 0x33,
-        SysExRtMscVideoSwitchers                = 0x34,
-        SysExRtMscVideoEffects                  = 0x35,
-        SysExRtMscVideoCharacterGenerators      = 0x36,
-        SysExRtMscVideoStillStores              = 0x37,
-        SysExRtMscVideoMonitors                 = 0x38,
+        SysExRtMscCmdFmtVideo                         = 0x30,
+        SysExRtMscCmdFmtVideoTapeMachines             = 0x31,
+        SysExRtMscCmdFmtVideoCassetteMachines         = 0x32,
+        SysExRtMscCmdFmtVideoDiscPlayers              = 0x33,
+        SysExRtMscCmdFmtVideoSwitchers                = 0x34,
+        SysExRtMscCmdFmtVideoEffects                  = 0x35,
+        SysExRtMscCmdFmtVideoCharacterGenerators      = 0x36,
+        SysExRtMscCmdFmtVideoStillStores              = 0x37,
+        SysExRtMscCmdFmtVideoMonitors                 = 0x38,
 
-        SysExRtMscProjection                    = 0x40,
-        SysExRtMscFilmProjectors                = 0x41,
-        SysExRtMscSlideProjectors               = 0x42,
-        SysExRtMscVideoProjectors               = 0x43,
-        SysExRtMscDissolvers                    = 0x44,
-        SysExRtMscShutterControls               = 0x45,
+        SysExRtMscCmdFmtProjection                    = 0x40,
+        SysExRtMscCmdFmtFilmProjectors                = 0x41,
+        SysExRtMscCmdFmtSlideProjectors               = 0x42,
+        SysExRtMscCmdFmtVideoProjectors               = 0x43,
+        SysExRtMscCmdFmtDissolvers                    = 0x44,
+        SysExRtMscCmdFmtShutterControls               = 0x45,
 
-        SysExRtMscProcessControl                = 0x50,
-        SysExRtMscHydraulicOil                  = 0x51,
-        SysExRtMscH2O                           = 0x52,
-        SysExRtMscWater                         = SysExRtMscH2O,
-        SysExRtMscCO2                           = 0x53,
-        SysExRtMscDryIce                        = SysExRtMscCO2,
-        SysExRtMscCompressedAir                 = 0x54,
-        SysExRtMscNaturalGas                    = 0x55,
-        SysExRtMscFog                           = 0x56,
-        SysExRtMscSmoke                         = 0x57,
-        SysExRtMscCrackedHaze                   = 0x58,
+        SysExRtMscCmdFmtProcessControl                = 0x50,
+        SysExRtMscCmdFmtHydraulicOil                  = 0x51,
+        SysExRtMscCmdFmtH2O                           = 0x52,
+        SysExRtMscCmdFmtWater                         = SysExRtMscCmdFmtH2O,
+        SysExRtMscCmdFmtCO2                           = 0x53,
+        SysExRtMscCmdFmtDryIce                        = SysExRtMscCmdFmtCO2,
+        SysExRtMscCmdFmtCompressedAir                 = 0x54,
+        SysExRtMscCmdFmtNaturalGas                    = 0x55,
+        SysExRtMscCmdFmtFog                           = 0x56,
+        SysExRtMscCmdFmtSmoke                         = 0x57,
+        SysExRtMscCmdFmtCrackedHaze                   = 0x58,
 
-        SysExRtMscPyro                          = 0x60,
-        SysExRtMscFireworks                     = 0x61,
-        SysExRtMscExplosions                    = 0x62,
-        SysExRtMscFlame                         = 0x63,
-        SysExRtMscSmokePots                     = 0x64,
+        SysExRtMscCmdFmtPyro                          = 0x60,
+        SysExRtMscCmdFmtFireworks                     = 0x61,
+        SysExRtMscCmdFmtExplosions                    = 0x62,
+        SysExRtMscCmdFmtFlame                         = 0x63,
+        SysExRtMscCmdFmtSmokePots                     = 0x64,
 
-        SysExRtMscAllTypes                      = 0x7F
+        SysExRtMscCmdFmtAllTypes                      = 0x7F
 
-    } SysExRtMsc_t;
+    } SysExRtMscCmdFmt_t;
 
-    inline bool isSysExRtMidiShowControl( uint8_t value ){
-        return (value == SysExRtMscLighting ||
-                value == SysExRtMscMovingLights ||
-                value == SysExRtMscColorChangers ||
-                value == SysExRtMscStrobes ||
-                value == SysExRtMscLasers ||
-                value == SysExRtMscChasers ||
-                value == SysExRtMscMusic ||
-                value == SysExRtMscCdPlayers ||
-                value == SysExRtMscEpromPlayback ||
-                value == SysExRtMscAudioTapeMachines ||
-                value == SysExRtMscIntercoms ||
-                value == SysExRtMscAmplifiers ||
-                value == SysExRtMscAudioEffectsDevices ||
-                value == SysExRtMscEqualizers ||
-                value == SysExRtMscMachinery ||
-                value == SysExRtMscRigging ||
-                value == SysExRtMscFlys ||
-                value == SysExRtMscLifts ||
-                value == SysExRtMscTurntables ||
-                value == SysExRtMscTrusses ||
-                value == SysExRtMscRobots ||
-                value == SysExRtMscAnimation ||
-                value == SysExRtMscFloats ||
-                value == SysExRtMscBreakaways ||
-                value == SysExRtMscBarges ||
-                value == SysExRtMscVideo ||
-                value == SysExRtMscVideoTapeMachines ||
-                value == SysExRtMscVideoCassetteMachines ||
-                value == SysExRtMscVideoDiscPlayers ||
-                value == SysExRtMscVideoSwitchers ||
-                value == SysExRtMscVideoEffects ||
-                value == SysExRtMscVideoCharacterGenerators ||
-                value == SysExRtMscVideoStillStores ||
-                value == SysExRtMscVideoMonitors ||
-                value == SysExRtMscProjection ||
-                value == SysExRtMscFilmProjectors ||
-                value == SysExRtMscSlideProjectors ||
-                value == SysExRtMscVideoProjectors ||
-                value == SysExRtMscDissolvers ||
-                value == SysExRtMscShutterControls ||
-                value == SysExRtMscProcessControl ||
-                value == SysExRtMscHydraulicOil ||
-                value == SysExRtMscH2O ||
-                value == SysExRtMscCO2 ||
-                value == SysExRtMscCompressedAir ||
-                value == SysExRtMscNaturalGas ||
-                value == SysExRtMscFog ||
-                value == SysExRtMscSmoke ||
-                value == SysExRtMscCrackedHaze ||
-                value == SysExRtMscPyro ||
-                value == SysExRtMscFireworks ||
-                value == SysExRtMscExplosions ||
-                value == SysExRtMscFlame ||
-                value == SysExRtMscSmokePots ||
-                value == SysExRtMscAllTypes);
+    inline bool isSysExRtMscCmdFmt( uint8_t value ){
+        return (value == SysExRtMscCmdFmtExtension ||
+                value == SysExRtMscCmdFmtLighting ||
+                value == SysExRtMscCmdFmtMovingLights ||
+                value == SysExRtMscCmdFmtColorChangers ||
+                value == SysExRtMscCmdFmtStrobes ||
+                value == SysExRtMscCmdFmtLasers ||
+                value == SysExRtMscCmdFmtChasers ||
+                value == SysExRtMscCmdFmtMusic ||
+                value == SysExRtMscCmdFmtCdPlayers ||
+                value == SysExRtMscCmdFmtEpromPlayback ||
+                value == SysExRtMscCmdFmtAudioTapeMachines ||
+                value == SysExRtMscCmdFmtIntercoms ||
+                value == SysExRtMscCmdFmtAmplifiers ||
+                value == SysExRtMscCmdFmtAudioEffectsDevices ||
+                value == SysExRtMscCmdFmtEqualizers ||
+                value == SysExRtMscCmdFmtMachinery ||
+                value == SysExRtMscCmdFmtRigging ||
+                value == SysExRtMscCmdFmtFlys ||
+                value == SysExRtMscCmdFmtLifts ||
+                value == SysExRtMscCmdFmtTurntables ||
+                value == SysExRtMscCmdFmtTrusses ||
+                value == SysExRtMscCmdFmtRobots ||
+                value == SysExRtMscCmdFmtAnimation ||
+                value == SysExRtMscCmdFmtFloats ||
+                value == SysExRtMscCmdFmtBreakaways ||
+                value == SysExRtMscCmdFmtBarges ||
+                value == SysExRtMscCmdFmtVideo ||
+                value == SysExRtMscCmdFmtVideoTapeMachines ||
+                value == SysExRtMscCmdFmtVideoCassetteMachines ||
+                value == SysExRtMscCmdFmtVideoDiscPlayers ||
+                value == SysExRtMscCmdFmtVideoSwitchers ||
+                value == SysExRtMscCmdFmtVideoEffects ||
+                value == SysExRtMscCmdFmtVideoCharacterGenerators ||
+                value == SysExRtMscCmdFmtVideoStillStores ||
+                value == SysExRtMscCmdFmtVideoMonitors ||
+                value == SysExRtMscCmdFmtProjection ||
+                value == SysExRtMscCmdFmtFilmProjectors ||
+                value == SysExRtMscCmdFmtSlideProjectors ||
+                value == SysExRtMscCmdFmtVideoProjectors ||
+                value == SysExRtMscCmdFmtDissolvers ||
+                value == SysExRtMscCmdFmtShutterControls ||
+                value == SysExRtMscCmdFmtProcessControl ||
+                value == SysExRtMscCmdFmtHydraulicOil ||
+                value == SysExRtMscCmdFmtH2O ||
+                value == SysExRtMscCmdFmtCO2 ||
+                value == SysExRtMscCmdFmtCompressedAir ||
+                value == SysExRtMscCmdFmtNaturalGas ||
+                value == SysExRtMscCmdFmtFog ||
+                value == SysExRtMscCmdFmtSmoke ||
+                value == SysExRtMscCmdFmtCrackedHaze ||
+                value == SysExRtMscCmdFmtPyro ||
+                value == SysExRtMscCmdFmtFireworks ||
+                value == SysExRtMscCmdFmtExplosions ||
+                value == SysExRtMscCmdFmtFlame ||
+                value == SysExRtMscCmdFmtSmokePots ||
+                value == SysExRtMscCmdFmtAllTypes);
     }
 
-    inline uint8_t getSysExRtMscCategory( uint8_t value ){
+    inline uint8_t getSysExRtMscCmdFmtCategory( uint8_t value ){
         return (value & 0x70);
     }
 
-    inline bool isSysExRtMsgCategory( uint8_t value, uint8_t category){
+    inline bool isSysExRtMsgCategory( uint8_t value, uint8_t category ){
         return (value & 0x70) == category;
     }
+
+
+    /**
+     * Recommended minimum sets
+     *
+     * #1   Simple Controlled Device, no time code, basic data
+     * #2   No time code, full data capability
+     * #3   Full time code, full data capability
+     * #4   Two phase commit methodology
+     */
+    typedef enum {
+        SysExRtMscCmdExtension          = 0x00,
+
+        // General Commands
+        SysExRtMscCmdGo                 = 0x01, // 123-
+        SysExRtMscCmdStop               = 0x02, // 123-
+        SysExRtMscCmdResume             = 0x03, // 123-
+        SysExRtMscCmdTimedGo            = 0x04, // -23-
+        SysExRtMscCmdLoad               = 0x05, // -23-
+        SysExRtMscCmdSet                = 0x06, // -23-
+        SysExRtMscCmdFire               = 0x07, // -23-
+        SysExRtMscCmdAllOff             = 0x08, // -23-
+        SysExRtMscCmdRestore            = 0x09, // -23-
+        SysExRtMscCmdReset              = 0x0A, // -23-
+        SysExRtMscCmdGoOff              = 0x0B, // -23-
+
+        // Sound Commands
+        SysExRtMscCmdGo_JamLock         = 0x10, // --3-
+        SysExRtMscCmdStandbyPlus        = 0x11, // -23-
+        SysExRtMscCmdStandbyMinus       = 0x12, // -23-
+        SysExRtMscCmdSequencePlus       = 0x13, // -23-
+        SysExRtMscCmdSequenceMinus      = 0x14, // -23-
+        SysExRtMscCmdStartClock         = 0x15, // --3-
+        SysExRtMscCmdStopClock          = 0x16, // --3-
+        SysExRtMscCmdZeroClock          = 0x17, // --3-
+        SysExRtMscCmdSetClock           = 0x18, // --3-
+        SysExRtMscCmdMtcChaseOn         = 0x19, // --3-
+        SysExRtMscCmdMtcChaseOff        = 0x1A, // --3-
+        SysExRtMscCmdOpenCueList        = 0x1B, // -23-
+        SysExRtMscCmdCloseCueList       = 0x1C, // -23-
+        SysExRtMscCmdOpenCuePath        = 0x1D, // -23-
+        SysExRtMscCmdCloseCuePath       = 0x1E  // -23-
+
+        // Two-phase Commands
+        SysExRtMscCmdStandby            = 0x20, // ---4
+        SysExRtMscCmdStandingBy         = 0x21, // ---4
+        SysExRtMscCmdGo2Pc              = 0x22, // ---4
+        SysExRtMscCmdComplete           = 0x23, // ---4
+        SysExRtMscCmdCancel             = 0x24, // ---4
+        SysExRtMscCmdCancelled          = 0x25, // ---4
+        SysExRtMscCmdAbort              = 0x26  // ---4
+    } SysExRtMscCmd_t;
 
     typedef enum {
         SysExRtNotationInformationBarNumber                = 0x01,
