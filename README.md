@@ -9,12 +9,14 @@ No particular structures are enforced such that you can take from it what you wa
 ## Contained contants & un-/packers
 
 - (many) MIDI Message constants + enumerations
-- Manufacturer Id list
-- Standard/Common CC list
+- Manufacturer Id list (see `include/manufacturerids.h`)
+ - tool to generate up-to-date header, run `make manufacturerids` (requires wget + php)
+- Standard/Common CC list (see `include/commonccs.h`)
 - *packers* construct the right byte sequence for a particular message ASSERTing valid parameters
 - *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination)
 - packers and unpackers are always complementary and are available as literal-based and struct-based variants
 - *structs* and *types* help to create a unified interface and make handling easier
+- *Command line utility* to turn human-readable commands into corresponding byte sequence and vice versa (see `src/cli.cpp` and below)
 
 * tt = to test
 
