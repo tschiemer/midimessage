@@ -26,12 +26,10 @@ namespace MidiMessage {
                     return packNoteOn(bytes, msg->Channel, msg->Data.NoteOn.Key, msg->Data.NoteOn.Velocity);
 
                 case StatusClassPolyphonicKeyPressure:
-                    return packPolyphonicKeyPressure(bytes, msg->Channel, msg->Data.PolyphonicKeyPressure.Key,
-                                                     msg->Data.PolyphonicKeyPressure.Pressure);
+                    return packPolyphonicKeyPressure(bytes, msg->Channel, msg->Data.PolyphonicKeyPressure.Key, msg->Data.PolyphonicKeyPressure.Pressure);
 
                 case StatusClassControlChange:
-                    return packControlChange(bytes, msg->Channel, msg->Data.ControlChange.Controller,
-                                             msg->Data.ControlChange.Value);
+                    return packControlChange(bytes, msg->Channel, msg->Data.ControlChange.Controller, msg->Data.ControlChange.Value);
 
                 case StatusClassProgramChange:
                     return packProgramChange(bytes, msg->Channel, msg->Data.ProgramChange.Program);
