@@ -3,6 +3,10 @@ project(midimessage)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 include_directories(include)
 
 set(SOURCE_FILES
@@ -15,8 +19,16 @@ set(SOURCE_FILES
 
 add_library(midimessage ${SOURCE_FILES})
 
-add_executable(example-sample src/mmstdlib.cpp example/sample.cpp)
-target_link_libraries(example-sample midimessage)
+add_executable(midimessage-cli src/cli.cpp src/mmstdlib.cpp)
+target_link_libraries(midimessage-cli midimessage)
+
+add_executable(simple examples/simple.cpp src/mmstdlib.cpp)
+target_link_libraries(simple midimessage)
+
+set_target_properties(simple
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+        )
 
 add_custom_target(manufacturerids
         COMMAND wget https://www.midi.org/specifications-old/item/manufacturer-id-numbers
