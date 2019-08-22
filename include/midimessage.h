@@ -27,6 +27,7 @@
 
 #if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
 #ifndef SYSEX_MEMORY_STATIC_SIZE
+// Several standards and best practices mention that MIDI messages are at most 128 bytes long.
 #define SYSEX_MEMORY_STATIC_SIZE 128
 #endif
 #if SYSEX_MEMORY_STATIC_SIZE < 1
