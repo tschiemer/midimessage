@@ -109,11 +109,11 @@ void receivedSysExMessageFromSomewhere( uint8_t * buf, int len ) {
 
     std::cout << "Received SysEx Message with " << (int)msg.Data.SysEx.Length << " bytes of data" << std::endl;
 
-    if (msg.Data.SysEx.Id == MidiMessage::SysExIdExperimental){
+    if (msg.Data.SysEx.Id == MidiMessage::SysExIdByteExperimental){
         std::cout << "Experimental message!" << std::endl;
-    } else if (msg.Data.SysEx.Id == MidiMessage::SysExIdRealTime) {
+    } else if (msg.Data.SysEx.Id == MidiMessage::SysExIdByteRealTime) {
         std::cout << "Universal real time message!" << std::endl;
-    } else if (msg.Data.SysEx.Id == MidiMessage::SysExIdNonRealTime) {
+    } else if (msg.Data.SysEx.Id == MidiMessage::SysExIdByteNonRealTime) {
         std::cout << "Universal non-real time message!" << std::endl;
     } else {
         std::cout << "Custom manufacturer message!" << std::endl;
@@ -148,17 +148,17 @@ int main(int argc, char * argv[]){
 
     std::cout << "-------------- Experimental Sysex msg" << std::endl;
 
-    uint8_t bufSysExExperimental[6] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::SysExIdExperimental, 1, 3, 3, 7};
+    uint8_t bufSysExExperimental[6] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::SysExIdByteExperimental, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysExExperimental, sizeof(bufSysExExperimental) );
 
     std::cout << "-------------- Universal Realtime Sysex msg" << std::endl;
 
-    uint8_t bufSysRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::SysExIdRealTime, 1, 3, 3, 7};
+    uint8_t bufSysRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::SysExIdByteRealTime, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysRealtime, sizeof(bufSysRealtime) );
 
     std::cout << "-------------- Universal Non-RealtimeSysex msg" << std::endl;
 
-    uint8_t bufSysNonRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::SysExIdNonRealTime, 1, 3, 3, 7};
+    uint8_t bufSysNonRealtime[10] = {MidiMessage::SystemMessageSystemExclusive, MidiMessage::SysExIdByteNonRealTime, 1, 3, 3, 7};
     receivedSysExMessageFromSomewhere( bufSysNonRealtime, sizeof(bufSysNonRealtime) );
 
     return 0;
