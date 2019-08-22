@@ -22,7 +22,20 @@ add_library(midimessage ${SOURCE_FILES})
 add_executable(midimessage-cli src/cli.cpp src/mmstdlib.cpp)
 target_link_libraries(midimessage-cli midimessage)
 
-add_executable(simple examples/simple.cpp src/mmstdlib.cpp)
+
+message("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+message("NOTE to create an up-to-date 'include/manufacturerids.h' you can 'make manufacturerids' (requires wget and php)")
+message("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+
+add_custom_target(manufacturerids
+        COMMAND wget https://www.midi.org/specifications-old/item/manufacturer-id-numbers
+        COMMAND php ${CMAKE_CURRENT_SOURCE_DIR}/tools/createManufacturerIdsHeader.php manufacturer-id-numbers ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h
+        COMMAND rm manufacturer-id-numbers)
+
+
+# EXAMPLES
+
+add_executable(simple EXCLUDE_FROM_ALL examples/simple.cpp src/mmstdlib.cpp)
 target_link_libraries(simple midimessage)
 
 set_target_properties(simple
@@ -30,11 +43,8 @@ set_target_properties(simple
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
         )
 
-add_custom_target(manufacturerids
-        COMMAND wget https://www.midi.org/specifications-old/item/manufacturer-id-numbers
-        COMMAND php ${CMAKE_CURRENT_SOURCE_DIR}/tools/createManufacturerIdsHeader.php manufacturer-id-numbers ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h
-        COMMAND rm manufacturer-id-numbers)
-
-message("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
-message("NOTE to create an up-to-date 'include/manufacturerids.h' you can 'make manufacturerids' (requires wget and php)")
-message("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+# Group examples into target <examples>
+if(NOT TARGET examples)
+    add_custom_target(examples)
+    add_dependencies(examples simple)
+endif()
