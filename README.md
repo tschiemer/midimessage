@@ -4,10 +4,17 @@ Very basic constants and un-/packer for MIDI Messages.
 
 Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) that do not provide these basics.
 
+No particular structures are enforced such that you can take from it what you want.
+
 ## Contained contants & un-/packers
 
+- (many) MIDI Message constants + enumerations
 - Manufacturer Id list
 - Standard/Common CC list
+- *packers* construct the right byte sequence for a particular message ASSERTing valid parameters
+- *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination)
+- packers and unpackers are always complementary and are available as literal-based and struct-based variants
+- *structs* and *types* help to create a unified interface and make handling easier
 
 * tt = to test
 
