@@ -805,7 +805,7 @@ namespace MidiMessage {
         SysExRtMscCmdOpenCueList        = 0x1B, // -23-
         SysExRtMscCmdCloseCueList       = 0x1C, // -23-
         SysExRtMscCmdOpenCuePath        = 0x1D, // -23-
-        SysExRtMscCmdCloseCuePath       = 0x1E  // -23-
+        SysExRtMscCmdCloseCuePath       = 0x1E,  // -23-
 
         // Two-phase Commands
         SysExRtMscCmdStandby            = 0x20, // ---4
