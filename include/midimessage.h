@@ -150,7 +150,19 @@ namespace MidiMessage {
     const uint16_t FineTuningCenter   = 0x2000; // 0xA440 when in two 7bit values
     const uint16_t FineTuningMax      = 0x3FFF; // 0x7F7F
 
-    const uint8_t SysExBroadcastDeviceId = 0x7F; // for  SysEx (Non-)Realtime Messages
+    const uint8_t SysExDeviceIdBroadcast = 0x7F; // for  SysEx (Non-)Realtime Messages
+
+    inline bool isSysExDeviceIdGroup( uint8_t value ){
+        ASSERT( (value & DataMask) == value );
+
+        return (0x70 <= value) && (value <= 0x7E);
+    }
+
+    inline uint8_t getSysExDevceIdGroup( uint8_t value ){
+        ASSERT( isSysExDeviceIdGroup(value) );
+
+        return (value >= 0x70) ? (value - 0x70) : 0x7F;
+    }
 
 
     const uint8_t FpsMask       = 0b01100000;
