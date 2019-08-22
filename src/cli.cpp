@@ -23,7 +23,33 @@ typedef enum {
 
 void printHelp( void ) {
     printf("Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate [<cmd> ...]]\n");
-    printf("If no <data> or <cmd>.. is given reads from STDIN assuming one input per line separated by a NL\n");
+    printf("If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line\n");
+    printf("Output to STDOUT (when generating this will be binary).\n");
+    printf("Note: parsed message output format is identical to the required generation format.\n");
+
+    printf("\nVoice Commands:\n");
+    printf("\t note (on|off) <key> <velocity> <channel>\n");
+    printf("\t cc <controller> <value> <channel>\n");
+    printf("\t pc <program> <channel>\n");
+    printf("\t pressure <pressure> <channel>\n");
+    printf("\t pitch <pitch> <channel>\n");
+    printf("\t poly <key> <pressure> <channel>\n");
+
+    printf("\nSystem Commands:\n");
+    printf("\t start\n");
+    printf("\t stop\n");
+    printf("\t continue\n");
+    printf("\t reset\n");
+    printf("\t active-sensing\n");
+    printf("\t tune-request\n");
+    printf("\t timing-clock\n");
+    printf("\t quarter-frame <messageType> <nibble>\n");
+    printf("\t song-position <position>\n");
+    printf("\t song-select <songNumber>\n");
+
+    printf("\nExamples:\n");
+    printf("\t ./midimessage-cli -g note on 60 40 1\n");
+    printf("\t ./midimessage-cli -g | ./midimessage-cli -p\n");
 }
 
 void generate(uint8_t argc,  char  * argv[]);

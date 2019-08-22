@@ -107,6 +107,37 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
 ```
 
+## command line utility
+
+Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate [<cmd> ...]]
+If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line
+Output to STDOUT (when generating this will be binary).
+Note: parsed message output format is identical to the required generation format.
+
+Voice Commands:
+	 note (on|off) <key> <velocity> <channel>
+	 cc <controller> <value> <channel>
+	 pc <program> <channel>
+	 pressure <pressure> <channel>
+	 pitch <pitch> <channel>
+	 poly <key> <pressure> <channel>
+
+System Commands:
+	 start
+	 stop
+	 continue
+	 reset
+	 active-sensing
+	 tune-request
+	 timing-clock
+	 quarter-frame <messageType> <nibble>
+	 song-position <position>
+	 song-select <songNumber>
+
+Examples:
+	 ./midimessage-cli -g note on 60 40 1
+	 ./midimessage-cli -g | ./midimessage-cli -p
+
 ## References
 
 - https://www.midi.org/specifications-old/item/the-midi-1-0-specification
