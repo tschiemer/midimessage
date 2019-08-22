@@ -22,7 +22,7 @@ typedef enum {
 } Mode_t;
 
 void printHelp( void ) {
-    printf("Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate [<cmd> ...]]\n");
+    printf("Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate|-g [<cmd> ...]]\n");
     printf("If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line\n");
     printf("Output to STDOUT (when generating this will be binary).\n");
     printf("Note: parsed message output format is identical to the required generation format ;)\n");

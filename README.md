@@ -110,7 +110,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 ## Command Line Utility
 
 ```
-Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate [<cmd> ...]]
+Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate|-g [<cmd> ...]]
 If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line
 Output to STDOUT (when generating this will be binary).
 Note: parsed message output format is identical to the required generation format ;)
