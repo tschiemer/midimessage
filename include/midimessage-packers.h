@@ -982,7 +982,7 @@ namespace MidiMessage {
                                            uint8_t second, uint8_t frame, uint8_t fps) {
         ASSERT(bytes != NULL);
         ASSERT((deviceId & DataMask) == deviceId);
-        ASSERT(isMidiTimeCodeFrameRate(fps));
+        ASSERT(isMtcFrameRate(fps));
         ASSERT(hour <= MtcMaxHour);
         ASSERT(minute <= MtcMaxMinute);
         ASSERT(second <= MtcMaxSecond);
@@ -1063,7 +1063,7 @@ namespace MidiMessage {
         ASSERT(deviceId != NULL);
         ASSERT(mtc != NULL);
 
-        MidiTimeCodeFrameRate_t fps = MidiTimeCodeFrameRate24fps;
+        MtcFrameRate_t fps = MtcFrameRate24fps;
 
         if (!unpackSysExMtcFullMessage(bytes, len, deviceId, (uint8_t *) &fps, &mtc->FpsHour, &mtc->Minute,
                                        &mtc->Second, &mtc->Frame)) {
@@ -1177,7 +1177,7 @@ namespace MidiMessage {
         ASSERT(!isSysExNonRtMtcWithAddInfo(msgType) || addInfoLen == 0);
         ASSERT(bytes != NULL);
         ASSERT((deviceId & DataMask) == deviceId);
-        ASSERT(isMidiTimeCodeFrameRate(fps));
+        ASSERT(isMtcFrameRate(fps));
         ASSERT(hour <= MtcMaxHour);
         ASSERT(minute <= MtcMaxMinute);
         ASSERT(second <= MtcMaxSecond);
@@ -1285,7 +1285,7 @@ namespace MidiMessage {
         ASSERT(bytes != NULL);
         ASSERT(mtc != NULL);
 
-        MidiTimeCodeFrameRate_t fps = MidiTimeCodeFrameRate24fps;
+        MtcFrameRate_t fps = MtcFrameRate24fps;
 
         if (!unpackSysExNonRtMtcCueingSetupMessage(bytes, len, msgType, deviceId, (uint8_t *) &fps, &mtc->FpsHour,
                                                    &mtc->Minute, &mtc->Second, &mtc->Frame, &mtc->FractionalFrame,

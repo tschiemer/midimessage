@@ -206,7 +206,7 @@ namespace MidiMessage {
     const uint8_t MtcMaxHour = 23;
     const uint8_t MtcMaxMinute = 59;
     const uint8_t MtcMaxSecond = 59;
-    const uint8_t MtcMaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MidiTimeCodeFrameRate_t
+    const uint8_t MtcMaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MtcFrameRate_t
     const uint8_t MtcMaxFractionalFrame = 99;
 
     const uint8_t StatusCodeFlagBit     = 0b01000000;
@@ -214,7 +214,13 @@ namespace MidiMessage {
     const uint8_t StatusVideoIdBit      = 0b00010000;
     
     const uint16_t MaxEventNumber = 0x3FFF; // 14 bit value
-    
+
+    /**
+     * Pitch center of Pitch Bend Message
+     * @see MaxDoubleValue
+     * @see packPitchBendChange()
+     * @see unpackPitchBendChange()
+     */
     const uint16_t PitchCenter      = 0x2000;
 
     const uint16_t CoarseTuningCenter = 0x0040;
@@ -1190,26 +1196,26 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        MidiTimeCodeFrameRate24fps      = 0b00,
-        MidiTimeCodeFrameRate25fps      = 0b01,
-        MidiTimeCodeFrameRate29_97fps   = 0b10, // 30fps Drop-Frame
-        MidiTimeCodeFrameRate30fpsDropFrame = MidiTimeCodeFrameRate29_97fps,
-        MidiTimeCodeFrameRate30fps      = 0b11  // 30fps Non-Drop
-    } MidiTimeCodeFrameRate_t;
+        MtcFrameRate24fps      = 0b00,
+        MtcFrameRate25fps      = 0b01,
+        MtcFrameRate29_97fps   = 0b10, // 30fps Drop-Frame
+        MtcFrameRate30fpsDropFrame = MtcFrameRate29_97fps,
+        MtcFrameRate30fps      = 0b11  // 30fps Non-Drop
+    } MtcFrameRate_t;
 
-    inline bool isMidiTimeCodeFrameRate( uint8_t fps ) {
-        return (fps == MidiTimeCodeFrameRate24fps ||
-                fps == MidiTimeCodeFrameRate25fps ||
-                fps == MidiTimeCodeFrameRate29_97fps ||
-                fps == MidiTimeCodeFrameRate30fps);
+    inline bool isMtcFrameRate( uint8_t fps ) {
+        return (fps == MtcFrameRate24fps ||
+                fps == MtcFrameRate25fps ||
+                fps == MtcFrameRate29_97fps ||
+                fps == MtcFrameRate30fps);
     }
 
 
-    inline MidiTimeCodeFrameRate_t getFps( uint8_t fpsHour ){
-        return (MidiTimeCodeFrameRate_t)((fpsHour & MtcFpsMask) >> MtcFpsOffset);
+    inline MtcFrameRate_t getFps( uint8_t fpsHour ){
+        return (MtcFrameRate_t)((fpsHour & MtcFpsMask) >> MtcFpsOffset);
     }
 
-    inline uint8_t setFps( MidiTimeCodeFrameRate_t fps ){
+    inline uint8_t setFps( MtcFrameRate_t fps ){
         return (((uint8_t)fps) << MtcFpsOffset) & MtcFpsMask;
     }
 
