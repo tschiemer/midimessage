@@ -162,6 +162,7 @@ namespace MidiMessage {
 
     inline int denibblize( uint8_t * dst, uint8_t * src, int len ){
         ASSERT( len % 2 == 0 );
+
         for (int i = 0, j = 0; i < len; ){
             dst[j] = src[i++] & NibbleMask;
             dst[j] |= (src[i++] & NibbleMask) << 4;
@@ -176,6 +177,50 @@ namespace MidiMessage {
         return value & ChannelMask;
     }
 
+
+    const uint8_t SysExDeviceIdBroadcast = 0x7F; // for  SysEx (Non-)Realtime Messages
+
+    inline bool isSysExDeviceIdGroup( uint8_t value ){
+        ASSERT( (value & DataMask) == value );
+
+        return (0x70 <= value) && (value <= 0x7E);
+    }
+
+    inline uint8_t getSysExDevceIdGroup( uint8_t value ){
+        ASSERT( isSysExDeviceIdGroup(value) );
+
+        return (value >= 0x70) ? (value - 0x70) : 0x7F;
+    }
+
+
+    const uint8_t MtcFpsMask       = 0b01100000;
+    const uint8_t MtcFpsOffset     = 5;
+    const uint8_t MtcHourMask      = 0b00011111;
+    const uint8_t MtcMinuteMask    = 0b00111111;
+    const uint8_t MtcSecondMask    = 0b00111111;
+    const uint8_t MtcFrameMask     = 0b00011111;
+    const uint8_t MtcFrameSignBit  = 0b01000000;
+    const uint8_t MtcFrameFinalByteIdBit   = 0b00100000;
+    const uint8_t MtcFractionalFrameMask   = 0b01111111;
+
+    const uint8_t MtcMaxHour = 23;
+    const uint8_t MtcMaxMinute = 59;
+    const uint8_t MtcMaxSecond = 59;
+    const uint8_t MtcMaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MidiTimeCodeFrameRate_t
+    const uint8_t MtcMaxFractionalFrame = 99;
+
+    const uint8_t StatusCodeFlagBit     = 0b01000000;
+    const uint8_t StatusInvalidCodeBit  = 0b00100000;
+    const uint8_t StatusVideoIdBit      = 0b00010000;
+    
+    const uint16_t MaxEventNumber = 0x3FFF; // 14 bit value
+    
+    const uint16_t PitchCenter      = 0x2000;
+
+    const uint16_t CoarseTuningCenter = 0x0040;
+    const uint16_t CoarseTuningMax    = 0x007F;
+    const uint16_t FineTuningCenter   = 0x2000; // 0xA440 when in two 7bit values
+    const uint16_t FineTuningMax      = 0x3FFF; // 0x7F7F
 
 
     const int MsgLenNoteOff                         = 3;
@@ -199,50 +244,6 @@ namespace MidiMessage {
     const int MsgLenSysExRtMtcCueingSetupMessageMin  = 8;
     const int MsgLenSysExRtMmcCommandWithoutInfo = 6;
 
-
-
-    const uint16_t PitchCenter      = 0x2000;
-
-    const uint16_t CoarseTuningCenter = 0x0040;
-    const uint16_t CoarseTuningMax    = 0x007F;
-    const uint16_t FineTuningCenter   = 0x2000; // 0xA440 when in two 7bit values
-    const uint16_t FineTuningMax      = 0x3FFF; // 0x7F7F
-
-    const uint8_t SysExDeviceIdBroadcast = 0x7F; // for  SysEx (Non-)Realtime Messages
-
-    inline bool isSysExDeviceIdGroup( uint8_t value ){
-        ASSERT( (value & DataMask) == value );
-
-        return (0x70 <= value) && (value <= 0x7E);
-    }
-
-    inline uint8_t getSysExDevceIdGroup( uint8_t value ){
-        ASSERT( isSysExDeviceIdGroup(value) );
-
-        return (value >= 0x70) ? (value - 0x70) : 0x7F;
-    }
-
-
-    const uint8_t FpsMask       = 0b01100000;
-    const uint8_t FpsOffset     = 5;
-    const uint8_t HourMask      = 0b00011111;
-    const uint8_t MinuteMask    = 0b00111111;
-    const uint8_t SecondMask    = 0b00111111;
-    const uint8_t FrameMask     = 0b00011111;
-    const uint8_t FrameSignBit  = 0b01000000;
-    const uint8_t FrameFinalByteIdBit   = 0b00100000;
-    const uint8_t FractionalFrameMask   = 0b01111111;
-    const uint8_t StatusCodeFlagBit     = 0b01000000;
-    const uint8_t StatusInvalidCodeBit  = 0b00100000;
-    const uint8_t StatusVideoIdBit      = 0b00010000;
-
-    const uint8_t MaxHour = 23;
-    const uint8_t MaxMinute = 59;
-    const uint8_t MaxSecond = 59;
-    const uint8_t MaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MidiTimeCodeFrameRate_t
-    const uint8_t MaxFractionalFrame = 99;
-
-    const uint16_t MaxEventNumber = 0x3FFF; // 14 bit value
 
     typedef enum {
         StatusClassNoteOff                  = 0x80,
@@ -1205,15 +1206,15 @@ namespace MidiMessage {
 
 
     inline MidiTimeCodeFrameRate_t getFps( uint8_t fpsHour ){
-        return (MidiTimeCodeFrameRate_t)((fpsHour & FpsMask) >> FpsOffset);
+        return (MidiTimeCodeFrameRate_t)((fpsHour & MtcFpsMask) >> MtcFpsOffset);
     }
 
     inline uint8_t setFps( MidiTimeCodeFrameRate_t fps ){
-        return (((uint8_t)fps) << FpsOffset) & FpsMask;
+        return (((uint8_t)fps) << MtcFpsOffset) & MtcFpsMask;
     }
 
     inline uint8_t getHour( uint8_t fpsHour ){
-        return fpsHour & HourMask;
+        return fpsHour & MtcHourMask;
     }
 
 

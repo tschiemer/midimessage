@@ -983,20 +983,20 @@ namespace MidiMessage {
         ASSERT(bytes != NULL);
         ASSERT((deviceId & DataMask) == deviceId);
         ASSERT(isMidiTimeCodeFrameRate(fps));
-        ASSERT(hour <= MaxHour);
-        ASSERT(minute <= MaxMinute);
-        ASSERT(second <= MaxSecond);
-        ASSERT(frame <= MaxFps[fps]);
+        ASSERT(hour <= MtcMaxHour);
+        ASSERT(minute <= MtcMaxMinute);
+        ASSERT(second <= MtcMaxSecond);
+        ASSERT(frame <= MtcMaxFps[fps]);
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdByteRealTime;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtMidiTimeCode;
         bytes[4] = SysExRtMtcFullMessage;
-        bytes[5] = ((fps << FpsOffset) & FpsMask) | (hour & HourMask);
-        bytes[6] = minute & MinuteMask;
-        bytes[7] = second & SecondMask;
-        bytes[8] = frame & FrameMask;
+        bytes[5] = ((fps << MtcFpsOffset) & MtcFpsMask) | (hour & MtcHourMask);
+        bytes[6] = minute & MtcMinuteMask;
+        bytes[7] = second & MtcSecondMask;
+        bytes[8] = frame & MtcFrameMask;
         bytes[9] = SystemMessageEndOfExclusive;
 
         return MsgLenSysExRtMtcFullMessage;
@@ -1178,11 +1178,11 @@ namespace MidiMessage {
         ASSERT(bytes != NULL);
         ASSERT((deviceId & DataMask) == deviceId);
         ASSERT(isMidiTimeCodeFrameRate(fps));
-        ASSERT(hour <= MaxHour);
-        ASSERT(minute <= MaxMinute);
-        ASSERT(second <= MaxSecond);
-        ASSERT(frame <= MaxFps[fps]);
-        ASSERT(fractionalFrame <= MaxFractionalFrame);
+        ASSERT(hour <= MtcMaxHour);
+        ASSERT(minute <= MtcMaxMinute);
+        ASSERT(second <= MtcMaxSecond);
+        ASSERT(frame <= MtcMaxFps[fps]);
+        ASSERT(fractionalFrame <= MtcMaxFractionalFrame);
         ASSERT(eventNumber <= MaxEventNumber);
 
         int msgLen = MsgLenSysExNonRtMtcCueingSetupMessageMin - 1; // min message length (w/o EOX)
@@ -1192,11 +1192,11 @@ namespace MidiMessage {
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExNonRtMidiTimeCode;
         bytes[4] = msgType;
-        bytes[5] = ((fps << FpsOffset) & FpsMask) | (hour & HourMask);
-        bytes[6] = minute & MinuteMask;
-        bytes[7] = second & SecondMask;
-        bytes[8] = frame & FrameMask;
-        bytes[9] = fractionalFrame & FractionalFrameMask;
+        bytes[5] = ((fps << MtcFpsOffset) & MtcFpsMask) | (hour & MtcHourMask);
+        bytes[6] = minute & MtcMinuteMask;
+        bytes[7] = second & MtcSecondMask;
+        bytes[8] = frame & MtcFrameMask;
+        bytes[9] = fractionalFrame & MtcFractionalFrameMask;
 
         packDoubleValue(&bytes[10], eventNumber);
 
@@ -1216,7 +1216,7 @@ namespace MidiMessage {
         ASSERT(mtc != NULL);
 
         return packSysExNonRtMtcCueingSetupMessage(msgType, bytes, deviceId, getFps(mtc->FpsHour),
-                                                   mtc->FpsHour & HourMask, mtc->Minute, mtc->Second, mtc->Frame,
+                                                   mtc->FpsHour & MtcHourMask, mtc->Minute, mtc->Second, mtc->Frame,
                                                    mtc->FractionalFrame, eventNumber, addInfo, addInfoLen);
     }
 
@@ -1259,11 +1259,11 @@ namespace MidiMessage {
         *deviceId = bytes[2] & DataMask;
         *msgType = (SysExNonRtMtc_t) (bytes[4]);
         *fps = (bytes[5] >> 5) & 0b11;
-        *hour = bytes[5] & HourMask;
-        *minute = bytes[6] & MinuteMask;
-        *second = bytes[7] & SecondMask;
-        *frame = bytes[8] & FrameMask;
-        *fractionalFrame = bytes[9] & FractionalFrameMask;
+        *hour = bytes[5] & MtcHourMask;
+        *minute = bytes[6] & MtcMinuteMask;
+        *second = bytes[7] & MtcSecondMask;
+        *frame = bytes[8] & MtcFrameMask;
+        *fractionalFrame = bytes[9] & MtcFractionalFrameMask;
 
         unpackDoubleValue(&bytes[10], eventNumber);
 
