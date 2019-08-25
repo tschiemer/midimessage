@@ -1,6 +1,6 @@
-//
-// Created by Philip Tschiemer on 21.08.19.
-//
+/**
+ * \file
+ */
 
 #ifndef MIDIMESSAGE_COMMONCCS_H
 #define MIDIMESSAGE_COMMONCCS_H
@@ -30,6 +30,8 @@ namespace MidiMessage {
         CcGeneralPurposeController4                 = 0x13, // 19
 
         // 0x20 - 0x3F = LSB for Controllers 0-31 (rarely implemented)
+
+        CcDataEntryLSB                              = 0x26, // 38
 
         CcHoldPedal                                 = 0x40, // 64
         CcSustain                                   = CcHoldPedal,
