@@ -89,10 +89,10 @@ usort( $enum, function( $a, $b ) {
 });
 
 $enum = array_map( function( $obj ){
-	return "\t\t ManufacturerId{$obj->key} \t = 0x{$obj->code} /* {$obj->status} / {$obj->name} {$obj->url} */";
+	return "\t\t ManufacturerId{$obj->key} \t = 0x{$obj->code}, /* {$obj->status} / {$obj->name} {$obj->url} */";
 }, $enum );
 
-$enum = join(",\n",$enum);
+$enum = join("\n",$enum);
 
 $date = date('c');
 

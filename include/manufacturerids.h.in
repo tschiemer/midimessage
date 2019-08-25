@@ -1,11 +1,19 @@
-//
-// MIDI SysEx Message Manufacturer Id List
-//
-// Generated using 'make manufacturerids'
-//
-// @date  ${date}
-// @url https://www.midi.org/specifications-old/item/manufacturer-id-numbers
-//
+/**
+ * \file
+ *
+ * MIDI SysEx Message Manufacturer Id List
+ *
+ * Unified format where single byte ids are located at byte1, and where for three byte ids byte1 = extension id (= 0x00), byte2 = regional byte, byte3.
+ * Thus the original byte order is kept.
+ *
+ * byte0 (MSB) byte1 byte2 byte3 (LSB)
+ *
+ * Generated using 'make manufacturerids'
+ *
+ * @date ${date}
+ * @url https://www.midi.org/specifications-old/item/manufacturer-id-numbers
+ */
+
 
 #ifndef MIDIMESSAGE_MANUFACTURERIDS_H
 #define MIDIMESSAGE_MANUFACTURERIDS_H
