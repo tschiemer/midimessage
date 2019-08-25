@@ -43,7 +43,7 @@ target_link_libraries(simple midimessage)
 
 set_target_properties(simple
         PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples/bin"
         )
 
 # Group examples into target <examples>
