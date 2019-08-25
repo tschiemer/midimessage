@@ -6,6 +6,8 @@ Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) th
 
 No particular structures are enforced such that you can take from it what you want.
 
+Home repository: https://github.com/tschiemer/midimessage
+
 ## Features
 
 - (many) MIDI Message constants + enumerations
@@ -71,11 +73,17 @@ tt = to test
 - `midimessage-cli` requires on getopt
 
 ```bash
+git clone https://github.com/tschiemer/midimessage.git
+cd midimessage
+
 cmake .
 make
+
 make examples
+make docs
 make manufacturerids
 ```
+
 
 ## Code Example
 
