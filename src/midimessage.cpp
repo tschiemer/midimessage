@@ -129,10 +129,10 @@ namespace MidiMessage {
                             case SysExRtDcMasterBalance:
                             case SysExRtDcMasterCoarseTuning:
                             case SysExRtDcMasterFineTuning:
-                                return packDeviceControl( bytes, msg->Channel, (SysExRtDc_t)msg->Data.SysEx.SubId2, msg->Data.SysEx.Data.DeviceControlValue );
+                                return packDeviceControl( bytes, msg->Channel, (SysExRtDc_t)msg->Data.SysEx.SubId2, msg->Data.SysEx.Data.DeviceControl.Value );
 
                             case SysExRtDcGlobalParameterControl:
-                                return packGlobalParameterControl( bytes, msg->Channel, &msg->Data.SysEx.Data.GlobalParameterControl);
+                                return packGlobalParameterControl( bytes, msg->Channel, &msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl);
 
                         }
 
@@ -452,7 +452,7 @@ namespace MidiMessage {
                             case SysExRtDcMasterCoarseTuning:
                             case SysExRtDcMasterFineTuning:
 
-                                return unpackDeviceControl( bytes, length, &msg->Channel, (SysExRtDc_t*)&msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.DeviceControlValue );
+                                return unpackDeviceControl( bytes, length, &msg->Channel, (SysExRtDc_t*)&msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.DeviceControl.Value );
 
                             case SysExRtDcGlobalParameterControl:
 
@@ -462,15 +462,15 @@ namespace MidiMessage {
                                 msg->Data.SysEx.ByteData = (uint8_t*)calloc(length - 8, 1);
 #endif
                                 // use sysex raw byte data container for gpc
-                                msg->Data.SysEx.Data.GlobalParameterControl.Data = msg->Data.SysEx.ByteData;
+                                msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.Data = msg->Data.SysEx.ByteData;
 
-                                if ( ! unpackGlobalParameterControl( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.GlobalParameterControl )){
+                                if ( ! unpackGlobalParameterControl( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl )){
 #if SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
                                     free( msg->Data.SysEx.ByteData );
 #endif
                                 }
 
-                                msg->Data.SysEx.Length = msg->Data.SysEx.Data.GlobalParameterControl.DataLength;
+                                msg->Data.SysEx.Length = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.DataLength;
 
                                 return true;
                         }

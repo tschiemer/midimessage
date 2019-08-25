@@ -209,10 +209,28 @@ namespace MidiMessage {
     const uint8_t MtcMaxFps[] = {23,24,29,29}; // According to index given by FrameRate enum @see MtcFrameRate_t
     const uint8_t MtcMaxFractionalFrame = 99;
 
+    /**
+     * Status code flag bit as used in MIDI Show Control (MSC)
+     */
     const uint8_t StatusCodeFlagBit     = 0b01000000;
+
+    /**
+     * Status invalid code bit as used in MIDI Show Control (MSC)
+     */
     const uint8_t StatusInvalidCodeBit  = 0b00100000;
+
+    /**
+     * Status video id bit as used in MIDI Show Control (MSC)
+     */
     const uint8_t StatusVideoIdBit      = 0b00010000;
-    
+
+    /**
+     * Max event number as used in MIDI Time Code Cueing
+     * @see packSysExNonRtMtcCueingSetupMessage()
+     * @see unpackSysExNonRtMtcCueingSetupMessage()
+     * @see packSysExRtMtcCueingSetupMessage()
+     * @see unpackSysExRtMtcCueingSetupMessage()
+     */
     const uint16_t MaxEventNumber = 0x3FFF; // 14 bit value
 
     /**
@@ -223,6 +241,9 @@ namespace MidiMessage {
      */
     const uint16_t PitchCenter      = 0x2000;
 
+    /**
+     * As used in
+     */
     const uint16_t CoarseTuningCenter = 0x0040;
     const uint16_t CoarseTuningMax    = 0x007F;
     const uint16_t FineTuningCenter   = 0x2000; // 0xA440 when in two 7bit values
@@ -1290,6 +1311,12 @@ namespace MidiMessage {
     }
 
     typedef struct {
+        uint8_t * Number;
+        uint8_t * List;
+        uint8_t * Path;
+    } MscCueNumber_t;
+
+    typedef struct {
         StatusClass_t StatusClass;
         uint8_t Status;
         uint8_t Channel; // Also DeviceId for SysEx messages
@@ -1335,9 +1362,10 @@ namespace MidiMessage {
                         uint8_t SoftwareRevision[4];
                     } GeneralInfo;
 
-                    uint16_t DeviceControlValue;
-
-                    GlobalParameterControl_t GlobalParameterControl;
+                    union {
+                        uint16_t Value;
+                        GlobalParameterControl_t GlobalParameterControl;
+                    } DeviceControl;
 
                 } Data;
 
