@@ -1,6 +1,6 @@
-//
-// Created by Philip Tschiemer on 18.08.19.
-//
+/**
+ * \file
+ */
 
 #ifndef MIDIMESSAGE_STDLIB_H
 #define MIDIMESSAGE_STDLIB_H
