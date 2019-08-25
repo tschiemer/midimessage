@@ -11,6 +11,7 @@ include_directories(include)
 
 set(SOURCE_FILES
         include/midimessage.h
+        include/midimessage-packers.h
         include/manufacturerids.h
         include/commonccs.h
         include/notes.h
@@ -32,6 +33,8 @@ add_custom_target(manufacturerids
         COMMAND php ${CMAKE_CURRENT_SOURCE_DIR}/tools/createManufacturerIdsHeader.php manufacturer-id-numbers ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h
         COMMAND rm manufacturer-id-numbers)
 
+add_custom_target(docs
+        COMMAND doxygen doxygen.config)
 
 # EXAMPLES
 

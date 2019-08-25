@@ -2,9 +2,12 @@
 // Created by Philip Tschiemer on 19.07.19.
 //
 
-#include <midimessage.h>
+
 #include <mmstdlib.h>
 #include <cstddef>
+
+#include <midimessage.h>
+#include <midimessage-packers.h>
 
 
 
@@ -388,7 +391,7 @@ namespace MidiMessage {
                 return true;
             } // isSysExManufacturerId(bytes[1])
 
-            if (bytes[1] == SysExIdRealTime) {
+            if (bytes[1] == SysExIdByteRealTime) {
                 if (length < 4) {
                     return false;
                 }
