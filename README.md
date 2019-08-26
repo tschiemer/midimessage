@@ -135,17 +135,18 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 ## Command Line Utility
 
 ```
-Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [<cmd> ...])
+Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])
 
 Options:
-	 -h|-? 	 show this help
-	 --running-status|-r 	 Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)
-	 --timed|-t[milli|micro] 	 Enabled the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)
+	 -h|-? 			 show this help
+	 --running-status|-r 		 Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)
+	 --timed|-t[milli|micro] 	 Enables the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)
 	 --parse|-p [<binary-data>] 	 Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.
 	 --generate|-g [<cmd> ...] 	 Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.
+	 --prefix=<prefix> 		 Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode).
+	 --suffix=<suffix> 		 Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).
 
 Note: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!
-
 Fancy pants note: the parsing output format is identical to the generation command format ;)
 
 Voice Commands:
@@ -174,10 +175,11 @@ System Exclusives:
 	 sysex nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>
 
 Examples:
-	 ./midimessage-cli -g note on 60 40 1
-	 ./midimessage-cli -g | ./midimessage-cli -p
-	 ./midimessage-cli -g | ./midimessage-cli -ptmilli > test.recording
-	 cat test.recording | ./midimessage-cli -gtmilli | ./midimessage-cli -p
+	 bin/midimessage-cli -g note on 60 40 1
+	 bin/midimessage-cli -g | bin/midimessage-cli -p
+	 bin/midimessage-cli -g --prefix='%d ' --suffix=$'\x0a'
+	 bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording
+	 cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p
 ```
 
 ## References

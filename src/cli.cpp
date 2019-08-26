@@ -41,18 +41,23 @@ unsigned long lastTimestamp, now;
 
 bool runningStatusEnabled = false;
 
+char prefix[32] = "";
+char suffix[32] = "";
+
 void printHelp( void ) {
-    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [<cmd> ...])\n");
+    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
 
     printf("\nOptions:\n");
-    printf("\t -h|-? \t show this help\n");
-    printf("\t --running-status|-r \t Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)\n");
-    printf("\t --timed|-t[milli|micro] \t Enabled the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)\n");
+    printf("\t -h|-? \t\t\t show this help\n");
+    printf("\t --running-status|-r \t\t Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)\n");
+    printf("\t --timed|-t[milli|micro] \t Enables the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)\n");
     printf("\t --parse|-p [<binary-data>] \t Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.\n");
     printf("\t --generate|-g [<cmd> ...] \t Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.\n");
+    printf("\t --prefix=<prefix> \t\t Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
+    printf("\t --suffix=<suffix> \t\t Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
 
     printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!\n");
-    printf("\nFancy pants note: the parsing output format is identical to the generation command format ;) \n");
+    printf("Fancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
     printf("\nVoice Commands:\n");
     printf("\t note (on|off) <channel> <key> <velocity>\n");
@@ -81,10 +86,11 @@ void printHelp( void ) {
 
 
     printf("\nExamples:\n");
-    printf("\t ./midimessage-cli -g note on 60 40 1\n");
-    printf("\t ./midimessage-cli -g | ./midimessage-cli -p\n");
-    printf("\t ./midimessage-cli -g | ./midimessage-cli -ptmilli > test.recording\n");
-    printf("\t cat test.recording | ./midimessage-cli -gtmilli | ./midimessage-cli -p\n");
+    printf("\t bin/midimessage-cli -g note on 60 40 1\n");
+    printf("\t bin/midimessage-cli -g | bin/midimessage-cli -p\n");
+    printf("\t bin/midimessage-cli -g --prefix='%%d ' --suffix=$'\\x0a'\n");
+    printf("\t bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording\n");
+    printf("\t cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p\n");
 }
 
 void generateLoop(void);
@@ -116,7 +122,6 @@ int main(int argc, char * argv[], char * env[]){
     int c;
     int digit_optind = 0;
 
-
     Mode_t mode = ModeUndefined;
 
     if (argc <= 1){
@@ -133,6 +138,8 @@ int main(int argc, char * argv[], char * env[]){
                 {"generate",   no_argument,    0,  'g' },
                 {"timed", optional_argument,  0, 't'},
                 {"running-status", optional_argument, 0, 'r'},
+                {"prefix", required_argument, 0, 0},
+                {"suffix", required_argument, 0, 0},
                 {"help",    no_argument,    0,  'h' },
                 {0,         0,              0,  0 }
         };
@@ -143,6 +150,24 @@ int main(int argc, char * argv[], char * env[]){
             break;
 
         switch (c) {
+            case 0:
+
+                if (strcmp(long_options[option_index].name, "prefix") == 0) {
+                    if (mode != ModeGenerate) {
+                        printf("Can only use prefix when generating messages!\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    strcpy(prefix, optarg);
+                }
+                if (strcmp(long_options[option_index].name, "suffix") == 0) {
+                    if (mode != ModeGenerate) {
+                        printf("Can only use prefix when generating messages!\n");
+                        exit(EXIT_FAILURE);
+                    }
+                    strcpy(suffix, optarg);
+                }
+                break;
+
             case '?':
             case 'h':
                 printHelp();
@@ -151,7 +176,7 @@ int main(int argc, char * argv[], char * env[]){
             case 'p':
                 if (mode == ModeGenerate){
                     printf("Already set to parsing - can not do both!\n");
-                    return 1;
+                    exit(EXIT_FAILURE);
                 }
                 mode = ModeParse;
                 break;
@@ -535,11 +560,15 @@ void generate(uint8_t argc, char * argv[]){
 
     if (length > 0){
 
+        printf(prefix, length);
+
         if (runningStatusEnabled && updateRunningStatus( &runningStatus, bytes[0] )){
             fwrite( &bytes[1], 1, length - 1, stdout );
         } else {
             fwrite(bytes, 1, length, stdout);
         }
+
+        printf("%s", suffix);
 
         fflush(stdout);
     }
