@@ -141,12 +141,12 @@ Output to STDOUT (when generating this will be binary).
 Note: parsed message output format is identical to the required generation format ;)
 
 Voice Commands:
-	 note (on|off) <key> <velocity> <channel>
-	 cc <controller> <value> <channel>
-	 pc <program> <channel>
-	 pressure <pressure> <channel>
-	 pitch <pitch> <channel>
-	 poly <key> <pressure> <channel>
+	 note (on|off) <channel> <key> <velocity>
+	 cc <channel> <controller> <value>
+	 pc <channel> <program>
+	 pressure <channel> <pressure>
+	 pitch <channel> <pitch>
+	 poly <channel> <key> <pressure>
 
 System Commands:
 	 start
@@ -161,13 +161,14 @@ System Commands:
 	 song-select <songNumber>
 
 System Exclusives:
-	 experimental <n> <data-of-length-n>
-	 manufacturer <hex-manufacturer-id> <n> <data-of-length-n>
+	 sysex experimental <n> <data-of-length-n>
+	 sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>
+	 sysex nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>
 
 Note: Data bytes have a value range of 0-127 - anything above is considered a control byte.
 
 Recordings and Replay
-	 Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then have a delay since the last message in the given time scale (micro or milli seconds, default = micro).
+Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then keep the delay between message in the given time scale (micro or milli seconds, default = micro).
 
 Examples:
 	 ./midimessage-cli -g note on 60 40 1

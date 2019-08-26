@@ -67,14 +67,14 @@ void printHelp( void ) {
     printf("\t song-select <songNumber>\n");
 
     printf("\nSystem Exclusives:\n");
-    printf("\t experimental <n> <data-of-length-n>\n");
-    printf("\t manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
-    printf("\t nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision> \n");
+    printf("\t sysex experimental <n> <data-of-length-n>\n");
+    printf("\t sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
+    printf("\t sysex nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision> \n");
 
     printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte.\n");
 
     printf("\nRecordings and Replay\n");
-    printf("\t Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then have a delay since the last message in the given time scale (micro or milli seconds, default = micro).\n");
+    printf("Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then keep the delay between message in the given time scale (micro or milli seconds, default = micro).\n");
 
     printf("\nExamples:\n");
     printf("\t ./midimessage-cli -g note on 60 40 1\n");
