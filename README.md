@@ -181,3 +181,5 @@ Examples:
 
 
 ## License MIT
+
+Also see file `LICENSE`
