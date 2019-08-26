@@ -250,26 +250,26 @@ namespace MidiMessage {
     const uint16_t FineTuningMax      = 0x3FFF; // 0x7F7F
 
 
-    const int MsgLenNoteOff                         = 3;
-    const int MsgLenNoteOn                          = 3;
-    const int MsgLenPolyphonicKeyPressure           = 3;
-    const int MsgLenControlChange                   = 3;
-    const int MsgLenProgramChange                   = 2;
-    const int MsgLenChannelPressure                 = 2;
-    const int MsgLenPitchBendChange                 = 3;
-    const int MsgLenMtcQuarterFrame                 = 2;
-    const int MsgLenSongPositionPointer             = 3;
-    const int MsgLenSongSelect                      = 2;
+    const uint8_t MsgLenNoteOff                         = 3;
+    const uint8_t MsgLenNoteOn                          = 3;
+    const uint8_t MsgLenPolyphonicKeyPressure           = 3;
+    const uint8_t MsgLenControlChange                   = 3;
+    const uint8_t MsgLenProgramChange                   = 2;
+    const uint8_t MsgLenChannelPressure                 = 2;
+    const uint8_t MsgLenPitchBendChange                 = 3;
+    const uint8_t MsgLenMtcQuarterFrame                 = 2;
+    const uint8_t MsgLenSongPositionPointer             = 3;
+    const uint8_t MsgLenSongSelect                      = 2;
 
-    const int MsgLenSysExNonRtMtcCueingSetupMessageMin  = 13;
-    const int MsgLenSysExNonRtGenInfoIdentityRequest = 6;
-    const int MsgLenSysExNonRtGenInfoIdentityReply = 15;
-    const int MsgLenSysExNonRtDeviceControl = 8;
+    const uint8_t MsgLenSysExNonRtMtcCueingSetupMessageMin  = 13;
+    const uint8_t MsgLenSysExNonRtGenInfoIdentityRequest = 6;
+    const uint8_t MsgLenSysExNonRtGenInfoIdentityReply = 15;
+    const uint8_t MsgLenSysExNonRtDeviceControl = 8;
 
-    const int MsgLenSysExRtMtcFullMessage    = 10;
-    const int MsgLenSysExRtMtcUserBits       = 15;
-    const int MsgLenSysExRtMtcCueingSetupMessageMin  = 8;
-    const int MsgLenSysExRtMmcCommandWithoutInfo = 6;
+    const uint8_t MsgLenSysExRtMtcFullMessage    = 10;
+    const uint8_t MsgLenSysExRtMtcUserBits       = 15;
+    const uint8_t MsgLenSysExRtMtcCueingSetupMessageMin  = 8;
+    const uint8_t MsgLenSysExRtMmcCommandWithoutInfo = 6;
 
 
     typedef enum {
@@ -833,8 +833,7 @@ namespace MidiMessage {
     } SysExRtMscCmdFmt_t;
 
     inline bool isSysExRtMscCmdFmt( uint8_t value ){
-        return (value == SysExRtMscCmdFmtExtension ||
-                value == SysExRtMscCmdFmtLighting ||
+        return (value == SysExRtMscCmdFmtLighting ||
                 value == SysExRtMscCmdFmtMovingLights ||
                 value == SysExRtMscCmdFmtColorChangers ||
                 value == SysExRtMscCmdFmtStrobes ||
@@ -950,6 +949,42 @@ namespace MidiMessage {
         SysExRtMscCmdCancelled          = 0x25, // ---4
         SysExRtMscCmdAbort              = 0x26  // ---4
     } SysExRtMscCmd_t;
+
+    inline bool isSysExRtMscCmd( uint8_t value ){
+        return (value == SysExRtMscCmdGo ||
+                value == SysExRtMscCmdStop ||
+                value == SysExRtMscCmdResume ||
+                value == SysExRtMscCmdTimedGo ||
+                value == SysExRtMscCmdLoad ||
+                value == SysExRtMscCmdSet ||
+                value == SysExRtMscCmdFire ||
+                value == SysExRtMscCmdAllOff ||
+                value == SysExRtMscCmdRestore ||
+                value == SysExRtMscCmdReset ||
+                value == SysExRtMscCmdGoOff ||
+                value == SysExRtMscCmdGo_JamLock ||
+                value == SysExRtMscCmdStandbyPlus ||
+                value == SysExRtMscCmdStandbyMinus ||
+                value == SysExRtMscCmdSequencePlus ||
+                value == SysExRtMscCmdSequenceMinus ||
+                value == SysExRtMscCmdStartClock ||
+                value == SysExRtMscCmdStopClock ||
+                value == SysExRtMscCmdZeroClock ||
+                value == SysExRtMscCmdSetClock ||
+                value == SysExRtMscCmdMtcChaseOn ||
+                value == SysExRtMscCmdMtcChaseOff ||
+                value == SysExRtMscCmdOpenCueList ||
+                value == SysExRtMscCmdCloseCueList ||
+                value == SysExRtMscCmdOpenCuePath ||
+                value == SysExRtMscCmdCloseCuePath ||
+                value == SysExRtMscCmdStandby ||
+                value == SysExRtMscCmdStandingBy ||
+                value == SysExRtMscCmdGo2Pc ||
+                value == SysExRtMscCmdComplete ||
+                value == SysExRtMscCmdCancel ||
+                value == SysExRtMscCmdCancelled ||
+                value == SysExRtMscCmdAbort);
+    }
 
     typedef enum {
         SysExRtNotationInformationBarNumber                = 0x01,
@@ -1310,11 +1345,168 @@ namespace MidiMessage {
         return &gpc->Data[ gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth ];
     }
 
+
+    typedef union {
+        uint32_t Value;
+        uint8_t Bytes[3];
+    } MscExtensibleCommandField_t;
+
+    inline uint8_t copyMscExtensibleCommandField( uint8_t * dst, uint8_t * src ) {
+        ASSERT(dst != NULL);
+        ASSERT(src != NULL);
+
+        dst[0] = src[0];
+        if (src[0] != SysExRtMscCmdExtension) {
+            return 1;
+        }
+
+        dst[1] = src[1];
+        if (src[1] != SysExRtMscCmdExtension) {
+            return 2;
+        }
+
+        dst[2] = src[2];
+
+        return 3;
+    }
+
+
     typedef struct {
         uint8_t * Number;
         uint8_t * List;
         uint8_t * Path;
     } MscCueNumber_t;
+
+    inline bool isMscCueNumberChar( uint8_t value ){
+        return ( '0' <= value && value <= '9') || value == '.';
+    }
+
+    inline bool isValidMscCueNumberPart( uint8_t * str ){
+        if (str == NULL || str[0] == '\0'){
+            return true;
+        }
+
+        for (uint8_t i = 0; str[i] != '\0'; i++){
+            if ( ! isMscCueNumberChar(str[i]) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    inline uint8_t packMscCueNumber( uint8_t * bytes, uint8_t * number, uint8_t * list, uint8_t * path ){
+        ASSERT( bytes != NULL );
+        ASSERT( isValidMscCueNumberPart(number) && number != NULL && isMscCueNumberChar(number[0]) );
+        ASSERT( isValidMscCueNumberPart(list) );
+        ASSERT( isValidMscCueNumberPart(path) );
+
+        int len = 0;
+
+        for(uint8_t i = 0; number[i] != '\0'; i++){
+            bytes[len++] = number[i];
+        }
+
+        if (list == NULL || ! isMscCueNumberChar(list[0]) ){
+            return len;
+        }
+
+        bytes[len++] = '\0';
+
+        for ( uint8_t i = 0; list[i] != '\0'; i++){
+            bytes[len++] = list[i];
+        }
+
+        if (path == NULL || ! isMscCueNumberChar(path[0]) ) {
+            return len;
+        }
+
+        bytes[len++] = '\0';
+
+        for ( uint8_t i = 0; path[i] != '\0'; i++){
+            bytes[len++] = list[i];
+        }
+
+        return len;
+    }
+
+    inline bool unpackMscCueNumber( uint8_t * bytes, uint8_t len, uint8_t ** number, uint8_t ** list, uint8_t ** path ){
+        ASSERT( bytes != NULL );
+        ASSERT( number != NULL );
+        ASSERT( list != NULL );
+        ASSERT( path != NULL );
+
+        if (len < 1){
+            return false;
+        }
+
+        uint8_t l = 0;
+
+        *number = bytes;
+
+        for(; l < len; l++){
+            if (bytes[l] == '\0'){
+                break;
+            }
+            if (bytes[l] == SystemMessageEndOfExclusive){
+                bytes[l] = '\0';
+                *list = NULL;
+                *path = NULL;
+                return true;
+            }
+            if ( ! isMscCueNumberChar(bytes[l]) ){
+                return false;
+            }
+        }
+
+        l++;
+
+        if ( l >= len || ! isMscCueNumberChar(bytes[l]) ){
+            *list = NULL;
+            *path = NULL;
+            return true;
+        }
+
+        *list = &bytes[l];
+
+        for(; l < len; l++){
+            if (bytes[l] == '\0'){
+                break;
+            }
+            if (bytes[l] == SystemMessageEndOfExclusive){
+                bytes[l] = '\0';
+                *path = NULL;
+                return true;
+            }
+            if ( ! isMscCueNumberChar(bytes[l]) ){
+                return false;
+            }
+        }
+
+        l++;
+
+        if ( l >= len || ! isMscCueNumberChar(bytes[l]) ){
+            *path = NULL;
+            return true;
+        }
+
+
+        for(; l < len; l++){
+            if (bytes[l] == '\0') {
+                // by specification Cue numbers must end with an EOX
+                return false;
+            }
+            if (bytes[l] == SystemMessageEndOfExclusive){
+                bytes[l] = '\0';
+                return true;
+            }
+            if ( ! isMscCueNumberChar(bytes[l]) ){
+                return false;
+            }
+        }
+
+        return false;
+    }
 
     typedef struct {
         StatusClass_t StatusClass;
@@ -1366,6 +1558,12 @@ namespace MidiMessage {
                         uint16_t Value;
                         GlobalParameterControl_t GlobalParameterControl;
                     } DeviceControl;
+
+                    struct {
+                        MscExtensibleCommandField_t CommandFormat;
+                        MscExtensibleCommandField_t Command;
+                        MscCueNumber_t CueNumber;
+                    } MidiShowControl;
 
                 } Data;
 

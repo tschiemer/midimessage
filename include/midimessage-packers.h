@@ -1649,7 +1649,7 @@ namespace MidiMessage {
         bytes[3] = SysExRtMidiMachineControlCommand;
         bytes[4] = command;
 
-        for (int i = 0; i < dataLen; i++) {
+        for (uint8_t i = 0; i < dataLen; i++) {
             bytes[len++] = data[i];
         }
 
@@ -1692,11 +1692,99 @@ namespace MidiMessage {
         if (bytes[len - 1] == SystemMessageEndOfExclusive) {
             len--;
         }
+
+        *dataLen = 0;
+
         if (len > 5) {
-            *dataLen = 0;
             for (int i = 5; i < len; i++, (*dataLen)++) {
                 data[(*dataLen)++] = bytes[i];
             }
+        }
+
+        return true;
+    }
+
+    inline uint8_t packMidiShowControl( uint8_t * bytes, uint8_t deviceId, uint8_t * cmdFmt, uint8_t * cmd, uint8_t * data, uint8_t dataLen ){
+        ASSERT( bytes != NULL );
+        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( cmdFmt != NULL && isSysExRtMscCmdFmt(cmdFmt[0]) );
+        ASSERT( cmd != NULL && isSysExRtMscCmd(cmd[0]) );
+        ASSERT( dataLen == 0 || data != NULL );
+
+
+        uint8_t len = 4;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdByteRealTime;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = SysExRtMidiShowControl;
+
+        len += copyMscExtensibleCommandField( &bytes[len], cmdFmt );
+
+        len += copyMscExtensibleCommandField( &bytes[len], cmd );
+
+        for (uint8_t i = 0; i < dataLen; i++) {
+            bytes[len++] = data[i];
+        }
+
+        bytes[len++] = SystemMessageEndOfExclusive;
+
+        return len;
+    }
+
+
+    inline bool unpackMidiVisualShowControl(uint8_t * bytes, uint8_t len, uint8_t * deviceId, uint8_t * cmdFmt, uint8_t * cmd,
+                                 uint8_t * data, uint8_t * dataLen) {
+        ASSERT(bytes != NULL);
+        ASSERT(deviceId != NULL);
+        ASSERT( cmdFmt != NULL );
+        ASSERT( cmd != NULL );
+        ASSERT(data != NULL);
+        ASSERT(dataLen != NULL);
+
+
+        if (len < 5) {
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive) {
+            return false;
+        }
+        if (bytes[1] != SysExIdByteRealTime) {
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2]) {
+            return false;
+        }
+        if (bytes[3] != SysExRtMidiShowControl) {
+            return false;
+        }
+        if ( ! isSysExRtMscCmdFmt(bytes[4]) ) {
+            return false;
+        }
+
+        uint8_t pos = 4;
+
+        *deviceId = bytes[2];
+
+        pos += copyMscExtensibleCommandField( cmdFmt, &bytes[pos] );
+
+        if ( ! isSysExRtMscCmd(bytes[len]) ){
+            return false;
+        }
+
+        pos += copyMscExtensibleCommandField( cmd, &bytes[pos] );
+
+        if (bytes[len - 1] == SystemMessageEndOfExclusive) {
+            len--;
+        }
+
+        *dataLen = 0;
+
+        if (len > pos) {
+            for (uint8_t i = pos; i < len; i++, (*dataLen)++) {
+                data[(*dataLen)++] = bytes[i];
+            }
+            data[(*dataLen)++] = SystemMessageEndOfExclusive;
         }
 
         return true;
