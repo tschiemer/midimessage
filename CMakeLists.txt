@@ -15,12 +15,11 @@ set(SOURCE_FILES
         include/manufacturerids.h
         include/commonccs.h
         include/notes.h
-        include/mmstdlib.h
         src/midimessage.cpp)
 
 add_library(midimessage ${SOURCE_FILES})
 
-add_executable(midimessage-cli src/cli.cpp src/mmstdlib.cpp)
+add_executable(midimessage-cli src/cli.cpp)
 target_link_libraries(midimessage-cli midimessage)
 
 
@@ -38,7 +37,7 @@ add_custom_target(docs
 
 # EXAMPLES
 
-add_executable(simple EXCLUDE_FROM_ALL examples/simple.cpp src/mmstdlib.cpp)
+add_executable(simple EXCLUDE_FROM_ALL examples/simple.cpp)
 target_link_libraries(simple midimessage)
 
 set_target_properties(simple

@@ -27,45 +27,6 @@
 #define ASSERT(x)
 #endif
 
-/**
- * \def SYSEX_MEMORY
- * \brief Selection of memory allocation strategy used (default = SYSEX_MEMORY_DYNAMIC)
- * \see SYSEX_MEMORY_DYNAMIC
- */
-
-/**
- * \def SYSEX_MEMORY_STATIC
- * \brief Use static memory (value = 1)
- */
-/**
- * \def SYSEX_MEMORY_DYNAMIC
- * \brief Use dynamic memory allocation (value = 2)
- */
-
-#define SYSEX_MEMORY_STATIC 1
-#define SYSEX_MEMORY_DYNAMIC 2
-
-#ifndef SYSEX_MEMORY
-//#define SYSEX_MEMORY SYSEX_MEMORY_STATIC
-#define SYSEX_MEMORY SYSEX_MEMORY_DYNAMIC
-#endif
-
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-#ifndef SYSEX_MEMORY_STATIC_SIZE
-// Several standards and best practices mention that MIDI messages are at most 128 bytes long.
-#define SYSEX_MEMORY_STATIC_SIZE 128
-#endif
-#if SYSEX_MEMORY_STATIC_SIZE < 1
-#warning If using static sysex memory please specify memory size
-#endif
-#endif // SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-
-// Require dynamic memory allocaction to support global parameter control
-//#if SYSEX_MEMORY != SYSEX_MEMORY_DYNAMIC
-//#ifndef DISABLE_GLOBAL_PARAMETER_CONTROL
-//#define DISABLE_GLOBAL_PARAMETER_CONTROL
-//#endif
-//#endif
 
 namespace MidiMessage {
 
@@ -378,29 +339,29 @@ namespace MidiMessage {
      * @see deunifySysExId()
      */
     typedef enum {
-        SysExIdByteManufacturerExtension  = 0x00,
-        SysExIdByteExperimental           = 0x7D,
-        SysExIdByteNonRealTime            = 0x7E,
-        SysExIdByteRealTime               = 0x7F
+        SysExIdManufacturerExtensionByte  = 0x00,
+        SysExIdExperimentalByte           = 0x7D,
+        SysExIdNonRealTimeByte            = 0x7E,
+        SysExIdRealTimeByte               = 0x7F
     } SysExIdByte_t;
 
     /**
      * Type check
      */
     inline bool isSysExIdByte( uint8_t value ){
-        return (value == SysExIdByteManufacturerExtension ||
-                value == SysExIdByteExperimental ||
-                value == SysExIdByteNonRealTime ||
-                value == SysExIdByteRealTime);
+        return (value == SysExIdManufacturerExtensionByte ||
+                value == SysExIdExperimentalByte ||
+                value == SysExIdNonRealTimeByte ||
+                value == SysExIdRealTimeByte);
     }
 
     /**
      * Test wether given byte belongs to a non-manufacturer id.
      */
     inline bool isSysExManufacturerIdByte( uint8_t byte0 ){
-        return (byte0 != SysExIdByteExperimental &&
-                byte0 != SysExIdByteNonRealTime &&
-                byte0 != SysExIdByteRealTime);
+        return (byte0 != SysExIdExperimentalByte &&
+                byte0 != SysExIdNonRealTimeByte &&
+                byte0 != SysExIdRealTimeByte);
     }
 
     /**
@@ -464,7 +425,7 @@ namespace MidiMessage {
 
         bytes[0] = (id >> 16) & DataMask;
 
-        if (bytes[0] == SysExIdByteManufacturerExtension){
+        if (bytes[0] == SysExIdManufacturerExtensionByte){
             bytes[1] = (id >> 8) & DataMask;
             bytes[2] = id & DataMask;
             return 3;
@@ -478,7 +439,7 @@ namespace MidiMessage {
 
         *id = ((uint32_t)bytes[0]) << 16;
 
-        if (bytes[0] == SysExIdByteManufacturerExtension){
+        if (bytes[0] == SysExIdManufacturerExtensionByte){
             *id |= ((uint32_t)bytes[1]) << 8;
             *id |= ((uint32_t)bytes[2]);
             return 3;
@@ -987,6 +948,94 @@ namespace MidiMessage {
     }
 
     typedef enum {
+        SysExRtMscStatusUndefinedError                      = 0x0000,
+
+        SysExRtMscStatus1                                   = 0x1004, // meaning is dependent on Command_Format
+        SysExRtMscStatus2                                   = 0x1008,
+        SysExRtMscStatus3                                   = 0x100C,
+        SysExRtMscStatus4                                   = 0x1010,
+        SysExRtMscStatus5                                   = 0x1014,
+        SysExRtMscStatus6                                   = 0x1018,
+        SysExRtMscStatus7                                   = 0x101C,
+        SysExRtMscStatus8                                   = 0x1104,
+        SysExRtMscStatus9                                   = 0x1108,
+        SysExRtMscStatus10                                  = 0x1204,
+
+        SysExRtMscStatusChecksumError                       = 0x8000,
+        SysExRtMscStatusCompleting                          = 0x8004,
+        SysExRtMscStatusPaused                              = 0x8008,
+        SysExRtMscStatusTerminated                          = 0x800C,
+        SysExRtMscStatusReversed                            = 0x8010,
+        SysExRtMscStatusTimeout                             = 0x8020,
+        SysExRtMscStatusNotStandingBy                       = 0x8024,
+        SysExRtMscStatusManualOverrideInitiated             = 0x8028,
+        SysExRtMscStatusManualOverrideInProgress            = 0x8030, // Or possibly 0x8028??? The specs are contradictory CANCELLED vs ABORT
+        SysExRtMscStatusDeadmanInterlockNotEstablished      = 0x8040,
+        SysExRtMscStatusRequiredSafetyInterlockNotEstablished = 0x8044,
+        SysExRtMscStatusUnknownQNumber                       = 0x8050,
+        SysExRtMscStatusUnknownQList                        = 0x8054,
+        SysExRtMscStatusUnknownQPath                        = 0x8058,
+        SysExRtMscStatusTooManyCuesActive                   = 0x805C,
+        SysExRtMscStatusCueOutOfSequence                    = 0x8060,
+        SysExRtMscStatusInvalidData1Value                   = 0x8064,
+        SysExRtMscStatusInvalidData2Value                   = 0x8068,
+        SysExRtMscStatusInvalidData3Value                   = 0x806C,
+        SysExRtMscStatusInvalidData4Value                   = 0x8070,
+        SysExRtMscStatusManualCueingOfPlaybackMediumRequired = 0x8090,
+        SysExRtMscStatusPowerFailureInControlledSubsystem   = 0x80A0,
+        SysExRtMscStatusReadingNewShowCuesFromDisk          = 0x80B0,
+    } SysExRtMscStatus_t;
+
+    inline bool isSysExRtMscStatus( uint16_t value ){
+        return (value == SysExRtMscStatusUndefinedError ||
+                value == SysExRtMscStatus1 ||
+                value == SysExRtMscStatus2 ||
+                value == SysExRtMscStatus3 ||
+                value == SysExRtMscStatus4 ||
+                value == SysExRtMscStatus5 ||
+                value == SysExRtMscStatus6 ||
+                value == SysExRtMscStatus7 ||
+                value == SysExRtMscStatus8 ||
+                value == SysExRtMscStatus9 ||
+                value == SysExRtMscStatus10 ||
+                value == SysExRtMscStatusChecksumError ||
+                value == SysExRtMscStatusCompleting ||
+                value == SysExRtMscStatusPaused ||
+                value == SysExRtMscStatusTerminated ||
+                value == SysExRtMscStatusReversed ||
+                value == SysExRtMscStatusTimeout ||
+                value == SysExRtMscStatusNotStandingBy ||
+                value == SysExRtMscStatusManualOverrideInitiated ||
+                value == SysExRtMscStatusManualOverrideInProgress ||
+                value == SysExRtMscStatusDeadmanInterlockNotEstablished ||
+                value == SysExRtMscStatusRequiredSafetyInterlockNotEstablished ||
+                value == SysExRtMscStatusUnknownQNumber ||
+                value == SysExRtMscStatusUnknownQList ||
+                value == SysExRtMscStatusUnknownQPath ||
+                value == SysExRtMscStatusTooManyCuesActive ||
+                value == SysExRtMscStatusCueOutOfSequence ||
+                value == SysExRtMscStatusInvalidData1Value ||
+                value == SysExRtMscStatusInvalidData2Value ||
+                value == SysExRtMscStatusInvalidData3Value ||
+                value == SysExRtMscStatusInvalidData4Value ||
+                value == SysExRtMscStatusManualCueingOfPlaybackMediumRequired ||
+                value == SysExRtMscStatusPowerFailureInControlledSubsystem ||
+                value == SysExRtMscStatusReadingNewShowCuesFromDisk);
+    }
+
+    inline uint8_t packSysExRtMscStatus( uint8_t * bytes, uint16_t status ){
+        bytes[0] = (status >> 2) & DataMask;
+        bytes[1] = (status >> 10) & DataMask;
+        return 2;
+    }
+
+    inline uint8_t unpackSysExRtMscStatus( uint8_t * bytes, uint16_t * status ){
+        *status = (((uint16_t)bytes[0]) << 2) + (((uint16_t)bytes[1]) << 10);
+        return 2;
+    }
+
+
+    typedef enum {
         SysExRtNotationInformationBarNumber                = 0x01,
         SysExRtNotationInformationTimeSignatureImmediate   = 0x02,
         SysExRtNotationInformationTimeSignatureDelayed     = 0x03
@@ -1311,6 +1360,264 @@ namespace MidiMessage {
         uint8_t * Data;
     } GlobalParameterControl_t;
 
+
+    typedef union {
+        uint16_t Value;
+        GlobalParameterControl_t GlobalParameterControl;
+    } DeviceControlData_t;
+
+
+    typedef union {
+        uint32_t Value;
+        uint8_t Bytes[3];
+    } MscExtensibleCommandField_t;
+
+
+    typedef struct {
+        uint8_t * Number;
+        uint8_t * List;
+        uint8_t * Path;
+    } MscCueNumber_t;
+
+    inline bool isMscCueNumberChar( uint8_t value ){
+        return ( '0' <= value && value <= '9') || value == '.';
+    }
+
+
+    typedef struct {
+        MscExtensibleCommandField_t CommandFormat;
+        MscExtensibleCommandField_t Command;
+        MscCueNumber_t CueNumber;
+        MidiTimeCode_t MidiTimeCode;
+        uint16_t Controller;
+        uint16_t Value;
+        uint8_t MacroNumber;
+        uint16_t Checksum;
+        uint16_t SequenceNumber;
+        uint16_t Status;
+        uint8_t Data[4];
+    } MidiShowControlData_t;
+
+    typedef struct {
+        MidiTimeCode_t MidiTimeCode;
+        uint16_t EventNumber;
+    } MtcCueingData_t;
+
+    typedef struct {
+        uint32_t ManufacturerId;
+        uint16_t DeviceFamily;
+        uint16_t DeviceFamilyMember;
+        uint8_t SoftwareRevision[4];
+    } GeneralInformationData_t;
+
+    typedef struct {
+        StatusClass_t StatusClass;
+        uint8_t SystemMessage;
+        uint8_t Channel; // Also DeviceId for SysEx messages
+        union {
+            struct {
+                uint8_t Key;
+                uint8_t Velocity;
+            } Note;
+            struct {
+                uint8_t Key;
+                uint8_t Pressure;
+            } PolyphonicKeyPressure;
+            struct {
+                uint8_t Controller;
+                uint8_t Value;
+            } ControlChange;
+            struct {
+                uint8_t Program;
+            } ProgramChange;
+            struct {
+                uint8_t Pressure;
+            } ChannelPressure;
+            struct {
+                uint16_t Pitch;
+            } PitchBendChange;
+            MtcQuarterFrame_t MtcQuarterFrame;
+            struct {
+                uint16_t Position;
+            } SongPositionPointer;
+            struct {
+                uint8_t Song;
+            } SongSelect;
+            struct {
+                uint32_t Id;
+                uint8_t Length;
+                uint8_t SubId1;
+                uint8_t SubId2;
+                union {
+                    MidiTimeCode_t MidiTimeCode;
+
+                    MtcCueingData_t Cueing;
+
+                    GeneralInformationData_t GeneralInfo;
+
+                    DeviceControlData_t DeviceControl;
+
+                    MidiShowControlData_t MidiShowControl;
+
+                } Data;
+
+                uint8_t * ByteData;
+            } SysEx;
+
+        } Data;
+    } Message_t;
+
+
+    /**
+     * Test wether message is a system common message.
+     */
+    inline bool isSystemCommonMessage( Message_t * msg ){
+        return isSystemCommonMessage( msg->StatusClass );
+    }
+
+    /**
+     * Test wether message is a real time system message.
+     */
+    inline bool isSystemRealTimeMessage( Message_t * msg ){
+        return isSystemRealTimeMessage( msg->StatusClass );
+    }
+
+    /**
+     * Test wether message is a channel mode message (ie specific cc message)
+     */
+    inline bool isChannelModeMessage( uint8_t byte0, uint8_t byte1 ){
+        return getStatusClass(byte0) == StatusClassControlChange && isChannelModeController(byte1);
+    }
+
+    /**
+     * Test wether message is a channel mode message (ie specific cc message)
+     */
+    inline bool isChannelModeMessage( Message_t * msg ){
+        return isChannelModeMessage( msg->StatusClass, msg->Data.ControlChange.Controller );
+    }
+
+
+    /**
+     * Test wether message is a channel voice message (ie specific cc message)
+     */
+    inline bool isChannelVoiceMessage( uint8_t byte0, uint8_t byte1 ) {
+        return isStatusClass( (byte0 & StatusClassMask) )  &&
+               (byte0 & StatusClassMask) != StatusClassSystemMessage &&
+               !isChannelModeMessage(byte0, byte1);
+    }
+
+    /**
+     * Test wether message is a channel voice message (ie specific cc message)
+     */
+    inline bool isChannelVoiceMessage( Message_t * msg ){
+        return isChannelVoiceMessage( msg->StatusClass, msg->Data.ControlChange.Controller );
+    }
+
+    /**
+     * Get device Id of a sysex byte stream
+     */
+    inline uint8_t getDeviceId( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( bytes[0] == SystemMessageSystemExclusive );
+
+        return bytes[2] & DataMask;
+    }
+
+    /**
+     * Extract complete MIDI Time Code from 8 QuarterFrames given in the expected message order.
+     */
+    inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
+        ASSERT( (nibbles[0] & NibbleMask) == nibbles[0] );
+        ASSERT( (nibbles[1] & NibbleMask) == nibbles[1] );
+        ASSERT( (nibbles[2] & NibbleMask) == nibbles[2] );
+        ASSERT( (nibbles[3] & NibbleMask) == nibbles[3] );
+        ASSERT( (nibbles[4] & NibbleMask) == nibbles[4] );
+        ASSERT( (nibbles[5] & NibbleMask) == nibbles[5] );
+        ASSERT( (nibbles[6] & NibbleMask) == nibbles[6] );
+        ASSERT( (nibbles[7] & NibbleMask) == nibbles[7] );
+
+        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
+        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
+        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
+        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
+        mtc->FractionalFrame = 0;
+    }
+
+    /**
+     * Extract Quarter Frame nibble from given MIDI Time Code.
+     */
+    inline uint8_t MidiQuarterFrameNibbleFromTimeCode( MidiTimeCode_t * mtc, MtcQuarterFrameMessageType_t type ) {
+        ASSERT( mtc != NULL );
+        ASSERT( isMtcQuarterMessageType(type) );
+
+        switch(type){
+            MtcQuarterFrameMessageTypeFrameLS: return mtc->Frame & 0x0F;
+            MtcQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
+            MtcQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
+            MtcQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
+            MtcQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
+            MtcQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
+            MtcQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
+            MtcQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
+            default:
+                break;
+        }
+
+        return (uint8_t) ~0;
+    }
+
+
+
+    inline uint8_t packMidiTimeCode( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        bytes[0] = mtc->FpsHour;
+        bytes[1] = mtc->Minute;
+        bytes[2] = mtc->Second;
+        bytes[3] = mtc->Frame;
+
+        return 4;
+    }
+
+    inline uint8_t unpackMidiTimeCode( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        mtc->FpsHour = bytes[0];
+        mtc->Minute = bytes[1];
+        mtc->Second = bytes[2];
+        mtc->Frame = bytes[3];
+
+        return 4;
+    }
+
+    inline uint8_t packMidiTimeCodeLong( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        bytes[0] = mtc->FpsHour;
+        bytes[1] = mtc->Minute;
+        bytes[2] = mtc->Second;
+        bytes[3] = mtc->Frame;
+        bytes[4] = mtc->FractionalFrame;
+
+        return 5;
+    }
+
+    inline uint8_t unpackMidiTimeCodeLong( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        mtc->FpsHour = bytes[0];
+        mtc->Minute = bytes[1];
+        mtc->Second = bytes[2];
+        mtc->Frame = bytes[3];
+        mtc->FractionalFrame = bytes[4];
+
+        return 5;
+    }
+
     inline uint8_t getIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i ){
         ASSERT( gpc != NULL );
         ASSERT( gpc->Data != NULL );
@@ -1343,42 +1650,6 @@ namespace MidiMessage {
         ASSERT( gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth < gpc->DataLength );
 
         return &gpc->Data[ gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth ];
-    }
-
-
-    typedef union {
-        uint32_t Value;
-        uint8_t Bytes[3];
-    } MscExtensibleCommandField_t;
-
-    inline uint8_t copyMscExtensibleCommandField( uint8_t * dst, uint8_t * src ) {
-        ASSERT(dst != NULL);
-        ASSERT(src != NULL);
-
-        dst[0] = src[0];
-        if (src[0] != SysExRtMscCmdExtension) {
-            return 1;
-        }
-
-        dst[1] = src[1];
-        if (src[1] != SysExRtMscCmdExtension) {
-            return 2;
-        }
-
-        dst[2] = src[2];
-
-        return 3;
-    }
-
-
-    typedef struct {
-        uint8_t * Number;
-        uint8_t * List;
-        uint8_t * Path;
-    } MscCueNumber_t;
-
-    inline bool isMscCueNumberChar( uint8_t value ){
-        return ( '0' <= value && value <= '9') || value == '.';
     }
 
     inline bool isValidMscCueNumberPart( uint8_t * str ){
@@ -1508,183 +1779,25 @@ namespace MidiMessage {
         return false;
     }
 
-    typedef struct {
-        StatusClass_t StatusClass;
-        uint8_t Status;
-        uint8_t Channel; // Also DeviceId for SysEx messages
-        union {
-            struct {
-                uint8_t Key;
-                uint8_t Velocity;
-            } Note;
-            struct {
-                uint8_t Key;
-                uint8_t Pressure;
-            } PolyphonicKeyPressure;
-            struct {
-                uint8_t Controller;
-                uint8_t Value;
-            } ControlChange;
-            struct {
-                uint8_t Program;
-            } ProgramChange;
-            struct {
-                uint8_t Pressure;
-            } ChannelPressure;
-            struct {
-                uint16_t Pitch;
-            } PitchBendChange;
-            struct {
-                uint32_t Id;
-                uint8_t Length;
-                uint8_t SubId1;
-                uint8_t SubId2;
-                union {
-                    MidiTimeCode_t MidiTimeCode;
 
-                    struct {
-                        MidiTimeCode_t MidiTimeCode;
-                        uint16_t EventNumber;
-                    } Cueing;
+    inline uint8_t copyMscExtensibleCommandField( uint8_t * dst, uint8_t * src ) {
+        ASSERT(dst != NULL);
+        ASSERT(src != NULL);
 
-                    struct {
-                        uint32_t ManufacturerId;
-                        uint16_t DeviceFamily;
-                        uint16_t DeviceFamilyMember;
-                        uint8_t SoftwareRevision[4];
-                    } GeneralInfo;
-
-                    union {
-                        uint16_t Value;
-                        GlobalParameterControl_t GlobalParameterControl;
-                    } DeviceControl;
-
-                    struct {
-                        MscExtensibleCommandField_t CommandFormat;
-                        MscExtensibleCommandField_t Command;
-                        MscCueNumber_t CueNumber;
-                    } MidiShowControl;
-
-                } Data;
-
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-                uint8_t ByteData[SYSEX_MEMORY_STATIC_SIZE];
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-                uint8_t * ByteData;
-#endif
-            } SysEx;
-
-            MtcQuarterFrame_t MtcQuarterFrame;
-            struct {
-                uint16_t Position;
-            } SongPositionPointer;
-            struct {
-                uint8_t Song;
-            } SongSelect;
-        } Data;
-    } Message_t;
-
-
-    /**
-     * Test wether message is a system common message.
-     */
-    inline bool isSystemCommonMessage( Message_t * msg ){
-        return isSystemCommonMessage( msg->Status );
-    }
-
-    /**
-     * Test wether message is a real time system message.
-     */
-    inline bool isSystemRealTimeMessage( Message_t * msg ){
-        return isSystemRealTimeMessage( msg->Status );
-    }
-
-    /**
-     * Test wether message is a channel mode message (ie specific cc message)
-     */
-    inline bool isChannelModeMessage( uint8_t byte0, uint8_t byte1 ){
-        return getStatusClass(byte0) == StatusClassControlChange && isChannelModeController(byte1);
-    }
-
-    /**
-     * Test wether message is a channel mode message (ie specific cc message)
-     */
-    inline bool isChannelModeMessage( Message_t * msg ){
-        return isChannelModeMessage( msg->Status, msg->Data.ControlChange.Controller );
-    }
-
-
-    /**
-     * Test wether message is a channel voice message (ie specific cc message)
-     */
-    inline bool isChannelVoiceMessage( uint8_t byte0, uint8_t byte1 ) {
-        return isStatusClass( (byte0 & StatusClassMask) )  &&
-               (byte0 & StatusClassMask) != StatusClassSystemMessage &&
-               !isChannelModeMessage(byte0, byte1);
-    }
-
-    /**
-     * Test wether message is a channel voice message (ie specific cc message)
-     */
-    inline bool isChannelVoiceMessage( Message_t * msg ){
-        return isChannelVoiceMessage( msg->Status, msg->Data.ControlChange.Controller );
-    }
-
-    /**
-     * Get device Id of a sysex byte stream
-     */
-    inline uint8_t getDeviceId( uint8_t * bytes ){
-        ASSERT( bytes != NULL );
-        ASSERT( bytes[0] == SystemMessageSystemExclusive );
-
-        return bytes[2] & DataMask;
-    }
-
-    /**
-     * Extract complete MIDI Time Code from 8 QuarterFrames given in the expected message order.
-     */
-    inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
-        ASSERT( (nibbles[0] & NibbleMask) == nibbles[0] );
-        ASSERT( (nibbles[1] & NibbleMask) == nibbles[1] );
-        ASSERT( (nibbles[2] & NibbleMask) == nibbles[2] );
-        ASSERT( (nibbles[3] & NibbleMask) == nibbles[3] );
-        ASSERT( (nibbles[4] & NibbleMask) == nibbles[4] );
-        ASSERT( (nibbles[5] & NibbleMask) == nibbles[5] );
-        ASSERT( (nibbles[6] & NibbleMask) == nibbles[6] );
-        ASSERT( (nibbles[7] & NibbleMask) == nibbles[7] );
-
-        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
-        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
-        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
-        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
-        mtc->FractionalFrame = 0;
-    }
-
-    /**
-     * Extract Quarter Frame nibble from given MIDI Time Code.
-     */
-    inline uint8_t MidiQuarterFrameNibbleFromTimeCode( MidiTimeCode_t * mtc, MtcQuarterFrameMessageType_t type ) {
-        ASSERT( mtc != NULL );
-        ASSERT( isMtcQuarterMessageType(type) );
-
-        switch(type){
-            MtcQuarterFrameMessageTypeFrameLS: return mtc->Frame & 0x0F;
-            MtcQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
-            MtcQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
-            MtcQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
-            MtcQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
-            MtcQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
-            MtcQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
-            MtcQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
-            default:
-                break;
+        dst[0] = src[0];
+        if (src[0] != SysExRtMscCmdExtension) {
+            return 1;
         }
 
-        return (uint8_t) ~0;
+        dst[1] = src[1];
+        if (src[1] != SysExRtMscCmdExtension) {
+            return 2;
+        }
+
+        dst[2] = src[2];
+
+        return 3;
     }
-
-
-
     /**
      *  Tries to pack a given midi <msg> into the corresponding sequence of raw bytes.
      *
@@ -1707,31 +1820,6 @@ namespace MidiMessage {
      * @see freeMessage()
      */
     bool unpack( uint8_t * bytes,uint8_t len, Message_t * msg );
-
-#if SYSEX_MEMORY == SYSEX_MEMORY_STATIC
-
-    /**
-     * Dummy function for freeing SysEx memory
-     *
-     * Note: This function is only provided to allow simple chaning of the SYSEX_MEMORY strategy.
-     *
-     * @param   msg     midi message to be (supposedly freed)
-     */
-    inline void freeMessage( Message_t * msg ) {
-        // do nothing
-    }
-
-#elif SYSEX_MEMORY == SYSEX_MEMORY_DYNAMIC
-    /**
-     * Frees SysEx memory (if set)
-     *
-     * Is safe to be called on any (correctly used) message, ie will only act if msg is has status == SystemMessageSystemExclusive
-     * and has a data length of greater than zero.
-     *
-     * @param   msg     midi message to be freed
-     */
-    void freeMessage( Message_t * msg );
-#endif
 
 }
 

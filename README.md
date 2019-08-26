@@ -1,12 +1,10 @@
-# midimessage
+# [midimessage](https://github.com/tschiemer/midimessage)
 
 Very basic constants and un-/packer for MIDI Messages.
 
 Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) that do not provide these basics.
 
 No particular structures are enforced such that you can take from it what you want.
-
-Home repository: https://github.com/tschiemer/midimessage
 
 ## Features
 
@@ -18,7 +16,6 @@ Home repository: https://github.com/tschiemer/midimessage
 - *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination)
 - packers and unpackers are always complementary and are available as literal-based and struct-based variants
 - *structs* and *types* help to create a unified interface and make handling easier
- - for variable size (sysex) messages static or dynamic memory allocation is realised (default = dynamic, see preprocessor define `SYSEX_MEMORY` in `include/midimessage.h`)
 - *Command line utility* to turn human-readable commands into corresponding byte sequence and vice versa (see `src/cli.cpp` and below)
 
 
@@ -47,30 +44,26 @@ tt = to test
 | | Real Time MTC Cueing | SysEx Real Time | tt |
 | | Non Real Time MTC Cueing | SysEx Non-Real Time | tt |
 | MIDI Machine Control | Basics | | tt |
-| MIDI Show Control | | | TODO |
+| MIDI Show Control | | SysEx Real Time | tt |
 | MIDI Tuning Standard | | | TODO |
 | System Exclusive | Experimental (custom) messages | | tt |
 | | Manufacturer messages (+ manufacturer ids) | | tt |
-| | Sample Dump | Non-Real Time | TODO |
+| | Device Control (Master volume, balance, coarse/fine tuning, global parameters) | Real Time | tt |
 | | General Information | Non-Real Time | tt |
+| | Sample Dump | Non-Real Time | TODO |
 | | File Dump | Non-Real Time | TODO |
 | | General MIDI System Messages | Non-Real Time | TODO |
 | | Downloadable Sounds | Non-Real Time | TODO |
-| | Device Control (Master volume, balance, coarse/fine tuning, global parameters) | Real Time | tt |
 | | Notation Information | Real Time | TODO |
 
 
 
+## Requirements
 
-## Using libmidimessage
-
-`libmidimessage` relies on wrapper functions (as defined in `mmstdlib.h`) that have to be implemented by you.
-
- To use the stdlib implementations you can use the example implementation `mmstdlib.cpp`.
+- `midimessage-cli` requires getopt
+- target `manufacturerids` requires wget and php(-cli)
 
 ## Building
-
-- `midimessage-cli` requires on getopt
 
 ```bash
 git clone https://github.com/tschiemer/midimessage.git
@@ -85,6 +78,7 @@ make manufacturerids
 ```
 
 
+
 ## Code Example
 
 ```cpp
@@ -92,6 +86,10 @@ make manufacturerids
 void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
     MidiMessage::Message_t msg, msg2;
+    uint8_t msgBuf[128], msgBuf2[128];
+
+    msg.Data.SysEx.ByteData = msgBuf;
+    msg2.Data.SysEx.ByteData = msgBuf2;
 
     uint8_t buf2[256];
     int len2;
@@ -108,9 +106,6 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 
         std::cout << "Discarding non-ChannelVoice message" << std::endl;
 
-        // if above a SysEx message with data content was unpacked, we have to make sure to free the memory again.
-        MidiMessage::freeMessage(&msg);
-
         return;
     }
 
@@ -118,8 +113,8 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
     // (the final message packaging is unified)
     msg2.StatusClass = MidiMessage::StatusClassNoteOn;
     msg2.Channel = msg.Channel;
-    msg2.Data.NoteOn.Key = 40 + pitch;
-    msg2.Data.NoteOn.Velocity = 100;
+    msg2.Data.Note.Key = 40 + pitch;
+    msg2.Data.Note.Velocity = 100;
 
     pitch = (pitch + 1) % 13;
 
@@ -129,7 +124,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
     }
 
     // direct approach
-    len2 = MidiMessage::packNoteOff( buf2, msg2.Channel, msg2.Data.NoteOn.Key, 50 );
+    len2 = MidiMessage::packNoteOff( buf2, msg2.Channel, msg2.Data.Note.Key, 50 );
     if (len2 > 0){
         sendMidiMessageToSomewhere( buf2, len2 );
     }

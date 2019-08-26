@@ -21,6 +21,13 @@ typedef enum {
     ModeGenerate    = 2
 } Mode_t;
 
+
+uint8_t buf[128];
+
+Message_t msg = {
+        .Data.SysEx.ByteData = buf
+};
+
 void printHelp( void ) {
     printf("Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate|-g [<cmd> ...]]\n");
     printf("If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line\n");
@@ -203,7 +210,6 @@ int main(int argc, char * argv[], char * env[]){
 
 void generate(uint8_t argc, char * argv[]){
 
-    Message_t msg;
     uint8_t bytes[128];
     uint8_t length = 0;
 
@@ -287,7 +293,7 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageMtcQuarterFrame;
+        msg.SystemMessage = SystemMessageMtcQuarterFrame;
         msg.Data.MtcQuarterFrame.MessageType = atoi(argv[1]);
         msg.Data.MtcQuarterFrame.Nibble = atoi(argv[2]);
     }
@@ -296,7 +302,7 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageSongPositionPointer;
+        msg.SystemMessage = SystemMessageSongPositionPointer;
         msg.Data.SongPositionPointer.Position = atoi(argv[1]);
     }
     else if (strcmp(argv[0], "song-select") == 0){
@@ -304,40 +310,40 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageSongSelect;
+        msg.SystemMessage = SystemMessageSongSelect;
         msg.Data.SongSelect.Song = atoi(argv[1]);
     }
     else if (strcmp(argv[0], "start") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageStart;
+        msg.SystemMessage = SystemMessageStart;
     }
     else if (strcmp(argv[0], "stop") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageStop;
+        msg.SystemMessage = SystemMessageStop;
     }
     else if (strcmp(argv[0], "continue") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageContinue;
+        msg.SystemMessage = SystemMessageContinue;
     }
     else if (strcmp(argv[0], "active-sensing") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageActiveSensing;
+        msg.SystemMessage = SystemMessageActiveSensing;
     }
     else if (strcmp(argv[0], "reset") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageReset;
+        msg.SystemMessage = SystemMessageReset;
     }
     else if (strcmp(argv[0], "timing-clock") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageTimingClock;
+        msg.SystemMessage = SystemMessageTimingClock;
     }
     else if (strcmp(argv[0], "tune-request") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageTuneRequest;
+        msg.SystemMessage = SystemMessageTuneRequest;
     }
     else if (strcmp(argv[0], "sysex") == 0){
         msg.StatusClass = StatusClassSystemMessage;
-        msg.Status = SystemMessageSystemExclusive;
+        msg.SystemMessage = SystemMessageSystemExclusive;
         return;
     } else {
         return;
@@ -355,8 +361,6 @@ void generate(uint8_t argc, char * argv[]){
 }
 
 uint8_t parse(uint8_t length, uint8_t bytes[]){
-
-    Message_t msg;
 
 //    for(int i = 0; i < length; i++){
 //        printf("%02x ", bytes[i]);
@@ -393,37 +397,37 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
 
     if (msg.StatusClass == StatusClassSystemMessage){
 
-        if (msg.Status == SystemMessageMtcQuarterFrame){
+        if (msg.SystemMessage == SystemMessageMtcQuarterFrame){
             printf("quarter-frame %d %d\n", msg.Data.MtcQuarterFrame.MessageType, msg.Data.MtcQuarterFrame.Nibble);
         }
-        if (msg.Status == SystemMessageSongPositionPointer){
+        if (msg.SystemMessage == SystemMessageSongPositionPointer){
             printf("song-position %d\n", msg.Data.SongPositionPointer.Position);
         }
-        if (msg.Status == SystemMessageSongSelect){
+        if (msg.SystemMessage == SystemMessageSongSelect){
             printf("song-select %d\n", msg.Data.SongSelect.Song);
         }
-        if (msg.Status == SystemMessageStart){
+        if (msg.SystemMessage == SystemMessageStart){
             printf("start\n");
         }
-        if (msg.Status == SystemMessageStop){
+        if (msg.SystemMessage == SystemMessageStop){
             printf("stop\n");
         }
-        if (msg.Status == SystemMessageContinue){
+        if (msg.SystemMessage == SystemMessageContinue){
             printf("continue\n");
         }
-        if (msg.Status == SystemMessageActiveSensing){
+        if (msg.SystemMessage == SystemMessageActiveSensing){
             printf("active-sensing\n");
         }
-        if (msg.Status == SystemMessageReset){
+        if (msg.SystemMessage == SystemMessageReset){
             printf("reset\n");
         }
-        if (msg.Status == SystemMessageTimingClock){
+        if (msg.SystemMessage == SystemMessageTimingClock){
             printf("timing-clock\n");
         }
-        if (msg.Status == SystemMessageTuneRequest){
+        if (msg.SystemMessage == SystemMessageTuneRequest){
             printf("tune-request\n");
         }
-        if (msg.Status == SystemMessageSystemExclusive){
+        if (msg.SystemMessage == SystemMessageSystemExclusive){
             printf("SysEx\n");
         }
     }
