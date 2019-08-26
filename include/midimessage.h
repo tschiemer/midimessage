@@ -255,7 +255,6 @@ namespace MidiMessage {
                 value == StatusClassSystemMessage);
     }
 
-
     inline StatusClass_t getStatusClass( uint8_t value ){
         return (StatusClass_t)(value & StatusClassMask);
     }
@@ -307,6 +306,44 @@ namespace MidiMessage {
                 status == SystemMessageStop ||
                 status == SystemMessageActiveSensing ||
                 status == SystemMessageReset);
+    }
+
+    #define MidiMessage_RunningStatusNotSet 0
+
+    inline uint8_t isRunningStatus( uint8_t state ){
+        return isStatusClass( state & StatusClassMask ) && (state & StatusClassMask) != StatusClassSystemMessage;
+    }
+
+    inline uint8_t nextRunningStatus( uint8_t state, uint8_t nextStatus ){
+        // identical messages do not change the state.
+        if (state == nextStatus){
+            return state;
+        }
+        // system common messages break the state
+        if (isSystemCommonMessage(nextStatus)){
+            return MidiMessage_RunningStatusNotSet;
+        }
+        // system real time message to not change the state
+        if (isSystemRealTimeMessage(nextStatus)){
+            return state;
+        }
+
+        // this should always be true (unless there is some unknown status byte)
+        if (isRunningStatus(nextStatus)){
+            return nextStatus;
+        }
+
+        return MidiMessage_RunningStatusNotSet;
+    }
+
+    inline bool updateRunningStatus( uint8_t *state, uint8_t nextStatus ){
+
+        uint8_t previous = *state;
+        uint8_t next = nextRunningStatus( *state, nextStatus );
+
+        *state = next;
+
+        return previous == next && isRunningStatus(next);
     }
 
     typedef enum {

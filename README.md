@@ -135,10 +135,18 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 ## Command Line Utility
 
 ```
-Usage: midimessage-cli [-h?] [--parse|-p [--timed|-t[milli|micro]] [<binary-data>]] [--generate|-g [--timed|-t[milli|micro]] [<cmd> ...]]
-If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line
-Output to STDOUT (when generating this will be binary).
-Note: parsed message output format is identical to the required generation format ;)
+Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [<cmd> ...])
+
+Options:
+	 -h|-? 	 show this help
+	 --running-status|-r 	 Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)
+	 --timed|-t[milli|micro] 	 Enabled the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)
+	 --parse|-p [<binary-data>] 	 Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.
+	 --generate|-g [<cmd> ...] 	 Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.
+
+Note: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!
+
+Fancy pants note: the parsing output format is identical to the generation command format ;)
 
 Voice Commands:
 	 note (on|off) <channel> <key> <velocity>
@@ -164,11 +172,6 @@ System Exclusives:
 	 sysex experimental <n> <data-of-length-n>
 	 sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>
 	 sysex nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>
-
-Note: Data bytes have a value range of 0-127 - anything above is considered a control byte.
-
-Recordings and Replay
-Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then keep the delay between message in the given time scale (micro or milli seconds, default = micro).
 
 Examples:
 	 ./midimessage-cli -g note on 60 40 1

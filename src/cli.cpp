@@ -39,12 +39,20 @@ Resolution_t resolution = ResolutionMicro;
 bool timed = false;
 unsigned long lastTimestamp, now;
 
+bool runningStatusEnabled = false;
 
 void printHelp( void ) {
-    printf("Usage: midimessage-cli [-h?] [--parse|-p [--timed|-t[milli|micro]] [<binary-data>]] [--generate|-g [--timed|-t[milli|micro]] [<cmd> ...]]\n");
-    printf("If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line\n");
-    printf("Output to STDOUT (when generating this will be binary).\n");
-    printf("Note: parsed message output format is identical to the required generation format ;)\n");
+    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [<cmd> ...])\n");
+
+    printf("\nOptions:\n");
+    printf("\t -h|-? \t show this help\n");
+    printf("\t --running-status|-r \t Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)\n");
+    printf("\t --timed|-t[milli|micro] \t Enabled the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)\n");
+    printf("\t --parse|-p [<binary-data>] \t Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.\n");
+    printf("\t --generate|-g [<cmd> ...] \t Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.\n");
+
+    printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!\n");
+    printf("\nFancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
     printf("\nVoice Commands:\n");
     printf("\t note (on|off) <channel> <key> <velocity>\n");
@@ -71,10 +79,6 @@ void printHelp( void ) {
     printf("\t sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
     printf("\t sysex nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision> \n");
 
-    printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte.\n");
-
-    printf("\nRecordings and Replay\n");
-    printf("Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then keep the delay between message in the given time scale (micro or milli seconds, default = micro).\n");
 
     printf("\nExamples:\n");
     printf("\t ./midimessage-cli -g note on 60 40 1\n");
@@ -83,6 +87,8 @@ void printHelp( void ) {
     printf("\t cat test.recording | ./midimessage-cli -gtmilli | ./midimessage-cli -p\n");
 }
 
+void generateLoop(void);
+void parseLoop(void);
 void generate(uint8_t argc,  char  * argv[]);
 uint8_t parse(uint8_t length, uint8_t bytes[]);
 
@@ -126,11 +132,12 @@ int main(int argc, char * argv[], char * env[]){
                 {"parse",    no_argument,    0,  'p' },
                 {"generate",   no_argument,    0,  'g' },
                 {"timed", optional_argument,  0, 't'},
+                {"running-status", optional_argument, 0, 'r'},
                 {"help",    no_argument,    0,  'h' },
                 {0,         0,              0,  0 }
         };
 
-        c = getopt_long(argc, argv, "pgt::h?",
+        c = getopt_long(argc, argv, "pgt::rh?",
                         long_options, &option_index);
         if (c == -1)
             break;
@@ -171,6 +178,10 @@ int main(int argc, char * argv[], char * env[]){
                 }
                 break;
 
+            case 'r':
+                runningStatusEnabled = true;
+                break;
+
             default:
                 printf("?? getopt returned character code 0%o ??\n", c);
         }
@@ -193,6 +204,8 @@ int main(int argc, char * argv[], char * env[]){
 
     uint8_t pos = 0;
     uint8_t line[MAX_LEN];
+
+    line[0] = 0;
 
     uint8_t argsCount = 1;
     uint8_t * args[16];
@@ -269,10 +282,15 @@ int main(int argc, char * argv[], char * env[]){
         }
         if (mode == ModeParse) {
 
-            // wait for control byte
-            if (pos == 0 && !isControlByte(in) && in != SystemMessageEndOfExclusive) {
-                continue;
+            if (pos == 0 && isDataByte(in)){
+                if (runningStatusEnabled && isRunningStatus(line[0])){
+                    pos++;
+                } else {
+                    // wait for control byte
+                    continue;
+                }
             }
+
 
             line[pos++] = in;
 
@@ -284,12 +302,19 @@ int main(int argc, char * argv[], char * env[]){
 
     return EXIT_SUCCESS;
 }
+void generateLoop(void){
 
+}
+void parseLoop(void) {
+
+}
 
 void generate(uint8_t argc, char * argv[]){
 
     uint8_t bytes[128];
     uint8_t length = 0;
+
+    static uint8_t runningStatus = MidiMessage_RunningStatusNotSet;
 
     if (argc == 0){
         return;
@@ -506,13 +531,16 @@ void generate(uint8_t argc, char * argv[]){
         return;
     }
 
-//    printf("packing..\n");
-//    fflush(stdout);
-
     length = pack( bytes, &msg );
 
     if (length > 0){
-        fwrite(bytes, 1, length, stdout);
+
+        if (runningStatusEnabled && updateRunningStatus( &runningStatus, bytes[0] )){
+            fwrite( &bytes[1], 1, length - 1, stdout );
+        } else {
+            fwrite(bytes, 1, length, stdout);
+        }
+
         fflush(stdout);
     }
 }
