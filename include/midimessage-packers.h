@@ -1569,7 +1569,7 @@ namespace MidiMessage {
         ASSERT(softwareRevision != NULL);
 
 
-        if (len < 13) {
+        if (len != 16 || isControlByte(bytes[len-1]) ) {
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -1588,7 +1588,7 @@ namespace MidiMessage {
             return false;
         }
 
-        int l = 4;
+        int l = 5;
 
         *deviceId = bytes[2] & DataMask;
 
@@ -1611,7 +1611,7 @@ namespace MidiMessage {
     inline bool unpackSysExNonRtGeneralInformation( uint8_t *bytes, uint8_t length, Message_t *msg){
         ASSERT( msg != NULL );
 
-        if (length < 5){
+        if (length < 5 || isControlByte(bytes[length-1])){
             return false;
         }
 
@@ -1633,16 +1633,18 @@ namespace MidiMessage {
                 msg->StatusClass = StatusClassSystemMessage;
                 msg->SystemMessage = SystemMessageSystemExclusive;
                 msg->Channel = bytes[2];
-                msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
-                msg->Data.SysEx.SubId1 = SysExNonRtGenInfoIdentityRequest;
+                msg->Data.SysEx.Id = SysExIdNonRealTime;
+                msg->Data.SysEx.SubId1 = SysExNonRtGeneralInformation;
+                msg->Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityRequest;
                 return true;
 
             case SysExNonRtGenInfoIdentityReply:
                 if (unpackSysExNonRtGenInfoIdentityReply( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.GeneralInfo.ManufacturerId, &msg->Data.SysEx.Data.GeneralInfo.DeviceFamily, &msg->Data.SysEx.Data.GeneralInfo.DeviceFamilyMember, msg->Data.SysEx.Data.GeneralInfo.SoftwareRevision )){
                     msg->StatusClass = StatusClassSystemMessage;
                     msg->SystemMessage = SystemMessageSystemExclusive;
-                    msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
-                    msg->Data.SysEx.SubId1 = SysExNonRtGenInfoIdentityReply;
+                    msg->Data.SysEx.Id = SysExIdNonRealTime;
+                    msg->Data.SysEx.SubId1 = SysExNonRtGeneralInformation;
+                    msg->Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityReply;
                     return true;
                 }
         }

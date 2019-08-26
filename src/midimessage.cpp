@@ -407,6 +407,7 @@ namespace MidiMessage {
                 if (length < 4) {
                     return false;
                 }
+
 //                msg->Data.SysEx.Id = SysExIdNonRealTime;
 //                msg->Channel = bytes[2]; // deviceId
 //                msg->Data.SysEx.SubId1 = bytes[3];

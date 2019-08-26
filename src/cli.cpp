@@ -47,12 +47,12 @@ void printHelp( void ) {
     printf("Note: parsed message output format is identical to the required generation format ;)\n");
 
     printf("\nVoice Commands:\n");
-    printf("\t note (on|off) <key> <velocity> <channel>\n");
-    printf("\t cc <controller> <value> <channel>\n");
-    printf("\t pc <program> <channel>\n");
-    printf("\t pressure <pressure> <channel>\n");
-    printf("\t pitch <pitch> <channel>\n");
-    printf("\t poly <key> <pressure> <channel>\n");
+    printf("\t note (on|off) <channel> <key> <velocity>\n");
+    printf("\t cc <channel> <controller> <value>\n");
+    printf("\t pc <channel> <program>\n");
+    printf("\t pressure <channel> <pressure>\n");
+    printf("\t pitch <channel> <pitch>\n");
+    printf("\t poly <channel> <key> <pressure>\n");
 
     printf("\nSystem Commands:\n");
     printf("\t start\n");
@@ -69,6 +69,7 @@ void printHelp( void ) {
     printf("\nSystem Exclusives:\n");
     printf("\t experimental <n> <data-of-length-n>\n");
     printf("\t manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
+    printf("\t nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision> \n");
 
     printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte.\n");
 
@@ -304,8 +305,6 @@ void generate(uint8_t argc, char * argv[]){
         if (argc != 5){
             return;
         }
-        msg.Data.Note.Key = atoi(argv[2]);
-        msg.Data.Note.Velocity = atoi(argv[3]);
         if (strcmp(argv[1], "on") == 0){
             msg.StatusClass = StatusClassNoteOn;
         }
@@ -315,7 +314,9 @@ void generate(uint8_t argc, char * argv[]){
         else {
             return;
         }
-        msg.Channel = atoi(argv[4]);
+        msg.Channel = atoi(argv[2]);
+        msg.Data.Note.Key = atoi(argv[3]);
+        msg.Data.Note.Velocity = atoi(argv[4]);
     }
 
     else if (strcmp(argv[0], "cc") == 0){
@@ -323,9 +324,9 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassControlChange;
-        msg.Data.ControlChange.Controller = atoi(argv[1]);
-        msg.Data.ControlChange.Value = atoi(argv[2]);
-        msg.Channel = atoi(argv[3]);
+        msg.Channel = atoi(argv[1]);
+        msg.Data.ControlChange.Controller = atoi(argv[2]);
+        msg.Data.ControlChange.Value = atoi(argv[3]);
     }
 
     else if (strcmp(argv[0], "pc") == 0){
@@ -333,8 +334,8 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassProgramChange;
-        msg.Data.ProgramChange.Program = atoi(argv[1]);
-        msg.Channel = atoi(argv[2]);
+        msg.Channel = atoi(argv[1]);
+        msg.Data.ProgramChange.Program = atoi(argv[2]);
     }
 
     else if (strcmp(argv[0], "pressure") == 0){
@@ -342,8 +343,8 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassChannelPressure;
-        msg.Data.ChannelPressure.Pressure = atoi(argv[1]);
-        msg.Channel = atoi(argv[2]);
+        msg.Channel = atoi(argv[1]);
+        msg.Data.ChannelPressure.Pressure = atoi(argv[2]);
     }
 
     else if (strcmp(argv[0], "pitch") == 0){
@@ -351,8 +352,8 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassPitchBendChange;
-        msg.Data.PitchBendChange.Pitch = atoi(argv[1]);
-        msg.Channel = atoi(argv[2]);
+        msg.Channel = atoi(argv[1]);
+        msg.Data.PitchBendChange.Pitch = atoi(argv[2]);
     }
 
     else if (strcmp(argv[0], "poly") == 0){
@@ -360,9 +361,9 @@ void generate(uint8_t argc, char * argv[]){
             return;
         }
         msg.StatusClass = StatusClassPolyphonicKeyPressure;
-        msg.Data.PolyphonicKeyPressure.Key = atoi(argv[1]);
-        msg.Data.PolyphonicKeyPressure.Pressure = atoi(argv[2]);
-        msg.Channel = atoi(argv[3]);
+        msg.Channel = atoi(argv[1]);
+        msg.Data.PolyphonicKeyPressure.Key = atoi(argv[2]);
+        msg.Data.PolyphonicKeyPressure.Pressure = atoi(argv[3]);
     }
 
     else if (strcmp(argv[0], "quarter-frame") == 0){
@@ -438,15 +439,8 @@ void generate(uint8_t argc, char * argv[]){
             if (argc < 3){
                 return;
             }
-            int strlen = std::strlen(argv[2]);
-            if (strlen > 6){
-                return;
-            }
-            char * end = NULL;
-            unsigned long l = std::strtol(argv[2], &end, 16);
 
-            msg.Data.SysEx.Id = l;
-
+            msg.Data.SysEx.Id = std::strtol(argv[2], NULL, 16);
 
             if (argc < 5) {
                 msg.Data.SysEx.Length = 0;
@@ -454,6 +448,55 @@ void generate(uint8_t argc, char * argv[]){
                 int len = atoi(argv[3]);
                 memcpy((char*)msg.Data.SysEx.ByteData, argv[4], len);
                 msg.Data.SysEx.Length = len;
+            }
+        } else if (strcmp(argv[1], "rt") == 0){
+            if (argc < 3){
+                return;
+            }
+            msg.Data.SysEx.Id = SysExIdRealTime;
+
+
+        } else if (strcmp(argv[1], "nonrt") == 0) {
+            if (argc < 3){
+                return;
+            }
+
+            msg.Data.SysEx.Id = SysExIdNonRealTime;
+
+            if (strcmp(argv[2], "info") == 0){
+                if (argc < 4){
+                    return ;
+                }
+                msg.Data.SysEx.SubId1 = SysExNonRtGeneralInformation;
+
+                if (strcmp(argv[3], "request") == 0){
+                    if (argc < 5){
+                        return ;
+                    }
+                    msg.Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityRequest;
+                    msg.Channel = atoi(argv[4]);
+
+                } else if (strcmp(argv[3], "reply") == 0){
+                    if (argc < 8){
+                        return;
+                    }
+                    msg.Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityReply;
+                    msg.Channel = atoi(argv[4]);
+                    msg.Data.SysEx.Data.GeneralInfo.ManufacturerId = std::strtol(argv[5], NULL, 16);
+                    msg.Data.SysEx.Data.GeneralInfo.DeviceFamily = atoi(argv[6]);
+                    msg.Data.SysEx.Data.GeneralInfo.DeviceFamilyMember = atoi(argv[7]);
+                    uint32_t rev = std::strtol(argv[8], NULL, 16);
+                    msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[0] = (rev >> 24) & 0xFF;
+                    msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[1] = (rev >> 16) & 0xFF;
+                    msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[2] = (rev >> 8) & 0xFF;
+                    msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[3] = rev & 0xFF;
+
+                } else {
+                    return;
+                }
+
+            } else {
+                return;
             }
         } else {
             return;
@@ -501,25 +544,25 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
 
 
     if (msg.StatusClass == StatusClassNoteOn){
-        printf("note on %d %d %d\n", msg.Data.Note.Key, msg.Data.Note.Velocity, msg.Channel);
+        printf("note on %d %d %d\n", msg.Channel, msg.Data.Note.Key, msg.Data.Note.Velocity);
     }
     if (msg.StatusClass == StatusClassNoteOff){
-        printf("note off %d %d %d\n", msg.Data.Note.Key, msg.Data.Note.Velocity, msg.Channel);
+        printf("note off %d %d %d\n", msg.Channel, msg.Data.Note.Key, msg.Data.Note.Velocity);
     }
     if (msg.StatusClass == StatusClassControlChange){
-        printf("cc %d %d %d\n", msg.Data.ControlChange.Controller, msg.Data.ControlChange.Value, msg.Channel);
+        printf("cc %d %d %d\n", msg.Channel, msg.Data.ControlChange.Controller, msg.Data.ControlChange.Value);
     }
     if (msg.StatusClass == StatusClassProgramChange){
-        printf("pc %d %d\n", msg.Data.ProgramChange.Program, msg.Channel);
+        printf("pc %d %d\n", msg.Channel, msg.Data.ProgramChange.Program);
     }
     if (msg.StatusClass == StatusClassChannelPressure){
-        printf("pressure %d %d\n", msg.Data.ChannelPressure.Pressure, msg.Channel);
+        printf("pressure %d %d\n", msg.Channel, msg.Data.ChannelPressure.Pressure);
     }
     if (msg.StatusClass == StatusClassPitchBendChange){
-        printf("pitch %d %d\n", msg.Data.PitchBendChange.Pitch, msg.Channel);
+        printf("pitch %d %d\n", msg.Channel, msg.Data.PitchBendChange.Pitch);
     }
     if (msg.StatusClass == StatusClassPolyphonicKeyPressure){
-        printf("poly %d %d %d\n", msg.Data.PolyphonicKeyPressure.Key, msg.Data.PolyphonicKeyPressure.Pressure, msg.Channel);
+        printf("poly %d %d %d\n", msg.Channel, msg.Data.PolyphonicKeyPressure.Key, msg.Data.PolyphonicKeyPressure.Pressure);
     }
 
     if (msg.StatusClass == StatusClassSystemMessage){
@@ -566,7 +609,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             }
 
             if (isSysExManufacturerId(msg.Data.SysEx.Id)){
-                printf("manufacturer %06x %d ", msg.Data.SysEx.Id, msg.Data.SysEx.Length);
+                printf("manufacturer %06X %d ", msg.Data.SysEx.Id, msg.Data.SysEx.Length);
                 for(uint8_t i = 0; i < msg.Data.SysEx.Length; i++){
                     printf("%c", msg.Data.SysEx.ByteData[i]);
                 }
@@ -574,10 +617,32 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             }
 
             if (msg.Data.SysEx.Id == SysExIdRealTime){
-
+                printf("rt ");
             }
 
             if (msg.Data.SysEx.Id == SysExIdNonRealTime){
+                printf("nonrt ");
+
+                if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralInformation){
+                    printf("info ");
+
+                    if (msg.Data.SysEx.SubId2 == SysExNonRtGenInfoIdentityRequest){
+                        printf("request %d\n",
+                               msg.Channel
+                        );
+                    } else if (msg.Data.SysEx.SubId2 == SysExNonRtGenInfoIdentityReply) {
+                        printf("reply %d %06X %d %d %02X%02X%02X%02X\n",
+                               msg.Channel,
+                               msg.Data.SysEx.Data.GeneralInfo.ManufacturerId,
+                               msg.Data.SysEx.Data.GeneralInfo.DeviceFamily,
+                               msg.Data.SysEx.Data.GeneralInfo.DeviceFamilyMember,
+                               msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[0],
+                               msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[1],
+                               msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[2],
+                               msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[3]
+                        );
+                    }
+                }
 
             }
         }
