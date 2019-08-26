@@ -879,7 +879,7 @@ namespace MidiMessage {
         ASSERT(len > 2 || data != NULL);
         ASSERT(dataLen != NULL);
 
-        if (len < 2) {
+        if (len < 3 || !isControlByte(bytes[len-1]) ) {
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -889,9 +889,9 @@ namespace MidiMessage {
             return false;
         }
 
-        if (bytes[len - 1] == SystemMessageEndOfExclusive) {
+//        if (bytes[len - 1] == SystemMessageEndOfExclusive) {
             len--;
-        }
+//        }
 
         if (len <= 2) {
             *dataLen = 0;
@@ -956,7 +956,8 @@ namespace MidiMessage {
         uint8_t p = 1;
 
         if ((len < 2 && bytes[1] != SysExIdManufacturerExtensionByte) ||
-            (len < 4 && bytes[1] == SysExIdManufacturerExtensionByte)) {
+            (len < 4 && bytes[1] == SysExIdManufacturerExtensionByte) ||
+                ! isControlByte(bytes[len-1])) {
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -968,9 +969,9 @@ namespace MidiMessage {
 
         p += unpackSysExId(&bytes[1], manufacturerId);
 
-        if (bytes[len - 1] == SystemMessageEndOfExclusive) {
+//        if (bytes[len - 1] == SystemMessageEndOfExclusive) {
             len--;
-        }
+//        }
 
         if (len <= p) {
             *dataLen = 0;

@@ -160,6 +160,12 @@ System Commands:
 	 song-position <position>
 	 song-select <songNumber>
 
+System Exclusives:
+	 experimental <n> <data-of-length-n>
+	 manufacturer <hex-manufacturer-id> <n> <data-of-length-n>
+
+Note: Data bytes have a value range of 0-127 - anything above is considered a control byte.
+
 Examples:
 	 ./midimessage-cli -g note on 60 40 1
 	 ./midimessage-cli -g | ./midimessage-cli -p

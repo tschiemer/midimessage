@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <cstdlib>
 #include <string.h>
+#include <cstring>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -53,6 +54,12 @@ void printHelp( void ) {
     printf("\t quarter-frame <messageType> <nibble>\n");
     printf("\t song-position <position>\n");
     printf("\t song-select <songNumber>\n");
+
+    printf("\nSystem Exclusives:\n");
+    printf("\t experimental <n> <data-of-length-n>\n");
+    printf("\t manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
+
+    printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte.\n");
 
     printf("\nExamples:\n");
     printf("\t ./midimessage-cli -g note on 60 40 1\n");
@@ -344,7 +351,44 @@ void generate(uint8_t argc, char * argv[]){
     else if (strcmp(argv[0], "sysex") == 0){
         msg.StatusClass = StatusClassSystemMessage;
         msg.SystemMessage = SystemMessageSystemExclusive;
-        return;
+
+        if (argc < 2){
+            return;
+        }
+        if (strcmp(argv[1], "experimental") == 0) {
+            msg.Data.SysEx.Id = SysExIdExperimental;
+            if (argc < 4) {
+                msg.Data.SysEx.Length = 0;
+            } else {
+                int len = atoi(argv[2]);
+                memcpy((char*)msg.Data.SysEx.ByteData, argv[3], len);
+                msg.Data.SysEx.Length = len;
+            }
+        } else if (strcmp(argv[1], "manufacturer") == 0) {
+            if (argc < 3){
+                return;
+            }
+            int strlen = std::strlen(argv[2]);
+            if (strlen > 6){
+                return;
+            }
+            char * end = NULL;
+            unsigned long l = std::strtol(argv[2], &end, 16);
+
+            msg.Data.SysEx.Id = l;
+
+
+            if (argc < 5) {
+                msg.Data.SysEx.Length = 0;
+            } else {
+                int len = atoi(argv[3]);
+                memcpy((char*)msg.Data.SysEx.ByteData, argv[4], len);
+                msg.Data.SysEx.Length = len;
+            }
+        } else {
+            return;
+        }
+
     } else {
         return;
     }
@@ -428,7 +472,31 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             printf("tune-request\n");
         }
         if (msg.SystemMessage == SystemMessageSystemExclusive){
-            printf("SysEx\n");
+            printf("sysex ");
+
+            if (msg.Data.SysEx.Id == SysExIdExperimental){
+                printf("experimental %d ", msg.Data.SysEx.Length);
+                for(uint8_t i = 0; i < msg.Data.SysEx.Length; i++){
+                    printf("%c", msg.Data.SysEx.ByteData[i]);
+                }
+                printf("\n");
+            }
+
+            if (isSysExManufacturerId(msg.Data.SysEx.Id)){
+                printf("manufacturer %06x %d ", msg.Data.SysEx.Id, msg.Data.SysEx.Length);
+                for(uint8_t i = 0; i < msg.Data.SysEx.Length; i++){
+                    printf("%c", msg.Data.SysEx.ByteData[i]);
+                }
+                printf("\n");
+            }
+
+            if (msg.Data.SysEx.Id == SysExIdRealTime){
+
+            }
+
+            if (msg.Data.SysEx.Id == SysExIdNonRealTime){
+
+            }
         }
     }
 
