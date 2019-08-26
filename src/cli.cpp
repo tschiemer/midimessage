@@ -4,10 +4,12 @@
 
 #include <stdio.h>
 #include <cstdlib>
+#include <stdlib.h>
 #include <string.h>
 #include <cstring>
 #include <unistd.h>
 #include <getopt.h>
+#include <sys/time.h>
 
 #include "midimessage.h"
 
@@ -22,15 +24,24 @@ typedef enum {
     ModeGenerate    = 2
 } Mode_t;
 
-
 uint8_t buf[128];
 
 Message_t msg = {
         .Data.SysEx.ByteData = buf
 };
 
+typedef enum {
+    ResolutionMicro = 0,
+    ResolutionMilli = 1
+} Resolution_t;
+
+Resolution_t resolution = ResolutionMicro;
+bool timed = false;
+unsigned long lastTimestamp, now;
+
+
 void printHelp( void ) {
-    printf("Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate|-g [<cmd> ...]]\n");
+    printf("Usage: midimessage-cli [-h?] [--parse|-p [--timed|-t [milli|micro]] [<data1> ..]] [--generate|-g [--timed|-t[milli|micro]] [<cmd> ...]]\n");
     printf("If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line\n");
     printf("Output to STDOUT (when generating this will be binary).\n");
     printf("Note: parsed message output format is identical to the required generation format ;)\n");
@@ -61,13 +72,37 @@ void printHelp( void ) {
 
     printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte.\n");
 
+    printf("\nRecordings and Replay\n");
+    printf("\t Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then have a delay since the last message in the given time scale (micro or milli seconds, default = micro).");
+
     printf("\nExamples:\n");
     printf("\t ./midimessage-cli -g note on 60 40 1\n");
     printf("\t ./midimessage-cli -g | ./midimessage-cli -p\n");
+    printf("\t ./midimessage-cli -g | ./midimessage-cli -ptmilli > test.recording\n");
+    printf("\t cat test.recording | ./midimessage-cli -gtmilli | ./midimessage-cli -p\n");
 }
 
 void generate(uint8_t argc,  char  * argv[]);
 uint8_t parse(uint8_t length, uint8_t bytes[]);
+
+unsigned long getNow(){
+
+    struct timespec c;
+
+    if (clock_gettime(CLOCK_REALTIME, &c) == -1) {
+        perror("error calling clock_gettime()");
+        exit(1);
+    }
+
+    if (resolution == ResolutionMilli){
+        return c.tv_sec * 1000 + c.tv_nsec / 1000000;
+    }
+
+    return c.tv_sec * 1000000 + c.tv_nsec / 1000;
+}
+
+
+
 
 int main(int argc, char * argv[], char * env[]){
 
@@ -89,11 +124,12 @@ int main(int argc, char * argv[], char * env[]){
         static struct option long_options[] = {
                 {"parse",    no_argument,    0,  'p' },
                 {"generate",   no_argument,    0,  'g' },
+                {"timed", optional_argument,  0, 't'},
                 {"help",    no_argument,    0,  'h' },
                 {0,         0,              0,  0 }
         };
 
-        c = getopt_long(argc, argv, "pgh?",
+        c = getopt_long(argc, argv, "pgt::h?",
                         long_options, &option_index);
         if (c == -1)
             break;
@@ -118,6 +154,20 @@ int main(int argc, char * argv[], char * env[]){
                     return 1;
                 }
                 mode = ModeGenerate;
+                break;
+
+            case 't':
+                timed = true;
+                if (strlen(optarg) > 0){
+                    if (strcmp(optarg, "milli") == 0){
+                        resolution = ResolutionMilli;
+                    } else if (strcmp(optarg, "micro") == 0) {
+                        resolution = ResolutionMicro;
+                    } else {
+                        printf("Error: invalid time scale, either 'milli' or 'micro', %s given\n", optarg);
+                        exit(EXIT_FAILURE);
+                    }
+                }
                 break;
 
             default:
@@ -149,6 +199,12 @@ int main(int argc, char * argv[], char * env[]){
     args[0] = &line[0];
 
     int ch;
+
+    // start timer
+    if (timed){
+        // record timer
+        lastTimestamp = getNow();
+    }
 
     while( (ch = fgetc(stdin)) != EOF ){
 
@@ -187,7 +243,21 @@ int main(int argc, char * argv[], char * env[]){
                     argsCount--;
                 }
 
-                generate( argsCount, (char**)args );
+                if (timed){
+                    unsigned long delay = std::strtoul((char*)args[0], NULL, 10);
+                    unsigned long waitUntil = lastTimestamp + delay;
+                    unsigned long now;
+                    do {
+                        now = getNow();
+                    } while( now < waitUntil );
+
+                    lastTimestamp = now;
+
+                    generate( argsCount - 1 , (char**)&args[1] );
+
+                } else {
+                    generate( argsCount, (char**)args );
+                }
 
                 pos = 0;
                 line[0] = '\0';
@@ -416,6 +486,19 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
     }
 
 //    printf("parsed! %d\n", msg.StatusClass);
+
+
+
+    if (timed){
+
+        unsigned long now = getNow();
+        unsigned long diff = now - lastTimestamp;
+
+        printf("%ld ", diff);
+
+        lastTimestamp = now;
+    }
+
 
     if (msg.StatusClass == StatusClassNoteOn){
         printf("note on %d %d %d\n", msg.Data.Note.Key, msg.Data.Note.Velocity, msg.Channel);

@@ -135,7 +135,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 ## Command Line Utility
 
 ```
-Usage: midimessage-cli [-h?] [--parse|-p [<data1> ..]] [--generate|-g [<cmd> ...]]
+Usage: midimessage-cli [-h?] [--parse|-p [--timed|-t [milli|micro]] [<data1> ..]] [--generate|-g [--timed|-t[milli|micro]] [<cmd> ...]]
 If no <data> or <cmd>.. is given reads from STDIN assuming either a continuous data stream (when parsing) or one generation command per line
 Output to STDOUT (when generating this will be binary).
 Note: parsed message output format is identical to the required generation format ;)
@@ -166,9 +166,13 @@ System Exclusives:
 
 Note: Data bytes have a value range of 0-127 - anything above is considered a control byte.
 
+Recordings and Replay
+	 Using the --timed|-t option the utility will enter a record mode (when parsing) or replay mode (when generating) message. The generation commands will then have a delay since the last message in the given time scale (micro or milli seconds, default = micro).
 Examples:
 	 ./midimessage-cli -g note on 60 40 1
 	 ./midimessage-cli -g | ./midimessage-cli -p
+	 ./midimessage-cli -g | ./midimessage-cli -ptmilli > test.recording
+	 cat test.recording | ./midimessage-cli -gtmilli | ./midimessage-cli -p
 ```
 
 ## References
