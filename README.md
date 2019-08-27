@@ -12,6 +12,8 @@ No particular structures are enforced such that you can take from it what you wa
 - Manufacturer Id list (see `include/manufacturerids.h`)
  - tool to generate up-to-date header, run `make manufacturerids` (requires wget + php)
 - Standard/Common CC list (see `include/commonccs.h`)
+- DLS Proprietary Chunk ids (see `include/dlsproprietarychunkids.h`)
+- Basic notes (see `include/notes.h`)
 - *packers* construct the right byte sequence for a particular message ASSERTing valid parameters
 - *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination)
 - packers and unpackers are always complementary and are available as literal-based and struct-based variants
@@ -46,15 +48,16 @@ tt = to test
 | MIDI Machine Control | Basics | | tt |
 | MIDI Show Control | | SysEx Real Time | tt |
 | MIDI Tuning Standard | | | TODO |
-| System Exclusive | Experimental (custom) messages | | tt |
-| | Manufacturer messages (+ manufacturer ids) | | tt |
-| | Device Control (Master volume, balance, coarse/fine tuning, global parameters) | Real Time | tt |
-| | General Information | Non-Real Time | tt |
-| | Sample Dump | Non-Real Time | TODO |
-| | File Dump | Non-Real Time | TODO |
-| | General MIDI System Messages | Non-Real Time | TODO |
-| | Downloadable Sounds | Non-Real Time | TODO |
-| | Notation Information | Real Time | TODO |
+| General Handshaking | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
+| Experimental (custom) messages |  | SysEx (Custom) | tt |
+| Manufacturer messages (+ manufacturer ids)|  | SysEx (Custom) | tt |
+| Device Control (Master volume, balance, coarse/fine tuning, global parameters)| | SysEx Real Time | tt |
+| General Information | SysEx Non-Real Time | tt |
+| General MIDI System Messages | SysEx Non-Real Time | tt |
+| Sample Dump | | SysEx Non-Real Time | TODO |
+| File Dump | Non-Real Time | TODO |
+| Downloadable Sounds | Non-Real Time | TODO |
+| Notation Information | Real Time | TODO |
 
 
 

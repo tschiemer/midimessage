@@ -241,6 +241,8 @@ namespace MidiMessage {
     const uint8_t MsgLenSongPositionPointer             = 3;
     const uint8_t MsgLenSongSelect                      = 2;
 
+    const uint8_t MsgLenSysExNonRtGeneralHandshaking    = 6;
+    const uint8_t MsgLenSysExNonRtGeneralMidi           = 5;
     const uint8_t MsgLenSysExNonRtMtcCueingSetupMessageMin  = 13;
     const uint8_t MsgLenSysExNonRtGenInfoIdentityRequest = 6;
     const uint8_t MsgLenSysExNonRtGenInfoIdentityReply = 15;

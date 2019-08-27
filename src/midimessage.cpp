@@ -187,8 +187,16 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtGeneralMidi:
-                        //TODO
-                        return false;
+
+                        ASSERT( isSysExNonRtGeneralMidi(msg->Data.SysEx.SubId2) );
+
+                        bytes[0] = SystemMessageSystemExclusive;
+                        bytes[1] = SysExIdNonRealTimeByte;
+                        bytes[2] = msg->Channel & DataMask;
+                        bytes[3] = msg->Data.SysEx.SubId1;
+                        bytes[4] = SystemMessageEndOfExclusive;
+
+                        return MsgLenSysExNonRtGeneralHandshaking;
 
                     case SysExNonRtDownloadableSounds:
                         //TODO
@@ -219,7 +227,7 @@ namespace MidiMessage {
                         bytes[4] = msg->Data.SysEx.Data.PacketNumber; // Packet Number
                         bytes[5] = SystemMessageEndOfExclusive;
 
-                        return 6;
+                        return MsgLenSysExNonRtGeneralHandshaking;
 
                 }
 
@@ -438,8 +446,16 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtGeneralMidi:
-                        //TODO
-                        return false;
+                        if (length != MsgLenSysExNonRtGeneralMidi || ! isControlByte(bytes[3]) || ! isSysExNonRtGeneralMidi(bytes[4])){
+                            return false;
+                        }
+                        msg->StatusClass = StatusClassSystemMessage;
+                        msg->SystemMessage = SystemMessageSystemExclusive;
+                        msg->Channel = bytes[2] & DataMask;
+                        msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+                        msg->Data.SysEx.SubId1 = SysExNonRtGeneralMidi;
+                        msg->Data.SysEx.SubId2 = bytes[3];
+                        return true;
 
                     case SysExNonRtDownloadableSounds:
                         //TODO
@@ -462,7 +478,7 @@ namespace MidiMessage {
                     case SysExNonRtCancel:
                     case SysExNonRtNAK:
                     case SysExNonRtACK:
-                        if (length != 6 || !isControlByte(bytes[length-1])){
+                        if (length != MsgLenSysExNonRtGeneralHandshaking || !isControlByte(bytes[length-1])){
                             return false;
                         }
                         msg->StatusClass = StatusClassSystemMessage;
