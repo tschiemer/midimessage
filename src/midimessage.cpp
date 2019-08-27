@@ -358,7 +358,6 @@ namespace MidiMessage {
                     case SysExRtMidiTimeCode:
                         return unpackSysExRtMidiTimeCode(bytes, length, msg);
 
-
                     case SysExRtMidiShowControl:
                         return unpackSysExRtMidiShowControl(bytes, length, msg);
                         return false;
@@ -470,7 +469,7 @@ namespace MidiMessage {
                     case SysExNonRtNAK:
                     case SysExNonRtACK:
                         msg->StatusClass = StatusClassSystemMessage;
-                        msg->SystemMessage = bytes[1];
+                        msg->SystemMessage = bytes[0];
                         msg->Data.SysEx.Id = SysExIdNonRealTime;
                         msg->Channel = bytes[2]; // deviceId
                         msg->Data.SysEx.SubId1 = bytes[3];

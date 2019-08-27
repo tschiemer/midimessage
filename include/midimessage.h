@@ -1352,7 +1352,6 @@ namespace MidiMessage {
                 fps == MtcFrameRate30fps);
     }
 
-
     inline MtcFrameRate_t getFps( uint8_t fpsHour ){
         return (MtcFrameRate_t)((fpsHour & MtcFpsMask) >> MtcFpsOffset);
     }

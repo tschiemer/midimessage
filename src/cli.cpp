@@ -82,7 +82,11 @@ void printHelp( void ) {
     printf("\nSystem Exclusives:\n");
     printf("\t sysex experimental <n> <data-of-length-n>\n");
     printf("\t sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
-    printf("\t sysex nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision> \n");
+    printf("\t sysex nonrt <device-id> (eof|wait|cancel|nak|ack)\n");
+    printf("\t sysex nonrt <device-id> info request\n");
+    printf("\t sysex nonrt <device-id> info reply <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>\n");
+    printf("\t sysex rt <device-id> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
+    printf("\t sysex rt <device-id> mtc user-bits <hex-byte-0><hex-byte-1><hex-byte-2><hex-byte-3><hex-byte-4>\n");
 
 
     printf("\nExamples:\n");
@@ -470,12 +474,14 @@ void generate(uint8_t argc, char * argv[]){
         msg.SystemMessage = SystemMessageTuneRequest;
     }
     else if (strcmp(argv[0], "sysex") == 0){
-        msg.StatusClass = StatusClassSystemMessage;
-        msg.SystemMessage = SystemMessageSystemExclusive;
-
         if (argc < 2){
             return;
         }
+
+        msg.StatusClass = StatusClassSystemMessage;
+        msg.SystemMessage = SystemMessageSystemExclusive;
+
+
         if (strcmp(argv[1], "experimental") == 0) {
             msg.Data.SysEx.Id = SysExIdExperimental;
             if (argc < 4) {
@@ -485,7 +491,8 @@ void generate(uint8_t argc, char * argv[]){
                 memcpy((char*)msg.Data.SysEx.ByteData, argv[3], len);
                 msg.Data.SysEx.Length = len;
             }
-        } else if (strcmp(argv[1], "manufacturer") == 0) {
+        }
+        else if (strcmp(argv[1], "manufacturer") == 0) {
             if (argc < 3){
                 return;
             }
@@ -499,39 +506,96 @@ void generate(uint8_t argc, char * argv[]){
                 memcpy((char*)msg.Data.SysEx.ByteData, argv[4], len);
                 msg.Data.SysEx.Length = len;
             }
-        } else if (strcmp(argv[1], "rt") == 0){
-            if (argc < 3){
+        }
+        else if (strcmp(argv[1], "rt") == 0){
+            if (argc < 4){
                 return;
             }
+            msg.Channel = atoi(argv[2]);
             msg.Data.SysEx.Id = SysExIdRealTime;
 
+            if (strcmp(argv[3], "mtc") == 0){
+                if (argc < 5){
+                    return;
+                }
+                msg.Data.SysEx.SubId1 = SysExRtMidiTimeCode;
 
-        } else if (strcmp(argv[1], "nonrt") == 0) {
-            if (argc < 3){
+                if (strcmp(argv[4], "full-message") == 0){
+                    if (argc < 10){
+                        return;
+                    }
+                    msg.Data.SysEx.SubId2 = SysExRtMtcFullMessage;
+                    uint8_t fps = atoi(argv[5]);
+
+                    switch(fps){
+                        case 24: fps = MtcFrameRate24fps; break;
+                        case 25: fps = MtcFrameRate25fps; break;
+                        case 29: fps = MtcFrameRate29_97fps; break;
+                        case 30: fps = MtcFrameRate30fps; break;
+                        default: return;
+                    }
+
+                    uint8_t hour = atoi(argv[6]);
+                    msg.Data.SysEx.Data.MidiTimeCode.FpsHour = ((fps << MtcFpsOffset) & MtcFpsMask) | (hour & MtcHourMask);
+                    msg.Data.SysEx.Data.MidiTimeCode.Minute = atoi(argv[7]);
+                    msg.Data.SysEx.Data.MidiTimeCode.Second = atoi(argv[8]);
+                    msg.Data.SysEx.Data.MidiTimeCode.Frame = atoi(argv[9]);
+                }
+                if (strcmp(argv[4], "user-bits") == 0){
+                    if (argc < 6){
+                        return;
+                    }
+                    msg.Data.SysEx.SubId2 = SysExRtMtcUserBits;
+                    unsigned long long bits = strtoull(argv[5], NULL, 16);
+                    msg.Data.SysEx.ByteData[0] = (bits >> 32) & DataMask;
+                    msg.Data.SysEx.ByteData[1] = (bits >> 24) & DataMask;
+                    msg.Data.SysEx.ByteData[2] = (bits >> 16) & DataMask;
+                    msg.Data.SysEx.ByteData[3] = (bits >> 8) & DataMask;
+                    msg.Data.SysEx.ByteData[4] = bits & DataMask;
+                    msg.Data.SysEx.Length = 5;
+                }
+            }
+
+        }
+        else if (strcmp(argv[1], "nonrt") == 0) {
+            if (argc < 4){
                 return;
             }
 
+            msg.Channel = atoi(argv[2]);
             msg.Data.SysEx.Id = SysExIdNonRealTime;
 
-            if (strcmp(argv[2], "info") == 0){
-                if (argc < 4){
+            if (strcmp(argv[3], "eof") == 0){
+                msg.Data.SysEx.SubId1 = SysExNonRtEndOfFile;
+            }
+            else if (strcmp(argv[3], "wait") == 0){
+                msg.Data.SysEx.SubId1 = SysExNonRtWait;
+            }
+            else if (strcmp(argv[3], "cancel") == 0){
+                msg.Data.SysEx.SubId1 = SysExNonRtCancel;
+            }
+            else if (strcmp(argv[3], "nak") == 0){
+                msg.Data.SysEx.SubId1 = SysExNonRtNAK;
+            }
+            else if (strcmp(argv[3], "ack") == 0){
+                msg.Data.SysEx.SubId1 = SysExNonRtACK;
+            }
+
+
+            else if (strcmp(argv[3], "info") == 0){
+                if (argc < 5){
                     return ;
                 }
                 msg.Data.SysEx.SubId1 = SysExNonRtGeneralInformation;
 
-                if (strcmp(argv[3], "request") == 0){
-                    if (argc < 5){
-                        return ;
-                    }
+                if (strcmp(argv[4], "request") == 0){
                     msg.Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityRequest;
-                    msg.Channel = atoi(argv[4]);
 
                 } else if (strcmp(argv[3], "reply") == 0){
                     if (argc < 8){
                         return;
                     }
                     msg.Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityReply;
-                    msg.Channel = atoi(argv[4]);
                     msg.Data.SysEx.Data.GeneralInfo.ManufacturerId = std::strtol(argv[5], NULL, 16);
                     msg.Data.SysEx.Data.GeneralInfo.DeviceFamily = atoi(argv[6]);
                     msg.Data.SysEx.Data.GeneralInfo.DeviceFamilyMember = atoi(argv[7]);
@@ -557,6 +621,7 @@ void generate(uint8_t argc, char * argv[]){
     }
 
     length = pack( bytes, &msg );
+//    printf("packed %d..\n", length);
 
     if (length > 0){
 
@@ -585,7 +650,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
         return 0;
     }
 
-//    printf("parsed! %d\n", msg.StatusClass);
+//    printf("parsed! %02X\n", msg.StatusClass);
 
 
 
@@ -623,6 +688,8 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
     }
 
     if (msg.StatusClass == StatusClassSystemMessage){
+
+//        printf("sysmsg \n");
 
         if (msg.SystemMessage == SystemMessageMtcQuarterFrame){
             printf("quarter-frame %d %d\n", msg.Data.MtcQuarterFrame.MessageType, msg.Data.MtcQuarterFrame.Nibble);
@@ -674,22 +741,62 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             }
 
             if (msg.Data.SysEx.Id == SysExIdRealTime){
-                printf("rt ");
+                printf("rt %d ", msg.Channel);
+
+                if (msg.Data.SysEx.SubId1 == SysExRtMidiTimeCode){
+                    printf("mtc ");
+
+                    if (msg.Data.SysEx.SubId2 == SysExRtMtcFullMessage){
+                        uint8_t fps = 0;
+                        switch(getFps(msg.Data.SysEx.Data.MidiTimeCode.FpsHour)){
+                            case MtcFrameRate24fps: fps = 24; break;
+                            case MtcFrameRate25fps: fps = 25; break;
+                            case MtcFrameRate29_97fps: fps = 29; break;
+                            case MtcFrameRate30fps: fps = 30; break;
+                        }
+                        printf("full-message %d%s %d %d %d %d\n",
+                               fps,
+                               fps == 29 ? ".97" : "",
+                               getHour(msg.Data.SysEx.Data.MidiTimeCode.FpsHour),
+                               msg.Data.SysEx.Data.MidiTimeCode.Minute,
+                               msg.Data.SysEx.Data.MidiTimeCode.Second,
+                               msg.Data.SysEx.Data.MidiTimeCode.Frame
+                        );
+                    } else if (msg.Data.SysEx.SubId2 == SysExRtMtcUserBits){
+                        printf("user-bits %02X%02X%02X%02X%02X\n",
+                               msg.Data.SysEx.ByteData[0],
+                               msg.Data.SysEx.ByteData[1],
+                               msg.Data.SysEx.ByteData[2],
+                               msg.Data.SysEx.ByteData[3],
+                               msg.Data.SysEx.ByteData[4]
+                        );
+                    }
+                }
             }
 
             if (msg.Data.SysEx.Id == SysExIdNonRealTime){
-                printf("nonrt ");
+                printf("nonrt %d ", msg.Channel);
 
-                if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralInformation){
+
+                if (msg.Data.SysEx.SubId1 == SysExNonRtEndOfFile){
+                    printf("eof\n");
+                } else if (msg.Data.SysEx.SubId1 == SysExNonRtWait){
+                    printf("wait\n");
+                } else if (msg.Data.SysEx.SubId1 == SysExNonRtCancel){
+                    printf("cancel\n");
+                } else if (msg.Data.SysEx.SubId1 == SysExNonRtNAK){
+                    printf("nak\n");
+                } else if (msg.Data.SysEx.SubId1 == SysExNonRtACK){
+                    printf("ack\n");
+                }
+                else if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralInformation){
                     printf("info ");
 
                     if (msg.Data.SysEx.SubId2 == SysExNonRtGenInfoIdentityRequest){
-                        printf("request %d\n",
-                               msg.Channel
+                        printf("request\n"
                         );
                     } else if (msg.Data.SysEx.SubId2 == SysExNonRtGenInfoIdentityReply) {
-                        printf("reply %d %06X %d %d %02X%02X%02X%02X\n",
-                               msg.Channel,
+                        printf("reply %06X %d %d %02X%02X%02X%02X\n",
                                msg.Data.SysEx.Data.GeneralInfo.ManufacturerId,
                                msg.Data.SysEx.Data.GeneralInfo.DeviceFamily,
                                msg.Data.SysEx.Data.GeneralInfo.DeviceFamilyMember,

@@ -172,7 +172,11 @@ System Commands:
 System Exclusives:
 	 sysex experimental <n> <data-of-length-n>
 	 sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>
-	 sysex nonrt info (<request> <device-id>|<reply> <device-id> <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>
+	 sysex nonrt <device-id> (eof|wait|cancel|nak|ack)
+	 sysex nonrt <device-id> info request
+	 sysex nonrt <device-id> info reply <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>
+	 sysex rt <device-id> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
+	 sysex rt <device-id> mtc user-bits <hex-byte-0><hex-byte-1><hex-byte-2><hex-byte-3><hex-byte-4>
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
