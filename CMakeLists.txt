@@ -9,19 +9,36 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include_directories(include)
 
-set(SOURCE_FILES
+set(HEADER_FILES
         include/midimessage.h
         include/midimessage-packers.h
         include/manufacturerids.h
         include/dlsproprietarychunkids.h
         include/commonccs.h
-        include/notes.h
+        include/notes.h)
+
+set(SOURCE_FILES
+
         src/midimessage.cpp)
 
-add_library(midimessage ${SOURCE_FILES})
+add_library(midimessage ${HEADER_FILES} ${SOURCE_FILES})
 
 add_executable(midimessage-cli src/cli.cpp)
 target_link_libraries(midimessage-cli midimessage)
+
+message("Install path: ${CMAKE_INSTALL_PREFIX}")
+install(TARGETS midimessage midimessage-cli
+        LIBRARY
+            DESTINATION lib
+            COMPONENT Libraries
+            NAMELINK_COMPONENT Development
+        PUBLIC_HEADER
+            DESTINATION include
+            COMPONENT Development
+        RUNTIME
+            DESTINATION bin
+            COMPONENT Runtime
+)
 
 
 message("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n")
