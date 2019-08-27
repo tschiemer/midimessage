@@ -82,7 +82,7 @@ void printHelp( void ) {
     printf("\nSystem Exclusives:\n");
     printf("\t sysex experimental <n> <data-of-length-n>\n");
     printf("\t sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
-    printf("\t sysex nonrt <device-id> (eof|wait|cancel|nak|ack)\n");
+    printf("\t sysex nonrt <device-id> (eof|wait|cancel|nak|ack) <packet-number>\n");
     printf("\t sysex nonrt <device-id> info request\n");
     printf("\t sysex nonrt <device-id> info reply <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>\n");
     printf("\t sysex rt <device-id> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
@@ -484,7 +484,7 @@ void generate(uint8_t argc, char * argv[]){
 
         if (strcmp(argv[1], "experimental") == 0) {
             msg.Data.SysEx.Id = SysExIdExperimental;
-            if (argc < 4) {
+            if (argc != 4) {
                 msg.Data.SysEx.Length = 0;
             } else {
                 int len = atoi(argv[2]);
@@ -493,7 +493,7 @@ void generate(uint8_t argc, char * argv[]){
             }
         }
         else if (strcmp(argv[1], "manufacturer") == 0) {
-            if (argc < 3){
+            if (argc != 3){
                 return;
             }
 
@@ -566,19 +566,39 @@ void generate(uint8_t argc, char * argv[]){
             msg.Data.SysEx.Id = SysExIdNonRealTime;
 
             if (strcmp(argv[3], "eof") == 0){
+                if (argc != 5){
+                    return;
+                }
                 msg.Data.SysEx.SubId1 = SysExNonRtEndOfFile;
+                msg.Data.SysEx.SubId2 = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "wait") == 0){
+                if (argc != 5){
+                    return;
+                }
                 msg.Data.SysEx.SubId1 = SysExNonRtWait;
+                msg.Data.SysEx.SubId2 = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "cancel") == 0){
+                if (argc != 5){
+                    return;
+                }
                 msg.Data.SysEx.SubId1 = SysExNonRtCancel;
+                msg.Data.SysEx.SubId2 = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "nak") == 0){
+                if (argc != 5){
+                    return;
+                }
                 msg.Data.SysEx.SubId1 = SysExNonRtNAK;
+                msg.Data.SysEx.SubId2 = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "ack") == 0){
+                if (argc != 5){
+                    return;
+                }
                 msg.Data.SysEx.SubId1 = SysExNonRtACK;
+                msg.Data.SysEx.SubId2 = atoi(argv[4]);
             }
 
 
@@ -592,7 +612,7 @@ void generate(uint8_t argc, char * argv[]){
                     msg.Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityRequest;
 
                 } else if (strcmp(argv[3], "reply") == 0){
-                    if (argc < 8){
+                    if (argc != 8){
                         return;
                     }
                     msg.Data.SysEx.SubId2 = SysExNonRtGenInfoIdentityReply;
@@ -779,15 +799,15 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
 
 
                 if (msg.Data.SysEx.SubId1 == SysExNonRtEndOfFile){
-                    printf("eof\n");
+                    printf("eof %d\n", msg.Data.SysEx.SubId2);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtWait){
-                    printf("wait\n");
+                    printf("wait %d\n", msg.Data.SysEx.SubId2);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtCancel){
-                    printf("cancel\n");
+                    printf("cancel %d\n", msg.Data.SysEx.SubId2);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtNAK){
-                    printf("nak\n");
+                    printf("nak %d\n", msg.Data.SysEx.SubId2);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtACK){
-                    printf("ack\n");
+                    printf("ack %d\n", msg.Data.SysEx.SubId2);
                 }
                 else if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralInformation){
                     printf("info ");

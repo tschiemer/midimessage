@@ -219,9 +219,10 @@ namespace MidiMessage {
                         bytes[1] = SysExIdNonRealTimeByte;
                         bytes[2] = msg->Channel & DataMask;
                         bytes[3] = msg->Data.SysEx.SubId1;
-                        bytes[4] = SystemMessageEndOfExclusive;
+                        bytes[4] = msg->Data.SysEx.SubId2; // Packet Number
+                        bytes[5] = SystemMessageEndOfExclusive;
 
-                        return 5;
+                        return 6;
 
                 }
 
@@ -360,7 +361,6 @@ namespace MidiMessage {
 
                     case SysExRtMidiShowControl:
                         return unpackSysExRtMidiShowControl(bytes, length, msg);
-                        return false;
 
                     case SysExRtDeviceControl:
                         return unpackSysExRtDeviceControl( bytes, length, msg );
@@ -468,11 +468,15 @@ namespace MidiMessage {
                     case SysExNonRtCancel:
                     case SysExNonRtNAK:
                     case SysExNonRtACK:
+                        if (length != 6 || !isControlByte(bytes[length-1])){
+                            return false;
+                        }
                         msg->StatusClass = StatusClassSystemMessage;
                         msg->SystemMessage = bytes[0];
                         msg->Data.SysEx.Id = SysExIdNonRealTime;
                         msg->Channel = bytes[2]; // deviceId
                         msg->Data.SysEx.SubId1 = bytes[3];
+                        msg->Data.SysEx.SubId2 = bytes[4]; // Packet Number
                         return true;
 
                 }
