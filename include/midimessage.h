@@ -1446,6 +1446,81 @@ namespace MidiMessage {
         uint8_t SoftwareRevision[4];
     } GeneralInformationData_t;
 
+    typedef enum {
+        SampleDumpLoopTypeForwardOnly       = 0x00,
+        SampleDumpLoopTypeBackwardForward   = 0x01,
+        SampleDumpLoopTypeLoopOff           = 0x7F
+    } SampleDumpLoopType_t;
+
+    typedef struct {
+        uint16_t SampleNumber;
+        uint8_t SampleFormat; // # of significant bits from 8 - 28
+        uint32_t SamplePeriod; // in nsec (3 bytes)
+        uint32_t SampleLength; // in words (3 bytes)
+        uint32_t LoopStartPoint; // Word number (3 bytes)
+        uint32_t LoopEndPoint; // Word number (3 bytes)
+        SampleDumpLoopType_t LoopType; //
+    } SampleDumpHeaderData_t;
+
+    typedef struct {
+        uint16_t RequestedSample;
+    } SampleDumpRequestData_t;
+
+    typedef struct {
+        uint8_t RunningPacketCount;
+        uint8_t Checksum; // XOR of complete message to end of payload
+    } SampleDumpDataPacket_t;
+
+    typedef enum {
+        SampleDumpExtLoopTypeForward                    = 0x00,
+        SampleDumpExtLoopTypeForwardBackward            = 0x01,
+        SampleDumpExtLoopTypeForwardWithRelease         = 0x02,
+        SampleDumpExtLoopTypeForwardBackwardWithRelease = 0x03,
+        SampleDumpExtLoopTypeBackward                   = 0x40,
+        SampleDumpExtLoopTypeBackwardForward            = 0x41,
+        SampleDumpExtLoopTypeBackwardWithRelease        = 0x42,
+        SampleDumpExtLoopTypeBackwardForwardWithRelease = 0x43,
+        SampleDumpExtLoopTypeBackwardOneShot            = 0x7E,
+        SampleDumpExtLoopTypeForwardOneShot             = 0x7F
+    } SampleDumpExtLoopType_t;
+
+    typedef struct {
+        uint16_t SampleNumber;
+        uint8_t SampleFormat; // # of significant bits from 8 - 28
+        uint32_t SampleRateIntegerPortion; // in Hz
+        uint32_t SampleRateFractionalPortion; // in Hz
+        uint64_t SampleLength; // in words
+        uint64_t SustainLoopStart; // word number
+        uint64_t SustainLoopEnd; // word number
+        SampleDumpExtLoopType_t LoopType;
+        uint8_t NumberofChannels;
+    } SampleDumpExtLoopPointHeaderData_t;
+
+    typedef struct {
+        uint16_t Number;
+        uint16_t LoopNumber; // 7f7f delete all loops
+        SampleDumpExtLoopType_t LoopType;
+        uint64_t LoopStartAddress;
+        uint64_t LoopEndAddress;
+    } SampleDumpExtLoopPointTransmissionData_t;
+
+    typedef struct {
+        uint16_t SampleNumber;
+        uint16_t LoopNumber; // 7F7F = all loops
+    } SampleDumpExtLoopPointRequestData_t;
+
+    typedef struct {
+        uint16_t SampleNumber;
+        uint8_t NameLanguageTagLength;
+        uint8_t * NameLanguageTag;
+        uint8_t NameLength;
+        uint8_t * Name;
+    } SampleDumpExtNameTransmissionData_t;
+
+    typedef struct {
+        uint16_t SampleNumber;
+    } SampleDumpExtNameRequestData_t;
+
     typedef struct {
         StatusClass_t StatusClass;
         uint8_t SystemMessage;
@@ -1494,6 +1569,20 @@ namespace MidiMessage {
                     DeviceControlData_t DeviceControl;
 
                     MidiShowControlData_t MidiShowControl;
+
+                    union {
+                        SampleDumpHeaderData_t Header;
+                        SampleDumpRequestData_t Request;
+                        SampleDumpDataPacket_t DataPacket;
+                    } SampleDump;
+
+                    union {
+                        SampleDumpExtLoopPointHeaderData_t Header;
+                        SampleDumpExtLoopPointTransmissionData_t Transmission;
+                        SampleDumpExtLoopPointRequestData_t Request;
+                        SampleDumpExtNameTransmissionData_t NameTransmission;
+                        SampleDumpExtNameRequestData_t NameRequest;
+                    } SampleDumpExt;
 
                 } Data;
 
