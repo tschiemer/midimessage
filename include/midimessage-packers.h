@@ -427,7 +427,7 @@ namespace MidiMessage {
         }
 
         *channel = bytes[0] & ChannelMask;
-        unpackDoubleValue(&bytes[1], pitch);
+        *pitch = unpackDoubleValue(&bytes[1]);
 
         return true;
     }
@@ -783,7 +783,7 @@ namespace MidiMessage {
             return false;
         }
 
-        unpackDoubleValue(&bytes[1], position);
+        *position = unpackDoubleValue(&bytes[1]);
 
         return true;
     }
@@ -1000,7 +1000,7 @@ namespace MidiMessage {
     inline uint8_t packSysExRtMtcFullMessage(uint8_t *bytes, uint8_t deviceId, uint8_t fps, uint8_t hour, uint8_t minute,
                                            uint8_t second, uint8_t frame) {
         ASSERT(bytes != NULL);
-        ASSERT((deviceId & DataMask) == deviceId);
+        ASSERT(deviceId <= MaxValue);
         ASSERT(isMtcFrameRate(fps));
         ASSERT(hour <= MtcMaxHour);
         ASSERT(minute <= MtcMaxMinute);
@@ -1112,7 +1112,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExRtMtcUserBits(uint8_t *bytes, uint8_t deviceId, uint8_t *userBits) {
         ASSERT(bytes != NULL);
-        ASSERT((deviceId & DataMask) == deviceId);
+        ASSERT(deviceId <= MaxValue);
         ASSERT(userBits != NULL);
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -1234,7 +1234,7 @@ namespace MidiMessage {
         ASSERT(isSysExNonRtMtc(msgType));
         ASSERT(!isSysExNonRtMtcWithAddInfo(msgType) || addInfoLen == 0);
         ASSERT(bytes != NULL);
-        ASSERT((deviceId & DataMask) == deviceId);
+        ASSERT(deviceId <= MaxValue);
         ASSERT(isMtcFrameRate(fps));
         ASSERT(hour <= MtcMaxHour);
         ASSERT(minute <= MtcMaxMinute);
@@ -1328,7 +1328,7 @@ namespace MidiMessage {
         *frame = bytes[8] & MtcFrameMask;
         *fractionalFrame = bytes[9] & MtcFractionalFrameMask;
 
-        unpackDoubleValue(&bytes[10], eventNumber);
+        *eventNumber = unpackDoubleValue(&bytes[10]);
 
         if (isSysExNonRtMtc(bytes[4])) {
 
@@ -1374,9 +1374,9 @@ namespace MidiMessage {
     inline uint8_t packSysExRtMtcCueingSetupMessage(uint8_t *bytes, uint8_t msgType, uint8_t deviceId,
                                                     uint16_t eventNumber, uint8_t *addInfo, uint32_t addInfoLen) {
         ASSERT( isSysExRtMtcCueing(msgType) );
-        ASSERT( !isSysExRtMtcCueing(msgType) || addInfoLen == 0 );
+        ASSERT( addInfoLen == 0 || !isSysExRtMtcCueing(msgType)  );
         ASSERT( bytes != NULL );
-        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( deviceId <= MaxValue );
         ASSERT( eventNumber <= MaxEventNumber );
 
         int msgLen = MsgLenSysExRtMtcCueingSetupMessageMin - 1; // min message length (w/o EOX)
@@ -1438,7 +1438,7 @@ namespace MidiMessage {
         *deviceId = bytes[2] & DataMask;
         *msgType = bytes[4];
 
-        unpackDoubleValue(&bytes[10], eventNumber);
+        *eventNumber = unpackDoubleValue(&bytes[10]);
 
         if (isSysExRtMtcCueingWithAddInfo(bytes[4])) {
 
@@ -1468,7 +1468,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExNonRtGenInfoIdentityRequest(uint8_t *bytes, uint8_t deviceId) {
         ASSERT(bytes != NULL);
-        ASSERT((deviceId & DataMask) == deviceId);
+        ASSERT(deviceId <= MaxValue);
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTimeByte;
@@ -1485,7 +1485,7 @@ namespace MidiMessage {
                                                        uint16_t deviceFamily, uint16_t deviceFamilyMember,
                                                        uint8_t *softwareRevision) {
         ASSERT(bytes != NULL);
-        ASSERT((deviceId & DataMask) == deviceId);
+        ASSERT(deviceId <= MaxValue);
         ASSERT(deviceFamily <= MaxDoubleValue);
         ASSERT(deviceFamilyMember <= MaxDoubleValue);
 
@@ -1593,10 +1593,10 @@ namespace MidiMessage {
 
         l += unpackSysExId(&bytes[5], manufacturerId);
 
-        unpackDoubleValue(&bytes[l], deviceFamily);
+        *deviceFamily = unpackDoubleValue(&bytes[l]);
         l += 2;
 
-        unpackDoubleValue(&bytes[l], deviceFamilyMember);
+        *deviceFamilyMember = unpackDoubleValue(&bytes[l]);
         l += 2;
 
         softwareRevision[0] = bytes[l++];
@@ -1674,7 +1674,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExRtDcGlobalParameterControl(uint8_t *bytes, uint8_t deviceId, GlobalParameterControl_t *gpc) {
         ASSERT(bytes != NULL);
-        ASSERT((deviceId & DataMask) == deviceId);
+        ASSERT(deviceId <= MaxValue);
         ASSERT(gpc != NULL);
         ASSERT(gpc->Data != NULL);
 
@@ -1751,7 +1751,7 @@ namespace MidiMessage {
         *deviceId = bytes[2];
         *type = bytes[4];
 
-        unpackDoubleValue(&bytes[5], value);
+        *value = unpackDoubleValue(&bytes[5]);
 
         return true;
     }
@@ -1839,9 +1839,10 @@ namespace MidiMessage {
     inline uint8_t packSysExRtMmcCommand(uint8_t *bytes, uint8_t deviceId, uint8_t command, uint8_t *data,
                                   uint8_t dataLen) {
         ASSERT(bytes != NULL);
-        ASSERT((deviceId & DataMask) == deviceId);
+        ASSERT(deviceId <= MaxValue);
         ASSERT(isSysExRtMmcCommand(command));
         ASSERT((dataLen == 0) || (data != NULL));
+        ASSERT(dataLen <= MaxValue);
 
         uint32_t len = 5;
 
@@ -1929,7 +1930,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExRtMidiShowControl( uint8_t * bytes, uint8_t deviceId, MidiShowControlData_t * msc ){
         ASSERT( bytes != NULL );
-        ASSERT( (deviceId & DataMask) == deviceId );
+        ASSERT( deviceId <= MaxValue );
         ASSERT( msc != NULL );
         ASSERT( isSysExRtMscCmdFmt(msc->CommandFormat.Bytes[0]) );
         ASSERT( isSysExRtMscCmd(msc->Command.Bytes[0]) );
@@ -2054,14 +2055,13 @@ namespace MidiMessage {
     }
 
     inline uint8_t packSysExRtMidiShowControl( uint8_t * bytes, Message_t * msg ){
-        ASSERT( bytes != NULL );
         ASSERT( msg != NULL );
 
         return packSysExRtMidiShowControl( bytes, msg->Channel, &msg->Data.SysEx.Data.MidiShowControl );
     }
 
 
-    inline bool unpackSysExRtMidiShowControl(uint8_t * bytes, uint8_t len, uint8_t * deviceId,MidiShowControlData_t * msc ) {
+    inline bool unpackSysExRtMidiShowControl(uint8_t * bytes, uint8_t len, uint8_t * deviceId, MidiShowControlData_t * msc ) {
         ASSERT( bytes != NULL );
         ASSERT( deviceId != NULL );
         ASSERT( msc != NULL );
@@ -2116,9 +2116,9 @@ namespace MidiMessage {
                 break;
 
             case SysExRtMscCmdSet:
-                unpackDoubleValue( &bytes[pos], &msc->Controller );
+                msc->Controller = unpackDoubleValue( &bytes[pos] );
                 pos += 2;
-                unpackDoubleValue( &bytes[pos], &msc->Value );
+                msc->Value = unpackDoubleValue( &bytes[pos] );
                 pos += 2;
                 pos += unpackMidiTimeCodeLong( &bytes[pos], &msc->MidiTimeCode );
                 break;
@@ -2153,9 +2153,9 @@ namespace MidiMessage {
 
             case SysExRtMscCmdStandby:
             case SysExRtMscCmdGo2Pc:
-                unpackDoubleValue( &bytes[pos], &msc->Checksum );
+                msc->Checksum = unpackDoubleValue( &bytes[pos] );
                 pos += 2;
-                unpackDoubleValue( &bytes[pos], &msc->SequenceNumber );
+                msc->SequenceNumber = unpackDoubleValue( &bytes[pos] );
                 pos += 2;
                 msc->Data[0] = bytes[pos++];
                 msc->Data[1] = bytes[pos++];
@@ -2165,9 +2165,9 @@ namespace MidiMessage {
                 break;
 
             case SysExRtMscCmdStandingBy:
-                unpackDoubleValue( &bytes[pos], &msc->Checksum );
+                msc->Checksum = unpackDoubleValue( &bytes[pos] );
                 pos += 2;
-                unpackDoubleValue( &bytes[pos], &msc->SequenceNumber );
+                msc->SequenceNumber = unpackDoubleValue( &bytes[pos]);
                 pos += 2;
                 pos += unpackMidiTimeCodeLong( &bytes[pos], &msc->MidiTimeCode );
                 pos += unpackMscCueNumber( &bytes[pos], len - pos, &msc->CueNumber.Number, &msc->CueNumber.List, &msc->CueNumber.Path );
@@ -2175,19 +2175,19 @@ namespace MidiMessage {
 
             case SysExRtMscCmdComplete:
             case SysExRtMscCmdCancel:
-                unpackDoubleValue( &bytes[pos], &msc->Checksum );
+                msc->Checksum = unpackDoubleValue( &bytes[pos]);
                 pos += 2;
-                unpackDoubleValue( &bytes[pos], &msc->SequenceNumber );
+                msc->SequenceNumber = unpackDoubleValue( &bytes[pos]);
                 pos += 2;
                 pos += unpackMscCueNumber( &bytes[pos], len - pos, &msc->CueNumber.Number, &msc->CueNumber.List, &msc->CueNumber.Path );
                 break;
 
             case SysExRtMscCmdCancelled:
             case SysExRtMscCmdAbort:
-                unpackDoubleValue( &bytes[pos], &msc->Checksum );
+                msc->Checksum = unpackDoubleValue( &bytes[pos]);
                 pos += 2;
                 pos += unpackSysExRtMscStatus( &bytes[pos], &msc->Status );
-                unpackDoubleValue( &bytes[pos], &msc->SequenceNumber );
+                msc->SequenceNumber = unpackDoubleValue( &bytes[pos]);
                 pos += 2;
                 pos += unpackMscCueNumber( &bytes[len], len - pos, &msc->CueNumber.Number, &msc->CueNumber.List, &msc->CueNumber.Path );
                 break;
@@ -2207,7 +2207,6 @@ namespace MidiMessage {
     }
 
     inline bool unpackSysExRtMidiShowControl(uint8_t * bytes, uint8_t length, Message_t * msg ) {
-        ASSERT( bytes != NULL );
         ASSERT( msg != NULL );
 
         if ( unpackSysExRtMidiShowControl(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.MidiShowControl) ){
@@ -2220,6 +2219,267 @@ namespace MidiMessage {
 
         return false;
     }
+
+    inline uint8_t packSysExNonRtSampleDumpHeader(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t sampleFormat, uint32_t samplePeriod, uint32_t sampleLength, uint32_t loopStartPoint, uint32_t loopEndPoint, uint8_t loopType ){
+
+        ASSERT( bytes!= NULL );
+        ASSERT( deviceId <= MaxValue );
+        ASSERT( sampleNumber <= MaxDoubleValue );
+        ASSERT( sampleFormat <= MaxValue );
+        ASSERT( samplePeriod <= MaxTripleValue );
+        ASSERT( sampleLength <= MaxTripleValue );
+        ASSERT( loopEndPoint <= MaxTripleValue );
+        ASSERT( loopStartPoint <= MaxTripleValue );
+        ASSERT( isSampleDumpLoopType(loopType) );
+
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpHeader;
+
+        packDoubleValue( &bytes[4], sampleNumber );
+
+        bytes[6] = sampleFormat;
+
+        packTripleValue( &bytes[7], samplePeriod );
+        packTripleValue( &bytes[10], sampleLength );
+        packTripleValue( &bytes[13], loopStartPoint );
+        packTripleValue( &bytes[16], loopEndPoint );
+
+        bytes[19] = (uint8_t)loopType;
+
+        bytes[20] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSampleDumpHeader;
+    }
+
+    inline uint8_t packSysExNonRtSampleDumpHeader(uint8_t *bytes, uint8_t deviceId, SampleDumpHeaderData_t *header ){
+        ASSERT( header != NULL );
+
+        return packSysExNonRtSampleDumpHeader(bytes, deviceId, header->SampleNumber, (uint8_t)header->SampleFormat, header->SampleLength, header->SampleLength, header->LoopStartPoint, header->LoopEndPoint, header->LoopType );
+    }
+
+    inline uint8_t packSysExNonRtSampleDumpHeader(uint8_t * bytes, Message_t *msg){
+        ASSERT( msg != NULL);
+
+        return packSysExNonRtSampleDumpHeader(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.Header);
+    }
+
+
+    inline uint8_t unpackSysExNonRtSampleDumpHeader(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint8_t *sampleFormat, uint32_t *samplePeriod, uint32_t *sampleLength, uint32_t *loopStartPoint, uint32_t *loopEndPoint, uint8_t *loopType ){
+
+        ASSERT( bytes!= NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( sampleNumber != NULL );
+        ASSERT( sampleFormat != NULL );
+        ASSERT( samplePeriod != NULL );
+        ASSERT( sampleLength != NULL );
+        ASSERT( loopEndPoint != NULL );
+        ASSERT( loopStartPoint != NULL );
+        ASSERT( loopType != NULL );
+
+
+        if (length != MsgLenSysExNonRtSampleDumpHeader || ! isControlByte(bytes[length-1]) ){
+            return false;
+        }
+        if ( bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpHeader){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+
+        *sampleNumber = unpackDoubleValue( &bytes[4] );
+
+        *sampleFormat = bytes[6];
+
+        *samplePeriod = unpackTripleValue( &bytes[7] );
+        *sampleLength = unpackTripleValue( &bytes[10] );
+        *loopStartPoint = unpackTripleValue( &bytes[13] );
+        *loopEndPoint  = unpackTripleValue( &bytes[16]);
+
+        *loopType  = bytes[19];
+
+        return true;
+    }
+
+    inline uint8_t unpackSysExNonRtSampleDumpHeader(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SampleDumpHeaderData_t *header ){
+        ASSERT( header != NULL );
+
+        return unpackSysExNonRtSampleDumpHeader(bytes, length, deviceId, &header->SampleNumber, &header->SampleFormat, &header->SampleLength, &header->SampleLength, &header->LoopStartPoint, &header->LoopEndPoint, &header->LoopType );
+    }
+
+    inline uint8_t unpackSysExNonRtSampleDumpHeader(uint8_t * bytes, uint8_t length, Message_t *msg){
+        ASSERT( msg != NULL);
+
+        if (unpackSysExNonRtSampleDumpHeader(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Header)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+            msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpHeader;
+            return true;
+        }
+
+        return false;
+    }
+
+    inline uint8_t packSysExNonRtSampleDumpData(uint8_t *bytes, uint8_t deviceId, uint8_t runningPacketCount, uint8_t * data, uint8_t dataLen ){
+
+        ASSERT( bytes!= NULL );
+        ASSERT( deviceId <= MaxValue );
+        ASSERT( runningPacketCount <= MaxValue );
+        ASSERT( dataLen == 0 || data != NULL );
+        ASSERT( dataLen <= MaxValue );
+
+        uint8_t length = 5;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpHeader;
+
+        bytes[4] = runningPacketCount;
+
+        for (uint8_t i = 0; i < dataLen; i++, length++){
+            bytes[length] = data[i];
+        }
+
+        bytes[length] = xorChecksum( bytes, length );
+        length++;
+
+        bytes[length++] = SystemMessageEndOfExclusive;
+
+        return length;
+    }
+
+    inline uint8_t packSysExNonRtSampleDumpData(uint8_t *bytes, uint8_t deviceId, SampleDumpDataPacket_t * data){
+        ASSERT( data != NULL );
+
+        return packSysExNonRtSampleDumpData(bytes, deviceId, data->RunningPacketCount, data->Data, data->Length );
+    }
+
+    inline uint8_t packSysExNonRtSampleDumpData(uint8_t * bytes, Message_t *msg){
+        ASSERT( msg != NULL);
+
+        return packSysExNonRtSampleDumpData(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.Data);
+    }
+
+
+    inline uint8_t unpackSysExNonRtSampleDumpData(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint8_t *runningPacketCount, uint8_t * data, uint8_t *dataLen, uint8_t *checksum ){
+
+        ASSERT( bytes!= NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( runningPacketCount != NULL );
+        ASSERT( data != NULL );
+        ASSERT( dataLen != NULL );
+        ASSERT( checksum != NULL );
+
+        if (length < 5 || ! isControlByte(bytes[length-1]) ){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpHeader){
+            return false;
+        }
+
+
+        *deviceId = bytes[2];
+        *runningPacketCount = bytes[4];
+
+        *dataLen = length - 7;
+
+        uint8_t pos = 5;
+
+        for (uint8_t i = 0; i < *dataLen; i++, pos++){
+            bytes[pos] = data[i];
+        }
+
+        *checksum = bytes[pos];
+
+        return length;
+    }
+
+    inline uint8_t unpackSysExNonRtSampleDumpData(uint8_t *bytes,uint8_t length,  uint8_t * deviceId, SampleDumpDataPacket_t * data){
+        ASSERT( data != NULL );
+
+        return unpackSysExNonRtSampleDumpData(bytes, length, deviceId, &data->RunningPacketCount, data->Data, &data->Length, &data->Checksum );
+    }
+
+    inline uint8_t unpackSysExNonRtSampleDumpData(uint8_t * bytes, uint8_t length, Message_t *msg){
+        ASSERT( msg != NULL);
+
+        msg->Data.SysEx.Data.SampleDump.Data.Data = msg->Data.SysEx.ByteData;
+
+        if (unpackSysExNonRtSampleDumpData(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Data)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+            msg->Data.SysEx.SubId1 = SysExNonRtSampleDataPacket;
+            return true;
+        }
+
+        return false;
+    }
+
+
+    inline uint8_t packSysExNonRtSampleDumpRequest(uint8_t *bytes, uint8_t deviceId, uint16_t requestedSample ){
+
+        ASSERT( bytes!= NULL );
+        ASSERT( deviceId <= MaxValue );
+        ASSERT( requestedSample <= MaxDoubleValue );
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpRequest;
+
+        packDoubleValue( &bytes[4], requestedSample );
+
+        bytes[6] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSampleDumpRequest;
+    }
+
+    inline uint8_t packSysExNonRtSampleDumpRequest(uint8_t * bytes, Message_t *msg){
+        ASSERT( msg != NULL);
+
+        return packSysExNonRtSampleDumpRequest(bytes, msg->Channel, msg->Data.SysEx.Data.SampleDump.Request.RequestedSample);
+    }
+
+
+    inline uint8_t unpackSysExNonRtSampleDumpRequest(uint8_t *bytes, uint8_t length, uint8_t * deviceId, uint16_t * requestedSample ){
+
+        ASSERT( bytes!= NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( requestedSample != NULL );
+
+        if (length != MsgLenSysExNonRtSampleDumpRequest || ! isControlByte(bytes[length-1]) ){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpRequest){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *requestedSample = unpackDoubleValue( &bytes[4] );
+
+        return true;
+    }
+
+    inline uint8_t unpackSysExNonRtSampleDumpRequest(uint8_t * bytes, uint8_t length, Message_t *msg){
+        ASSERT( msg != NULL);
+
+        if (unpackSysExNonRtSampleDumpRequest(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Request.RequestedSample)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+            msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpRequest;
+            return true;
+        }
+
+        return false;
+    }
+
+
 }
 
 #endif //MIDIMESSAGE_PACKERS_H

@@ -72,6 +72,8 @@ namespace MidiMessage {
      */
     const uint16_t MaxDoubleValue   = 0x3FFF;
 
+    const uint32_t MaxTripleValue  = 0x1FFFFF;
+
     /**
      * Is it a data byte?
      */
@@ -85,6 +87,34 @@ namespace MidiMessage {
     inline uint8_t getData( uint8_t byte ){
         return byte & DataMask;
     }
+
+    inline void packDoubleValue( uint8_t * bytes, uint16_t value ) {
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+    }
+
+    inline uint16_t unpackDoubleValue( uint8_t * bytes ){
+        ASSERT( (bytes[0] & DataMask) == bytes[0] );
+        ASSERT( (bytes[1] & DataMask) == bytes[1] );
+
+        return (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
+    }
+
+    inline void packTripleValue( uint8_t * bytes, uint32_t value ) {
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+        bytes[2] = (value >> 14) & DataMask;
+    }
+
+    inline uint32_t unpackTripleValue( uint8_t * bytes ){
+        ASSERT( (bytes[0] & DataMask) == bytes[0] );
+        ASSERT( (bytes[1] & DataMask) == bytes[1] );
+        ASSERT( (bytes[2] & DataMask) == bytes[2] );
+
+        return (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
+    }
+
+
 
     /**
      * Get Least-Significant Nibble.
@@ -101,17 +131,6 @@ namespace MidiMessage {
         return (byte >> 4) & NibbleMask;
     }
 
-    inline void unpackDoubleValue( uint8_t * bytes, uint16_t * value ){
-        ASSERT( (bytes[0] & DataMask) == bytes[0] );
-        ASSERT( (bytes[1] & DataMask) == bytes[1] );
-
-        *value = (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
-    }
-
-    inline void packDoubleValue( uint8_t * bytes, uint16_t value ) {
-        bytes[0] = value & DataMask;
-        bytes[1] = (value >> 7) & DataMask;
-    }
 
     inline int nibblize( uint8_t * dst, uint8_t * src, int len ){
         for (int i = 0, j = 0; i < len; i++) {
@@ -231,6 +250,9 @@ namespace MidiMessage {
     const uint8_t MsgLenSysExRtMtcUserBits       = 15;
     const uint8_t MsgLenSysExRtMtcCueingSetupMessageMin  = 8;
     const uint8_t MsgLenSysExRtMmcCommandWithoutInfo = 6;
+
+    const uint8_t MsgLenSysExNonRtSampleDumpHeader = 21;
+    const uint8_t MsgLenSysExNonRtSampleDumpRequest = 7;
 
 
     typedef enum {
@@ -1446,11 +1468,18 @@ namespace MidiMessage {
         uint8_t SoftwareRevision[4];
     } GeneralInformationData_t;
 
+
     typedef enum {
         SampleDumpLoopTypeForwardOnly       = 0x00,
         SampleDumpLoopTypeBackwardForward   = 0x01,
         SampleDumpLoopTypeLoopOff           = 0x7F
     } SampleDumpLoopType_t;
+
+    inline bool isSampleDumpLoopType( uint8_t value ){
+        return (value == SampleDumpLoopTypeForwardOnly ||
+                value == SampleDumpLoopTypeBackwardForward ||
+                value == SampleDumpLoopTypeLoopOff);
+    }
 
     typedef struct {
         uint16_t SampleNumber;
@@ -1459,7 +1488,7 @@ namespace MidiMessage {
         uint32_t SampleLength; // in words (3 bytes)
         uint32_t LoopStartPoint; // Word number (3 bytes)
         uint32_t LoopEndPoint; // Word number (3 bytes)
-        SampleDumpLoopType_t LoopType; //
+        uint8_t LoopType; //
     } SampleDumpHeaderData_t;
 
     typedef struct {
@@ -1468,8 +1497,20 @@ namespace MidiMessage {
 
     typedef struct {
         uint8_t RunningPacketCount;
+        uint8_t Length;
+        uint8_t * Data;
         uint8_t Checksum; // XOR of complete message to end of payload
     } SampleDumpDataPacket_t;
+
+    inline uint8_t xorChecksum( uint8_t * bytes, uint8_t length ){
+        uint8_t chk = bytes[0];
+
+        for( uint8_t i = 1; i < length; i++){
+            chk ^= bytes[i];
+        }
+
+        return chk;
+    }
 
     typedef enum {
         SampleDumpExtLoopTypeForward                    = 0x00,
@@ -1492,14 +1533,14 @@ namespace MidiMessage {
         uint64_t SampleLength; // in words
         uint64_t SustainLoopStart; // word number
         uint64_t SustainLoopEnd; // word number
-        SampleDumpExtLoopType_t LoopType;
+        uint8_t LoopType;
         uint8_t NumberofChannels;
     } SampleDumpExtLoopPointHeaderData_t;
 
     typedef struct {
         uint16_t Number;
         uint16_t LoopNumber; // 7f7f delete all loops
-        SampleDumpExtLoopType_t LoopType;
+        uint8_t LoopType;
         uint64_t LoopStartAddress;
         uint64_t LoopEndAddress;
     } SampleDumpExtLoopPointTransmissionData_t;
@@ -1511,8 +1552,8 @@ namespace MidiMessage {
 
     typedef struct {
         uint16_t SampleNumber;
-        uint8_t NameLanguageTagLength;
-        uint8_t * NameLanguageTag;
+        uint8_t LanguageTagLength;
+        uint8_t * LanguageTag;
         uint8_t NameLength;
         uint8_t * Name;
     } SampleDumpExtNameTransmissionData_t;
@@ -1560,6 +1601,8 @@ namespace MidiMessage {
                 uint8_t SubId1;
                 uint8_t SubId2;
                 union {
+                    uint8_t PacketNumber;
+
                     MidiTimeCode_t MidiTimeCode;
 
                     MtcCueingData_t Cueing;
@@ -1573,7 +1616,7 @@ namespace MidiMessage {
                     union {
                         SampleDumpHeaderData_t Header;
                         SampleDumpRequestData_t Request;
-                        SampleDumpDataPacket_t DataPacket;
+                        SampleDumpDataPacket_t Data;
                     } SampleDump;
 
                     union {
@@ -1923,6 +1966,7 @@ namespace MidiMessage {
 
         return 3;
     }
+
     /**
      *  Tries to pack a given midi <msg> into the corresponding sequence of raw bytes.
      *

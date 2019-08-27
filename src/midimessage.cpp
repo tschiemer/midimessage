@@ -159,16 +159,13 @@ namespace MidiMessage {
 
                 switch (msg->Data.SysEx.SubId1) {
                     case SysExNonRtSampleDumpHeader:
-                        //TODO
-                        return false;
+                        return packSysExNonRtSampleDumpHeader( bytes, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        //TODO
-                        return false;
+                        return packSysExNonRtSampleDumpData( bytes, msg );
 
                     case SysExNonRtSampleDumpRequest:
-                        //TODO
-                        return false;
+                        return packSysExNonRtSampleDumpRequest( bytes, msg );
 
                     case SysExNonRtMidiTimeCode:
                         return packSysExNonRtMtcCueingSetupMessage( bytes, msg );
@@ -219,7 +216,7 @@ namespace MidiMessage {
                         bytes[1] = SysExIdNonRealTimeByte;
                         bytes[2] = msg->Channel & DataMask;
                         bytes[3] = msg->Data.SysEx.SubId1;
-                        bytes[4] = msg->Data.SysEx.SubId2; // Packet Number
+                        bytes[4] = msg->Data.SysEx.Data.PacketNumber; // Packet Number
                         bytes[5] = SystemMessageEndOfExclusive;
 
                         return 6;
@@ -413,16 +410,13 @@ namespace MidiMessage {
 
                 switch (bytes[3]) {
                     case SysExNonRtSampleDumpHeader:
-                        //TODO
-                        return false;
+                        return unpackSysExNonRtSampleDumpHeader( bytes, length, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        //TODO
-                        return false;
+                        return unpackSysExNonRtSampleDumpData( bytes, length, msg );
 
                     case SysExNonRtSampleDumpRequest:
-                        //TODO
-                        return false;
+                        return unpackSysExNonRtSampleDumpRequest( bytes, length, msg );
 
                     case SysExNonRtMidiTimeCode:
                         return unpackSysExNonRtMtcCueingSetupMessage( bytes, length, msg );
@@ -476,7 +470,7 @@ namespace MidiMessage {
                         msg->Data.SysEx.Id = SysExIdNonRealTime;
                         msg->Channel = bytes[2]; // deviceId
                         msg->Data.SysEx.SubId1 = bytes[3];
-                        msg->Data.SysEx.SubId2 = bytes[4]; // Packet Number
+                        msg->Data.SysEx.Data.PacketNumber = bytes[4]; // Packet Number
                         return true;
 
                 }
