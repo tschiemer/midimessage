@@ -13,6 +13,7 @@ set(SOURCE_FILES
         include/midimessage.h
         include/midimessage-packers.h
         include/manufacturerids.h
+        include/dlsproprietarychunkids.h
         include/commonccs.h
         include/notes.h
         src/midimessage.cpp)
