@@ -86,7 +86,13 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id> (eof|wait|cancel|nak|ack) <packet-number>\n");
     printf("\t sysex nonrt <device-id> info request\n");
     printf("\t sysex nonrt <device-id> info reply <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>\n");
-    printf("\t sysex nonrt <device_id> gm (system-on1|system-off|system-on2)\n");
+    printf("\t sysex nonrt <device-id> gm (system-on1|system-off|system-on2)\n");
+    printf("\t sysex nonrt <device-id> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<14bit-int>)\n");
+//    printf("\t sysex nonrt <device-id> cueing special")
+    printf("\t sysex nonrt <device-id> cueing punch-in add\n");
+    printf("\t sysex nonrt <device-id> cueing punch-in rm \n");
+    printf("\t sysex nonrt <device-id> cueing punch-out add\n");
+    printf("\t sysex nonrt <device-id> cueing punch-out rm\n");
     printf("\t sysex rt <device-id> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
     printf("\t sysex rt <device-id> mtc user-bits <hex-byte-0><hex-byte-1><hex-byte-2><hex-byte-3><hex-byte-4>\n");
 
@@ -649,7 +655,46 @@ void generate(uint8_t argc, char * argv[]){
                 else {
                     return;
                 }
-            } else {
+            }
+            else if (strcmp(argv[3], "cueing") == 0){
+                if (argc < 5){
+                    return;
+                }
+                msg.Data.SysEx.SubId1 = SysExNonRtMidiTimeCode;
+
+                if (strcmp(argv[4], "special") == 0){
+                    if (argc != 6){
+                        return;
+                    }
+                    msg.Data.SysEx.SubId2 = SysExNonRtMtcSpecial;
+
+                    if (strcmp(argv[5], "time-code-offset") == 0){
+                        msg.Data.SysEx.Data.Cueing.EventNumber = SysExNonRtMtcSpecialTimeCodeOffset;
+                    }
+                    else if (strcmp(argv[5], "enable-event-list") == 0){
+                        msg.Data.SysEx.Data.Cueing.EventNumber = SysExNonRtMtcSpecialEnableEventList;
+                    }
+                    else if (strcmp(argv[5], "disable-event-list") == 0){
+                        msg.Data.SysEx.Data.Cueing.EventNumber = SysExNonRtMtcSpecialDisableEventList;
+                    }
+                    else if (strcmp(argv[5], "clear-event-list") == 0){
+                        msg.Data.SysEx.Data.Cueing.EventNumber = SysExNonRtMtcSpecialClearEventList;
+                    }
+                    else if (strcmp(argv[5], "system-stop") == 0){
+                        msg.Data.SysEx.Data.Cueing.EventNumber = SysExNonRtMtcSpecialSystemStop;
+                    }
+                    else if (strcmp(argv[5], "event-list-request") == 0){
+                        msg.Data.SysEx.Data.Cueing.EventNumber = SysExNonRtMtcSpecialEventListRequest;
+                    }
+                    else {
+                        msg.Data.SysEx.Data.Cueing.EventNumber = atoi(argv[5]);
+                    }
+                }
+                else {
+                    return;
+                }
+            }
+            else {
                 return;
             }
         } else {
@@ -839,6 +884,36 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
                     }
                     if (msg.Data.SysEx.SubId2 == SysExNonRtGmSystemOn2){
                         printf("system-on2\n");
+                    }
+                }
+                else if (msg.Data.SysEx.SubId1 == SysExNonRtMidiTimeCode){
+                    printf("cueing ");
+                    if (msg.Data.SysEx.SubId2 == SysExNonRtMtcSpecial){
+                        printf("special ");
+                        if (msg.Data.SysEx.Data.Cueing.EventNumber == SysExNonRtMtcSpecialTimeCodeOffset){
+                            printf("time-code-offset\n");
+                        }
+                        else if (msg.Data.SysEx.Data.Cueing.EventNumber == SysExNonRtMtcSpecialEnableEventList){
+                            printf("enable-event-list\n");
+                        }
+                        else if (msg.Data.SysEx.Data.Cueing.EventNumber == SysExNonRtMtcSpecialDisableEventList){
+                            printf("disable-event-list\n");
+                        }
+                        else if (msg.Data.SysEx.Data.Cueing.EventNumber == SysExNonRtMtcSpecialClearEventList){
+                            printf("clear-event-list\n");
+                        }
+                        else if (msg.Data.SysEx.Data.Cueing.EventNumber == SysExNonRtMtcSpecialSystemStop){
+                            printf("system-stop\n");
+                        }
+                        else if (msg.Data.SysEx.Data.Cueing.EventNumber == SysExNonRtMtcSpecialEventListRequest){
+                            printf("event-list-request\n");
+                        }
+                        else {
+                            printf("%d\n", msg.Data.SysEx.Data.Cueing.EventNumber);
+                        }
+                    }
+                    else {
+                        printf("%d\n", msg.Data.SysEx.SubId2);
                     }
                 }
                 else if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralInformation){
