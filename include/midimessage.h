@@ -52,10 +52,6 @@ namespace MidiMessage {
      */
     const uint8_t DataMask = 0b01111111; // = 127
 
-    /**
-     *
-     */
-    const uint16_t DoubleValueMask  = 0b0111111101111111;
 
     /**
      * Mask for Byte-Nibbles (half-bytes)
@@ -72,7 +68,11 @@ namespace MidiMessage {
      */
     const uint16_t MaxDoubleValue   = 0x3FFF;
 
-    const uint32_t MaxTripleValue  = 0x1FFFFF;
+    const uint32_t MaxTripleValue  = 0x001FFFFF;
+
+    const uint32_t MaxQuadripleValue = 0x0FFFFFFF;
+
+    const uint64_t MaxQuintupleValue = 0x7FFFFFFFF;
 
     /**
      * Is it a data byte?
@@ -94,8 +94,8 @@ namespace MidiMessage {
     }
 
     inline uint16_t unpackDoubleValue( uint8_t * bytes ){
-        ASSERT( (bytes[0] & DataMask) == bytes[0] );
-        ASSERT( (bytes[1] & DataMask) == bytes[1] );
+        ASSERT( bytes[0] <= MaxValue );
+        ASSERT( bytes[1] <= MaxValue );
 
         return (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
     }
@@ -107,13 +107,46 @@ namespace MidiMessage {
     }
 
     inline uint32_t unpackTripleValue( uint8_t * bytes ){
-        ASSERT( (bytes[0] & DataMask) == bytes[0] );
-        ASSERT( (bytes[1] & DataMask) == bytes[1] );
-        ASSERT( (bytes[2] & DataMask) == bytes[2] );
+        ASSERT( bytes[0] <= MaxValue );
+        ASSERT( bytes[1] <= MaxValue );
+        ASSERT( bytes[2] <= MaxValue );
 
         return (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
     }
 
+    inline void packQuadripleValue( uint8_t * bytes, uint32_t value ){
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+        bytes[2] = (value >> 14) & DataMask;
+        bytes[3] = (value >> 21) & DataMask;
+    }
+
+    inline uint32_t unpackQuadripleValue( uint8_t * bytes ){
+        ASSERT( bytes[0] <= MaxValue );
+        ASSERT( bytes[1] <= MaxValue );
+        ASSERT( bytes[2] <= MaxValue );
+        ASSERT( bytes[3] <= MaxValue );
+
+        return (((uint32_t)bytes[3]) << 21) | (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
+    }
+
+    inline void packQuintupleValue( uint8_t * bytes, uint64_t value ){
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+        bytes[2] = (value >> 14) & DataMask;
+        bytes[3] = (value >> 21) & DataMask;
+        bytes[4] = (value >> 28) & DataMask;
+    }
+
+    inline uint64_t unpackQuintupleValue( uint8_t * bytes ){
+        ASSERT( bytes[0] <= MaxValue );
+        ASSERT( bytes[1] <= MaxValue );
+        ASSERT( bytes[2] <= MaxValue );
+        ASSERT( bytes[3] <= MaxValue );
+        ASSERT( bytes[4] <= MaxValue );
+
+        return (((uint64_t)bytes[3]) << 28) | (((uint64_t)bytes[3]) << 21) | (((uint64_t)bytes[2]) << 14) | (((uint64_t)bytes[1]) << 7) | ((uint64_t)bytes[0]);
+    }
 
 
     /**
@@ -143,7 +176,7 @@ namespace MidiMessage {
     inline int denibblize( uint8_t * dst, uint8_t * src, int len ){
         ASSERT( len % 2 == 0 );
 
-        for (int i = 0, j = 0; i < len; ){
+        for (int i = 0, j = 0; i < len; j++){
             dst[j] = src[i++] & NibbleMask;
             dst[j] |= (src[i++] & NibbleMask) << 4;
         }
@@ -242,7 +275,7 @@ namespace MidiMessage {
     const uint8_t MsgLenSongSelect                      = 2;
 
     const uint8_t MsgLenSysExNonRtGeneralHandshaking    = 6;
-    const uint8_t MsgLenSysExNonRtGeneralMidi           = 5;
+    const uint8_t MsgLenSysExNonRtGeneralMidi           = 6;
     const uint8_t MsgLenSysExNonRtMtcCueingSetupMessageMin  = 13;
     const uint8_t MsgLenSysExNonRtGenInfoIdentityRequest = 6;
     const uint8_t MsgLenSysExNonRtGenInfoIdentityReply = 15;
@@ -255,6 +288,8 @@ namespace MidiMessage {
 
     const uint8_t MsgLenSysExNonRtSampleDumpHeader = 21;
     const uint8_t MsgLenSysExNonRtSampleDumpRequest = 7;
+    const uint8_t MsgLenSysExNonRtSdsHeader             = 34;
+    const uint8_t MsgLenSysExNonRtSdsExtendedLoopPointTransmission = 25;
 
 
     typedef enum {
@@ -568,7 +603,7 @@ namespace MidiMessage {
         SysExNonRtMtcCuePoints                = 0x0B,
         SysExNonRtMtcCuePointsWithInfo        = 0x0C,
         SysExNonRtMtcDeleteCuePoint           = 0x0D,
-        SysExNonRtMtcEventNameInInfo          = 0x0E
+        SysExNonRtMtcEventName                = 0x0E
     } SysExNonRtMtc_t;
 
     inline bool isSysExNonRtMtc( uint8_t value ){
@@ -586,14 +621,32 @@ namespace MidiMessage {
                 value == SysExNonRtMtcCuePoints ||
                 value == SysExNonRtMtcCuePointsWithInfo ||
                 value == SysExNonRtMtcDeleteCuePoint ||
-                value == SysExNonRtMtcEventNameInInfo);
+                value == SysExNonRtMtcEventName);
     }
 
     inline bool isSysExNonRtMtcWithAddInfo( uint8_t value ){
         return (value == SysExNonRtMtcEventStartPointsWithInfo ||
                 value == SysExNonRtMtcEventStopPointsWithInfo ||
                 value == SysExNonRtMtcCuePointsWithInfo ||
-                value == SysExNonRtMtcEventNameInInfo);
+                value == SysExNonRtMtcEventName);
+    }
+
+    typedef enum {
+        SysExNonRtMtcSpecialTimeCodeOffset      = 0x0,
+        SysExNonRtMtcSpecialEnableEventList     = 0x01,
+        SysExNonRtMtcSpecialDisableEventList    = 0x02,
+        SysExNonRtMtcSpecialClearEventList      = 0x03,
+        SysExNonRtMtcSpecialSystemStop          = 0x04,
+        SysExNonRtMtcSpecialEventListRequest    = 0x05
+    } SysExNonRtMtcSpecial_t;
+
+    inline bool isSysExNonRtMtcSpecial( uint16_t value ){
+        return (value == SysExNonRtMtcSpecialTimeCodeOffset ||
+                value == SysExNonRtMtcSpecialEnableEventList ||
+                value == SysExNonRtMtcSpecialDisableEventList ||
+                value == SysExNonRtMtcSpecialClearEventList ||
+                value == SysExNonRtMtcSpecialSystemStop ||
+                value == SysExNonRtMtcSpecialEventListRequest);
     }
 
     typedef enum {
@@ -1537,10 +1590,10 @@ namespace MidiMessage {
         uint64_t SustainLoopEnd; // word number
         uint8_t LoopType;
         uint8_t NumberofChannels;
-    } SampleDumpExtLoopPointHeaderData_t;
+    } SampleDumpExtHeaderData_t;
 
     typedef struct {
-        uint16_t Number;
+        uint16_t SampleNumber;
         uint16_t LoopNumber; // 7f7f delete all loops
         uint8_t LoopType;
         uint64_t LoopStartAddress;
@@ -1622,9 +1675,9 @@ namespace MidiMessage {
                     } SampleDump;
 
                     union {
-                        SampleDumpExtLoopPointHeaderData_t Header;
-                        SampleDumpExtLoopPointTransmissionData_t Transmission;
-                        SampleDumpExtLoopPointRequestData_t Request;
+                        SampleDumpExtHeaderData_t Header;
+                        SampleDumpExtLoopPointTransmissionData_t LoopPointTransmission;
+                        SampleDumpExtLoopPointRequestData_t LoopPointRequest;
                         SampleDumpExtNameTransmissionData_t NameTransmission;
                         SampleDumpExtNameRequestData_t NameRequest;
                     } SampleDumpExt;

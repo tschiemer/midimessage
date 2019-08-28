@@ -170,10 +170,8 @@ namespace MidiMessage {
                     case SysExNonRtMidiTimeCode:
                         return packSysExNonRtMtcCueingSetupMessage( bytes, msg );
 
-
                     case SysExNonRtSampleDumpExtension:
-                        //TODO
-                        return false;
+                        return packSysExNonRtSds( bytes, msg );
 
                     case SysExNonRtGeneralInformation:
                         return packSysExNonRtGeneralInformation( bytes, msg );
@@ -194,9 +192,10 @@ namespace MidiMessage {
                         bytes[1] = SysExIdNonRealTimeByte;
                         bytes[2] = msg->Channel & DataMask;
                         bytes[3] = msg->Data.SysEx.SubId1;
-                        bytes[4] = SystemMessageEndOfExclusive;
+                        bytes[4] = msg->Data.SysEx.SubId2;
+                        bytes[5] = SystemMessageEndOfExclusive;
 
-                        return MsgLenSysExNonRtGeneralHandshaking;
+                        return MsgLenSysExNonRtGeneralMidi;
 
                     case SysExNonRtDownloadableSounds:
                         //TODO
@@ -446,15 +445,16 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtGeneralMidi:
-                        if (length != MsgLenSysExNonRtGeneralMidi || ! isControlByte(bytes[3]) || ! isSysExNonRtGeneralMidi(bytes[4])){
+//                        ASSERT(false);
+                        if (length != MsgLenSysExNonRtGeneralMidi || ! isControlByte(bytes[MsgLenSysExNonRtGeneralMidi-1]) || ! isSysExNonRtGeneralMidi(bytes[4])){
                             return false;
                         }
                         msg->StatusClass = StatusClassSystemMessage;
                         msg->SystemMessage = SystemMessageSystemExclusive;
                         msg->Channel = bytes[2] & DataMask;
-                        msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+                        msg->Data.SysEx.Id = SysExIdNonRealTime;
                         msg->Data.SysEx.SubId1 = SysExNonRtGeneralMidi;
-                        msg->Data.SysEx.SubId2 = bytes[3];
+                        msg->Data.SysEx.SubId2 = bytes[4];
                         return true;
 
                     case SysExNonRtDownloadableSounds:

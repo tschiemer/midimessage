@@ -1232,7 +1232,7 @@ namespace MidiMessage {
                                                        uint8_t frame, uint8_t fractionalFrame, uint16_t eventNumber,
                                                        uint8_t * addInfo, uint8_t addInfoLen) {
         ASSERT(isSysExNonRtMtc(msgType));
-        ASSERT(!isSysExNonRtMtcWithAddInfo(msgType) || addInfoLen == 0);
+        ASSERT(!isSysExNonRtMtcWithAddInfo(msgType) || addInfoLen > 0);
         ASSERT(bytes != NULL);
         ASSERT(deviceId <= MaxValue);
         ASSERT(isMtcFrameRate(fps));
@@ -1242,6 +1242,7 @@ namespace MidiMessage {
         ASSERT(frame <= MtcMaxFps[fps]);
         ASSERT(fractionalFrame <= MtcMaxFractionalFrame);
         ASSERT(eventNumber <= MaxEventNumber);
+        ASSERT( addInfoLen == 0 || addInfo != NULL );
 
         int msgLen = MsgLenSysExNonRtMtcCueingSetupMessageMin - 1; // min message length (w/o EOX)
 
@@ -1250,16 +1251,26 @@ namespace MidiMessage {
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExNonRtMidiTimeCode;
         bytes[4] = msgType;
-        bytes[5] = ((fps << MtcFpsOffset) & MtcFpsMask) | (hour & MtcHourMask);
-        bytes[6] = minute & MtcMinuteMask;
-        bytes[7] = second & MtcSecondMask;
-        bytes[8] = frame & MtcFrameMask;
-        bytes[9] = fractionalFrame & MtcFractionalFrameMask;
+
+        if (msgType == SysExNonRtMtcSpecial){
+            // time is ignored, so let's simplify things
+            bytes[5] = 0;
+            bytes[6] = 0;
+            bytes[7] = 0;
+            bytes[8] = 0;
+            bytes[9] = 0;
+        } else {
+            bytes[5] = ((fps << MtcFpsOffset) & MtcFpsMask) | (hour & MtcHourMask);
+            bytes[6] = minute & MtcMinuteMask;
+            bytes[7] = second & MtcSecondMask;
+            bytes[8] = frame & MtcFrameMask;
+            bytes[9] = fractionalFrame & MtcFractionalFrameMask;
+        }
 
         packDoubleValue(&bytes[10], eventNumber);
 
         if (isSysExNonRtMtcWithAddInfo(msgType)) {
-            msgLen += nibblize(&bytes[7], addInfo, addInfoLen);
+            msgLen += nibblize(&bytes[12], addInfo, addInfoLen);
         }
 
         bytes[msgLen++] = SystemMessageEndOfExclusive;
@@ -1279,16 +1290,22 @@ namespace MidiMessage {
 
     inline uint8_t packSysExNonRtMtcCueingSetupMessage( uint8_t * bytes, Message_t * msg ){
         ASSERT( msg != NULL );
+        ASSERT( msg->StatusClass == StatusClassSystemMessage);
+        ASSERT( msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT( msg->Data.SysEx.Id == SysExIdNonRealTime );
+        ASSERT( msg->Data.SysEx.SubId1 == SysExNonRtMidiTimeCode );
+        ASSERT( isSysExNonRtMtc(msg->Data.SysEx.SubId2));
 
         return packSysExNonRtMtcCueingSetupMessage( bytes, msg->Data.SysEx.SubId2, msg->Channel, &msg->Data.SysEx.Data.Cueing, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
     }
 
-    inline bool unpackSysExNonRtMtcCueingSetupMessage(uint8_t * bytes, uint8_t len, uint8_t  * msgType,
-                                                      uint8_t * deviceId, uint8_t * fps, uint8_t * hour, uint8_t * minute,
+    inline bool unpackSysExNonRtMtcCueingSetupMessage(uint8_t * bytes, uint8_t len,
+                                                      uint8_t * deviceId, uint8_t  * msgType, uint8_t * fps, uint8_t * hour, uint8_t * minute,
                                                       uint8_t * second, uint8_t * frame, uint8_t * fractionalFrame,
                                                       uint16_t * eventNumber, uint8_t * addInfo, uint8_t * addInfoLen) {
         ASSERT(bytes != NULL);
         ASSERT(deviceId != NULL);
+        ASSERT(msgType != NULL);
         ASSERT(fps != NULL);
         ASSERT(hour != NULL);
         ASSERT(minute != NULL);
@@ -1300,27 +1317,15 @@ namespace MidiMessage {
         ASSERT(addInfoLen != NULL);
 
 
-        if (len < MsgLenSysExNonRtMtcCueingSetupMessageMin - 1) {
+        if (len < MsgLenSysExNonRtMtcCueingSetupMessageMin - 1 || ! isControlByte(bytes[len-1])) {
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive) {
-            return false;
-        }
-        if (bytes[1] != SysExIdNonRealTimeByte) {
-            return false;
-        }
-        if ((bytes[2] & DataMask) != bytes[2]) {
-            return false;
-        }
-        if (bytes[3] != SysExNonRtMidiTimeCode) {
-            return false;
-        }
-        if (!isSysExNonRtMtc(bytes[4])) {
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtMidiTimeCode || !isSysExNonRtMtc(bytes[4])) {
             return false;
         }
 
         *deviceId = bytes[2] & DataMask;
-        *msgType = (SysExNonRtMtc_t) (bytes[4]);
+        *msgType = bytes[4];
         *fps = (bytes[5] >> 5) & 0b11;
         *hour = bytes[5] & MtcHourMask;
         *minute = bytes[6] & MtcMinuteMask;
@@ -1330,30 +1335,26 @@ namespace MidiMessage {
 
         *eventNumber = unpackDoubleValue(&bytes[10]);
 
-        if (isSysExNonRtMtc(bytes[4])) {
-
-            if (bytes[len - 1] != SystemMessageEndOfExclusive) {
-                len++;
-            }
-
+        if (len > MsgLenSysExNonRtMtcCueingSetupMessageMin) {
             *addInfoLen = denibblize(addInfo, &bytes[12], len - MsgLenSysExNonRtMtcCueingSetupMessageMin);
         }
 
         return true;
     }
 
-    inline bool unpackSysExNonRtMtcCueingSetupMessage( uint8_t * bytes, uint8_t len, uint8_t * msgType, uint8_t * deviceId, MtcCueingData_t * cueing, uint8_t *addInfo, uint8_t *addInfoLen){
+    inline bool unpackSysExNonRtMtcCueingSetupMessage( uint8_t * bytes, uint8_t len, uint8_t * deviceId, uint8_t * msgType, MtcCueingData_t * cueing, uint8_t *addInfo, uint8_t *addInfoLen){
         ASSERT( cueing != NULL );
 
         MtcFrameRate_t fps = MtcFrameRate24fps;
 
-        if ( unpackSysExNonRtMtcCueingSetupMessage( bytes, len, msgType, deviceId, (uint8_t*)&fps, &cueing->MidiTimeCode.FpsHour, &cueing->MidiTimeCode.Minute, &cueing->MidiTimeCode.Second, &cueing->MidiTimeCode.Frame, &cueing->MidiTimeCode.FractionalFrame, &cueing->EventNumber, addInfo, addInfoLen) ){
-            return false;
+        if ( unpackSysExNonRtMtcCueingSetupMessage( bytes, len, deviceId, msgType, (uint8_t*)&fps, &cueing->MidiTimeCode.FpsHour, &cueing->MidiTimeCode.Minute, &cueing->MidiTimeCode.Second, &cueing->MidiTimeCode.Frame, &cueing->MidiTimeCode.FractionalFrame, &cueing->EventNumber, addInfo, addInfoLen) ){
+
+            cueing->MidiTimeCode.FpsHour |= setFps(fps);
+
+            return true;
         }
 
-        cueing->MidiTimeCode.FpsHour |= setFps(fps);
-
-        return true;
+        return false;
     }
 
     inline bool unpackSysExNonRtMtcCueingSetupMessage(uint8_t * bytes, uint8_t len, Message_t * msg ){
@@ -1362,7 +1363,7 @@ namespace MidiMessage {
         if ( unpackSysExNonRtMtcCueingSetupMessage(bytes, len, &msg->Channel, &msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.Cueing, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length ) ){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
             msg->Data.SysEx.SubId1 = SysExNonRtMidiTimeCode;
             return true;
         }
@@ -2212,7 +2213,7 @@ namespace MidiMessage {
         if ( unpackSysExRtMidiShowControl(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.MidiShowControl) ){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdRealTimeByte;
+            msg->Data.SysEx.Id = SysExIdRealTime;
             msg->Data.SysEx.SubId1 = SysExRtMidiShowControl;
             return true;
         }
@@ -2315,7 +2316,7 @@ namespace MidiMessage {
         if (unpackSysExNonRtSampleDumpHeader(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Header)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
             msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpHeader;
             return true;
         }
@@ -2412,7 +2413,7 @@ namespace MidiMessage {
         if (unpackSysExNonRtSampleDumpData(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Data)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
             msg->Data.SysEx.SubId1 = SysExNonRtSampleDataPacket;
             return true;
         }
@@ -2471,7 +2472,7 @@ namespace MidiMessage {
         if (unpackSysExNonRtSampleDumpRequest(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Request.RequestedSample)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdNonRealTimeByte;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
             msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpRequest;
             return true;
         }
@@ -2479,7 +2480,113 @@ namespace MidiMessage {
         return false;
     }
 
+    inline uint8_t packSysExNonRtSdsHeader(uint8_t *bytes, uint8_t deviceId, SampleDumpExtHeaderData_t *header){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId <= MaxValue);
+        ASSERT(header!=NULL);
 
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpExtension;
+        bytes[4] = SysExNonRtSdsExtendedDumpHeader;
+
+        packDoubleValue( &bytes[5], header->SampleNumber);
+
+        bytes[7] = header->SampleFormat;
+
+        packQuadripleValue( &bytes[8], header->SampleRateIntegerPortion );
+        packQuadripleValue( &bytes[12], header->SampleRateFractionalPortion );
+
+        packQuintupleValue( &bytes[16], header->SampleLength );
+        packQuintupleValue( &bytes[21], header->SustainLoopStart );
+        packQuintupleValue( &bytes[26], header->SustainLoopEnd );
+
+        bytes[31] = header->LoopType;
+        bytes[32] = header->NumberofChannels;
+
+        bytes[33] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSdsHeader;
+    }
+
+    inline uint8_t packSysExNonRtSdsHeader(uint8_t *bytes, Message_t * msg){
+        ASSERT( msg != NULL );
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTimeByte);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedDumpHeader);
+
+        return packSysExNonRtSdsHeader(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.Header);
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t *bytes, uint8_t deviceId, SampleDumpExtLoopPointTransmissionData_t * data){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId<=MaxValue);
+        ASSERT(data!=NULL);
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpExtension;
+        bytes[4] = SysExNonRtSdsExtendedLoopPointsTransmission;
+
+        packDoubleValue( &bytes[5], data->SampleNumber );
+        packDoubleValue( &bytes[7], data->LoopNumber );
+
+        bytes[9] = data->LoopType;
+
+        packQuintupleValue( &bytes[14], data->LoopStartAddress);
+        packQuintupleValue( &bytes[19], data->LoopEndAddress);
+
+        bytes[24] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSdsExtendedLoopPointTransmission;
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t *bytes, Message_t *msg){
+        ASSERT( msg != NULL);
+        ASSERT( msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsTransmission);
+
+        return packSysExNonRtSdsLoopPointTransmission(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission);
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint16_t loopNumber){
+        ASSERT( bytes != NULL);
+        ASSERT(deviceId <= MaxValue);
+        ASSERT(sampleNumber <= MaxDoubleValue);
+        ASSERT(loopNumber <= MaxDoubleValue);
+
+    }
+
+
+    inline uint8_t packSysExNonRtSds(uint8_t *bytes, Message_t *msg){
+        ASSERT( msg != NULL );
+        ASSERT( isSysExNonRtSds(msg->Data.SysEx.SubId2) );
+
+        switch(msg->Data.SysEx.SubId2){
+            case SysExNonRtSdsExtendedDumpHeader:
+                return packSysExNonRtSdsHeader(bytes, msg);
+
+            case SysExNonRtSdsSampleNameTransmission:
+                return packSysExNonRtSdsLoopPointTransmission( bytes, msg);
+
+            case SysExNonRtSdsSampleNameRequest:
+                break;
+            case SysExNonRtSdsExtendedLoopPointsTransmission:
+                break;
+            case SysExNonRtSdsExtendedLoopPointsRequest:
+                break;
+
+        }
+
+        return 0;
+    }
 }
 
 #endif //MIDIMESSAGE_PACKERS_H

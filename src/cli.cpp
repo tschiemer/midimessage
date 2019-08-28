@@ -25,6 +25,10 @@ typedef enum {
     ModeGenerate    = 2
 } Mode_t;
 
+inline bool isValidMode( Mode_t mode ){
+    return (mode == ModeParse || mode == ModeGenerate);
+}
+
 uint8_t buf[128];
 
 Message_t msg = {
@@ -60,6 +64,16 @@ void printHelp( void ) {
     printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!\n");
     printf("Fancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
+    printf("\nData types:\n");
+    printf("\t u4 (data nibble) < 63 (0x0FF)\n");
+    printf("\t u7 (data byte) <= 127 (0x7F)\n");
+    printf("\t u14 (2byte integer) <= 16383 (0x3FFF)\n");
+    printf("\t u21 (3byte integer) <= 2097151 (0x1FFFFF)\n");
+    printf("\t u28 (4byte integer) <= 268435455 (0x0FFFFFFF)\n");
+    printf("\t u35 (5byte integer) <= 34359738367 (0x7FFFFFFFF)\n");
+    printf("\t sN ((max) Nbyte ascii string\n");
+    printf("\t xN (Nbyte hex string <> 2Ns)\n");
+
     printf("\nVoice Commands:\n");
     printf("\t note (on|off) <channel> <key> <velocity>\n");
     printf("\t cc <channel> <controller> <value>\n");
@@ -80,21 +94,20 @@ void printHelp( void ) {
     printf("\t song-position <position>\n");
     printf("\t song-select <songNumber>\n");
 
-    printf("\nSystem Exclusives:\n");
-    printf("\t sysex experimental <n> <data-of-length-n>\n");
-    printf("\t sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>\n");
-    printf("\t sysex nonrt <device-id> (eof|wait|cancel|nak|ack) <packet-number>\n");
-    printf("\t sysex nonrt <device-id> info request\n");
-    printf("\t sysex nonrt <device-id> info reply <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>\n");
-    printf("\t sysex nonrt <device-id> gm (system-on1|system-off|system-on2)\n");
-    printf("\t sysex nonrt <device-id> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<14bit-int>)\n");
-//    printf("\t sysex nonrt <device-id> cueing special")
-    printf("\t sysex nonrt <device-id> cueing punch-in add\n");
-    printf("\t sysex nonrt <device-id> cueing punch-in rm \n");
-    printf("\t sysex nonrt <device-id> cueing punch-out add\n");
-    printf("\t sysex nonrt <device-id> cueing punch-out rm\n");
-    printf("\t sysex rt <device-id> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
-    printf("\t sysex rt <device-id> mtc user-bits <hex-byte-0><hex-byte-1><hex-byte-2><hex-byte-3><hex-byte-4>\n");
+    printf("\nSystem Exclusives*:\n");
+    printf("\t sysex experimental <n (u7)> <data-of-length-n (xN)>\n");
+    printf("\t sysex manufacturer <manufacturer-id (x1, x3)> <n (u7)> <data-of-length-n (xN)>\n");
+    printf("\t sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number>\n");
+    printf("\t sysex nonrt <device-id (u7)> info request\n");
+    printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
+    printf("\t sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<(u14)>)\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing (punch-in|punch-out) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)>\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing (event-start|event-stop|cue-point) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> [<event-name (s) ..>]\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> <event-name (s) ..>\n");
+    printf("\t sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
+    printf("\t sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>\n");
+    printf("*<device-id> := 127 is broadcast\n");
 
 
     printf("\nExamples:\n");
@@ -224,6 +237,11 @@ int main(int argc, char * argv[], char * env[]){
         }
     }
 
+    if ( ! isValidMode( mode) ){
+        printf("Must be called in either parsing or generation mode!\n");
+        exit(EXIT_FAILURE);
+    }
+
 
     if (optind < argc) {
 
@@ -236,7 +254,7 @@ int main(int argc, char * argv[], char * env[]){
             }
         }
 
-        return EXIT_SUCCESS;
+        exit(EXIT_SUCCESS);
     }
 
     uint8_t pos = 0;
@@ -691,7 +709,115 @@ void generate(uint8_t argc, char * argv[]){
                     }
                 }
                 else {
-                    return;
+                    if (argc < 13){
+                        return;
+                    }
+
+                    if (strcmp(argv[4], "punch-in") == 0){
+                        if (strcmp(argv[5], "add") == 0){
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcPunchInPoint;
+                        } else if (strcmp(argv[5], "rm") == 0){
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcDeletePunchInPoint;
+                        } else {
+                            return;
+                        }
+                    }
+                    else if (strcmp(argv[4], "punch-out") == 0){
+                        if (strcmp(argv[5], "add") == 0){
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcPunchOutPoint;
+                        } else if (strcmp(argv[5], "rm") == 0){
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcDeletePunchOutPoint;
+                        } else {
+                            return;
+                        }
+                    }
+                    else if (strcmp(argv[4], "event-start") == 0){
+                        if (strcmp(argv[5], "add") == 0){
+                            if (argc == 13) {
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStartPoint;
+                            } else {
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStartPointsWithInfo;
+                            }
+                        } else if (strcmp(argv[5], "rm") == 0){
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcDeleteEventStartPoint;
+                        } else {
+                            return;
+                        }
+                    }
+                    else if (strcmp(argv[4], "event-stop") == 0){
+                        if (strcmp(argv[5], "add") == 0){
+                            if (argc == 13){
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStopPoint;
+                            } else {
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStopPointsWithInfo;
+                            }
+                        } else if (strcmp(argv[5], "rm") == 0){
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcDeleteEventStopPoint;
+                        } else {
+                            return;
+                        }
+                    }
+                    else if (strcmp(argv[4], "cue-point") == 0){
+                        if (strcmp(argv[5], "add") == 0){
+                            if (argc == 13) {
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcCuePoints;
+                            } else {
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcCuePointsWithInfo;
+                            }
+                        } else if (strcmp(argv[5], "rm") == 0){
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcDeletePunchInPoint;
+                        } else {
+                            return;
+                        }
+                    }
+                    else if (strcmp(argv[4], "event-name") == 0){
+                        if (strcmp(argv[5], "-") == 0){
+                            if (argc < 14){
+                                return;
+                            }
+                            msg.Data.SysEx.SubId2 = SysExNonRtMtcEventName;
+                        } else {
+                            return;
+                        }
+                    }
+                    else {
+                        return;
+                    }
+
+                    uint8_t fps = atoi(argv[6]);
+
+                    switch(fps){
+                        case 24: fps = MtcFrameRate24fps; break;
+                        case 25: fps = MtcFrameRate25fps; break;
+                        case 29: fps = MtcFrameRate29_97fps; break;
+                        case 30: fps = MtcFrameRate30fps; break;
+                        default: return;
+                    }
+
+                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.FpsHour =((fps << MtcFpsOffset) & MtcFpsMask) | (atoi(argv[7]) & MtcHourMask);
+                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.Minute = atoi(argv[8]);
+                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.Second = atoi(argv[9]);
+                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.Frame = atoi(argv[10]);
+                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.FractionalFrame = atoi(argv[11]);
+                    msg.Data.SysEx.Data.Cueing.EventNumber = atoi(argv[12]);
+
+                    if (isSysExNonRtMtcWithAddInfo(msg.Data.SysEx.SubId2)){
+                        uint8_t offset = 0;
+                        for(uint8_t i = 0; i < argc - 13; i++){
+                            if (i > 0){
+                                msg.Data.SysEx.ByteData[offset++] = ' ';
+                            }
+                            strcpy((char*)&msg.Data.SysEx.ByteData[offset], argv[13+i]);
+                            offset += strlen(argv[13+i]);
+
+                        }
+                        msg.Data.SysEx.Length += strlen((char*)msg.Data.SysEx.ByteData);
+                    } else {
+                        if (argc != 13){
+                            return;
+                        }
+                    }
+
                 }
             }
             else {
@@ -913,7 +1039,51 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
                         }
                     }
                     else {
-                        printf("%d\n", msg.Data.SysEx.SubId2);
+
+                        switch (msg.Data.SysEx.SubId2){
+                            case SysExNonRtMtcPunchInPoint:                 printf("punch-in add "); break;
+                            case SysExNonRtMtcDeletePunchInPoint:           printf("punch-in rm "); break;
+                            case SysExNonRtMtcPunchOutPoint:                printf("punch-out add "); break;
+                            case SysExNonRtMtcDeletePunchOutPoint:          printf("punch-out rm "); break;
+                            case SysExNonRtMtcEventStartPoint:
+                            case SysExNonRtMtcEventStartPointsWithInfo:     printf("event-start add "); break;
+                            case SysExNonRtMtcDeleteEventStartPoint:        printf("event-start rm "); break;
+                            case SysExNonRtMtcEventStopPoint:
+                            case SysExNonRtMtcEventStopPointsWithInfo:      printf("event-stop add "); break;
+                            case SysExNonRtMtcDeleteEventStopPoint:         printf("event-stop rm "); break;
+                            case SysExNonRtMtcCuePoints:
+                            case SysExNonRtMtcCuePointsWithInfo:            printf("cue-point add "); break;
+                            case SysExNonRtMtcDeleteCuePoint:               printf("cue-point rm "); break;
+                            case SysExNonRtMtcEventName:                    printf("event-name "); break;
+                            default:
+                                printf("?? ");
+                        }
+
+                        uint8_t fps = 0;
+                        switch(getFps(msg.Data.SysEx.Data.Cueing.MidiTimeCode.FpsHour)){
+                            case MtcFrameRate24fps: fps = 24; break;
+                            case MtcFrameRate25fps: fps = 25; break;
+                            case MtcFrameRate29_97fps: fps = 29; break;
+                            case MtcFrameRate30fps: fps = 30; break;
+                        }
+                        printf("%d%s %d %d %d %d %d %d",
+                               fps,
+                               fps == 29 ? ".97" : "",
+                               getHour(msg.Data.SysEx.Data.MidiTimeCode.FpsHour),
+                               msg.Data.SysEx.Data.Cueing.MidiTimeCode.Minute,
+                               msg.Data.SysEx.Data.Cueing.MidiTimeCode.Second,
+                               msg.Data.SysEx.Data.Cueing.MidiTimeCode.Frame,
+                               msg.Data.SysEx.Data.Cueing.MidiTimeCode.FractionalFrame,
+                               msg.Data.SysEx.Data.Cueing.EventNumber
+                        );
+
+                        if (msg.Data.SysEx.Length > 0){
+                            printf(" %s", msg.Data.SysEx.ByteData);
+                        }
+
+                        printf("\n");
+
+//                        printf("%d\n", msg.Data.SysEx.SubId2);
                     }
                 }
                 else if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralInformation){
