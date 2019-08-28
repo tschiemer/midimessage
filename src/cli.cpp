@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
+#include <midimessage.h>
 
 #include "midimessage.h"
 
@@ -85,6 +86,7 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id> (eof|wait|cancel|nak|ack) <packet-number>\n");
     printf("\t sysex nonrt <device-id> info request\n");
     printf("\t sysex nonrt <device-id> info reply <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>\n");
+    printf("\t sysex nonrt <device_id> gm (system-on1|system-off|system-on2)\n");
     printf("\t sysex rt <device-id> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
     printf("\t sysex rt <device-id> mtc user-bits <hex-byte-0><hex-byte-1><hex-byte-2><hex-byte-3><hex-byte-4>\n");
 
@@ -570,35 +572,35 @@ void generate(uint8_t argc, char * argv[]){
                     return;
                 }
                 msg.Data.SysEx.SubId1 = SysExNonRtEndOfFile;
-                msg.Data.SysEx.SubId2 = atoi(argv[4]);
+                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "wait") == 0){
                 if (argc != 5){
                     return;
                 }
                 msg.Data.SysEx.SubId1 = SysExNonRtWait;
-                msg.Data.SysEx.SubId2 = atoi(argv[4]);
+                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "cancel") == 0){
                 if (argc != 5){
                     return;
                 }
                 msg.Data.SysEx.SubId1 = SysExNonRtCancel;
-                msg.Data.SysEx.SubId2 = atoi(argv[4]);
+                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "nak") == 0){
                 if (argc != 5){
                     return;
                 }
                 msg.Data.SysEx.SubId1 = SysExNonRtNAK;
-                msg.Data.SysEx.SubId2 = atoi(argv[4]);
+                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
             }
             else if (strcmp(argv[3], "ack") == 0){
                 if (argc != 5){
                     return;
                 }
                 msg.Data.SysEx.SubId1 = SysExNonRtACK;
-                msg.Data.SysEx.SubId2 = atoi(argv[4]);
+                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
             }
 
 
@@ -629,6 +631,24 @@ void generate(uint8_t argc, char * argv[]){
                     return;
                 }
 
+            }
+            else if (strcmp(argv[3], "gm") == 0) {
+                if (argc != 5){
+                    return;
+                }
+                msg.Data.SysEx.SubId1 = SysExNonRtGeneralMidi;
+                if (strcmp(argv[4], "system-on1") == 0){
+                    msg.Data.SysEx.SubId2 = SysExNonRtGmSystemOn1;
+                }
+                else if (strcmp(argv[4], "system-off") == 0){
+                    msg.Data.SysEx.SubId2 = SysExNonRtGmSystemOff;
+                }
+                else if (strcmp(argv[4], "system-on2") == 0){
+                    msg.Data.SysEx.SubId2 = SysExNonRtGmSystemOn2;
+                }
+                else {
+                    return;
+                }
             } else {
                 return;
             }
@@ -799,15 +819,27 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
 
 
                 if (msg.Data.SysEx.SubId1 == SysExNonRtEndOfFile){
-                    printf("eof %d\n", msg.Data.SysEx.SubId2);
+                    printf("eof %d\n", msg.Data.SysEx.Data.PacketNumber);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtWait){
-                    printf("wait %d\n", msg.Data.SysEx.SubId2);
+                    printf("wait %d\n", msg.Data.SysEx.Data.PacketNumber);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtCancel){
-                    printf("cancel %d\n", msg.Data.SysEx.SubId2);
+                    printf("cancel %d\n", msg.Data.SysEx.Data.PacketNumber);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtNAK){
-                    printf("nak %d\n", msg.Data.SysEx.SubId2);
+                    printf("nak %d\n", msg.Data.SysEx.Data.PacketNumber);
                 } else if (msg.Data.SysEx.SubId1 == SysExNonRtACK){
-                    printf("ack %d\n", msg.Data.SysEx.SubId2);
+                    printf("ack %d\n", msg.Data.SysEx.Data.PacketNumber);
+                }
+                else if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralMidi){
+                    printf("gm ");
+                    if (msg.Data.SysEx.SubId2 == SysExNonRtGmSystemOn1){
+                        printf("system-on1\n");
+                    }
+                    if (msg.Data.SysEx.SubId2 == SysExNonRtGmSystemOff){
+                        printf("system-off\n");
+                    }
+                    if (msg.Data.SysEx.SubId2 == SysExNonRtGmSystemOn2){
+                        printf("system-on2\n");
+                    }
                 }
                 else if (msg.Data.SysEx.SubId1 == SysExNonRtGeneralInformation){
                     printf("info ");
