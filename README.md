@@ -1,4 +1,6 @@
-# [midimessage](https://github.com/tschiemer/midimessage)
+# midimessage
+
+https://github.com/tschiemer/midimessage
 
 Very basic constants and un-/packer for MIDI Messages.
 
@@ -8,16 +10,16 @@ No particular structures are enforced such that you can take from it what you wa
 
 ## Features
 
-- (many) MIDI Message constants + enumerations
+- (many) MIDI Message constants + enumerations (see `include/midimessage.h`)
+- *structs* and *types* help to create a unified interface and make handling easier
 - Manufacturer Id list (see `include/manufacturerids.h`)
  - tool to generate up-to-date header, run `make manufacturerids` (requires wget + php)
 - Standard/Common CC list (see `include/commonccs.h`)
 - DLS Proprietary Chunk ids (see `include/dlsproprietarychunkids.h`)
-- Basic notes (see `include/notes.h`)
-- *packers* construct the right byte sequence for a particular message ASSERTing valid parameters
-- *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination)
+- Basic note helpers (see `include/notes.h`)
+- *packers* construct the right byte sequence for a particular message ASSERTing valid parameters (see `include/midimessage-packers.h`)
+- *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination) (see `include/midimessage-packers.h`)
 - packers and unpackers are always complementary and are available as literal-based and struct-based variants
-- *structs* and *types* help to create a unified interface and make handling easier
 - *Command line utility* to turn human-readable commands into corresponding byte sequence and vice versa (see `src/cli.cpp` and below)
 
 
@@ -35,6 +37,7 @@ tt = to test
 | System Common Messages | Song position pointer | | tt |
 | | Song select | | tt |
 | | Tune request | | tt |
+| | Quarter Frames -> MIDI Time Code | | |
 | System Real Time Messages | Timing clock | | tt |
 | | Start | | tt |
 | | Continue | | tt |
@@ -49,8 +52,8 @@ tt = to test
 | MIDI Show Control | | SysEx Real Time | tt |
 | MIDI Tuning Standard | | | TODO |
 | General Handshaking | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
-| Experimental (custom) messages |  | SysEx (Custom) | tt |
-| Manufacturer messages (+ manufacturer ids)|  | SysEx (Custom) | tt |
+| Experimental messages |  | SysEx Experimental | tt |
+| Manufacturer messages (+ manufacturer ids)|  | SysEx Manufacturer | tt |
 | Device Control (Master volume, balance, coarse/fine tuning, global parameters)| | SysEx Real Time | tt |
 | General Information | SysEx Non-Real Time | tt |
 | General MIDI System Messages | SysEx Non-Real Time | tt |
@@ -59,6 +62,9 @@ tt = to test
 | Downloadable Sounds | Non-Real Time | TODO |
 | Notation Information | Real Time | TODO |
 
+## Docs
+
+https://tschiemer.github.com/tschiemer/midimessage
 
 
 ## Requirements
@@ -152,6 +158,16 @@ Options:
 Note: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!
 Fancy pants note: the parsing output format is identical to the generation command format ;)
 
+Data types:
+	 u4 (data nibble) < 63 (0x0FF)
+	 u7 (data byte) <= 127 (0x7F)
+	 u14 (2byte integer) <= 16383 (0x3FFF)
+	 u21 (3byte integer) <= 2097151 (0x1FFFFF)
+	 u28 (4byte integer) <= 268435455 (0x0FFFFFFF)
+	 u35 (5byte integer) <= 34359738367 (0x7FFFFFFFF)
+	 sN ((max) Nbyte ascii string
+	 xN (Nbyte hex string <> 2Ns)
+
 Voice Commands:
 	 note (on|off) <channel> <key> <velocity>
 	 cc <channel> <controller> <value>
@@ -172,14 +188,20 @@ System Commands:
 	 song-position <position>
 	 song-select <songNumber>
 
-System Exclusives:
-	 sysex experimental <n> <data-of-length-n>
-	 sysex manufacturer <hex-manufacturer-id> <n> <data-of-length-n>
-	 sysex nonrt <device-id> (eof|wait|cancel|nak|ack)
-	 sysex nonrt <device-id> info request
-	 sysex nonrt <device-id> info reply <hex-manufacturer-id> <hex-device-family> <hex-device-family-member> <hex-software-revision>
-	 sysex rt <device-id> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
-	 sysex rt <device-id> mtc user-bits <hex-byte-0><hex-byte-1><hex-byte-2><hex-byte-3><hex-byte-4>
+System Exclusives*:
+	 sysex experimental <n (u7)> <data-of-length-n (xN)>
+	 sysex manufacturer <manufacturer-id (x1, x3)> <n (u7)> <data-of-length-n (xN)>
+	 sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number>
+	 sysex nonrt <device-id (u7)> info request
+	 sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>
+	 sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)
+	 sysex nonrt <device-id (u7)> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<(u14)>)
+	 sysex nonrt <device-id (u7)> cueing (punch-in|punch-out) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)>
+	 sysex nonrt <device-id (u7)> cueing (event-start|event-stop|cue-point) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> [<event-name (s) ..>]
+	 sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> <event-name (s) ..>
+	 sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
+	 sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>
+*<device-id> := 127 is broadcast
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
