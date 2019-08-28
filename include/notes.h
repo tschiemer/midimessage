@@ -11,7 +11,22 @@
 #ifndef MIDIMESSAGE_NOTES_H
 #define MIDIMESSAGE_NOTES_H
 
+#include <cstdint>
+
 namespace MidiMessage {
+
+    const uint8_t IntervalMinorSecond   = 1;
+    const uint8_t IntervalMajorSecond   = 2;
+    const uint8_t IntervalMinorThird    = 3;
+    const uint8_t IntervalMajorThird    = 4;
+    const uint8_t IntervalFourth        = 5;
+    const uint8_t IntervalTritone       = 6;
+    const uint8_t IntervalFifth         = 7;
+    const uint8_t IntervalMinorSixth    = 8;
+    const uint8_t IntervalMajorSixth    = 9;
+    const uint8_t IntervalMinorSeventh  = 10;
+    const uint8_t IntervalMajorSeventh  = 11;
+    const uint8_t IntervalOctave        = 12;
 
     typedef enum {
         NoteMin = 0,
@@ -106,6 +121,7 @@ namespace MidiMessage {
     inline bool isSmallNote( Note_t note ){
         return (48 <= note && note <= 59);
     }
+
 
 }
 
