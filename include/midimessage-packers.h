@@ -844,6 +844,44 @@ namespace MidiMessage {
         return false;
     }
 
+    inline uint8_t packSystemMessage( uint8_t *bytes, uint8_t systemMessage ){
+        ASSERT( bytes != NULL );
+        ASSERT( isSystemMessage(systemMessage) && systemMessage != SystemMessageSystemExclusive );
+
+        bytes[0] = systemMessage;
+
+        return MsgLenSystemMessage;
+    }
+
+    inline uint8_t packSystemMessage( uint8_t *bytes, Message_t * msg){
+        ASSERT( msg != NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+
+        return packSystemMessage(bytes, msg->SystemMessage);
+    }
+
+    inline bool unpackSystemMessage( uint8_t *bytes, uint8_t length, uint8_t *systemMessage){
+        ASSERT(bytes != NULL);
+
+        if (length != MsgLenSystemMessage || bytes[0] == SystemMessageSystemExclusive || !isSystemMessage(bytes[0])){
+            return false;
+        }
+
+        *systemMessage = bytes[0];
+
+        return true;
+    }
+
+    inline bool unpackSystemMessage( uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT( msg != NULL);
+
+        if (unpackSystemMessage(bytes, length, &msg->SystemMessage)){
+            msg->StatusClass = StatusClassSystemMessage;
+            return true;
+        }
+
+        return false;
+    }
 
 ///////////// System Exclusive Messages             /////////////
 /////////////////////////////////////////////////////////////////

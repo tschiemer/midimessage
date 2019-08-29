@@ -83,8 +83,7 @@ namespace MidiMessage {
                 case SystemMessageStop:
                 case SystemMessageActiveSensing:
                 case SystemMessageReset:
-                    bytes[0] = msg->SystemMessage;
-                    return 1;
+                    return packSystemMessage( bytes, msg );
 
                 case SystemMessageSystemExclusive:
                     // processed below
@@ -298,12 +297,7 @@ namespace MidiMessage {
                 case SystemMessageStop:
                 case SystemMessageActiveSensing:
                 case SystemMessageReset:
-                    if (length != 1){
-                        return false;
-                    }
-                    msg->StatusClass = StatusClassSystemMessage;
-                    msg->SystemMessage = systemMessage;
-                    return true;
+                    return unpackSystemMessage( bytes, length, msg );
 
                 case SystemMessageSystemExclusive:
                     // processed below
