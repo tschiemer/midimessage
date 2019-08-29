@@ -237,7 +237,7 @@ namespace MidiMessage {
         ASSERT(bytes != NULL);
         ASSERT((channel & ChannelMask) == channel);
         ASSERT((controller & DataMask) == controller);
-        ASSERT((value & DataMask) == value);
+        ASSERT(value <= MaxU7);
 
         bytes[0] = StatusClassControlChange | (channel & ChannelMask);
         bytes[1] = controller & DataMask;
@@ -1000,7 +1000,7 @@ namespace MidiMessage {
     inline uint8_t packSysExRtMtcFullMessage(uint8_t *bytes, uint8_t deviceId, uint8_t fps, uint8_t hour, uint8_t minute,
                                            uint8_t second, uint8_t frame) {
         ASSERT(bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
         ASSERT(isMtcFrameRate(fps));
         ASSERT(hour <= MtcMaxHour);
         ASSERT(minute <= MtcMaxMinute);
@@ -1112,7 +1112,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExRtMtcUserBits(uint8_t *bytes, uint8_t deviceId, uint8_t *userBits) {
         ASSERT(bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
         ASSERT(userBits != NULL);
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -1234,7 +1234,7 @@ namespace MidiMessage {
         ASSERT(isSysExNonRtMtc(msgType));
         ASSERT(!isSysExNonRtMtcWithAddInfo(msgType) || addInfoLen > 0);
         ASSERT(bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
         ASSERT(isMtcFrameRate(fps));
         ASSERT(hour <= MtcMaxHour);
         ASSERT(minute <= MtcMaxMinute);
@@ -1377,7 +1377,7 @@ namespace MidiMessage {
         ASSERT( isSysExRtMtcCueing(msgType) );
         ASSERT( !isSysExRtMtcCueingWithAddInfo(msgType) || addInfoLen > 0  );
         ASSERT( bytes != NULL );
-        ASSERT( deviceId <= MaxValue );
+        ASSERT( deviceId <= MaxU7 );
         ASSERT( eventNumber <= MaxEventNumber );
 
         int len = 7; // min message length (w/o EOX)
@@ -1451,7 +1451,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExNonRtGenInfoIdentityRequest(uint8_t *bytes, uint8_t deviceId) {
         ASSERT(bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTimeByte;
@@ -1468,7 +1468,7 @@ namespace MidiMessage {
                                                        uint16_t deviceFamily, uint16_t deviceFamilyMember,
                                                        uint8_t *softwareRevision) {
         ASSERT(bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
         ASSERT(deviceFamily <= MaxU14);
         ASSERT(deviceFamilyMember <= MaxU14);
 
@@ -1657,7 +1657,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExRtDcGlobalParameterControl(uint8_t *bytes, uint8_t deviceId, GlobalParameterControl_t *gpc) {
         ASSERT(bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
         ASSERT(gpc != NULL);
         ASSERT(gpc->Data != NULL);
 
@@ -1822,10 +1822,10 @@ namespace MidiMessage {
     inline uint8_t packSysExRtMmcCommand(uint8_t *bytes, uint8_t deviceId, uint8_t command, uint8_t *data,
                                   uint8_t dataLen) {
         ASSERT(bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
         ASSERT(isSysExRtMmcCommand(command));
         ASSERT((dataLen == 0) || (data != NULL));
-        ASSERT(dataLen <= MaxValue);
+        ASSERT(dataLen <= MaxU7);
 
         uint32_t len = 5;
 
@@ -1913,7 +1913,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExRtMidiShowControl( uint8_t * bytes, uint8_t deviceId, MidiShowControlData_t * msc ){
         ASSERT( bytes != NULL );
-        ASSERT( deviceId <= MaxValue );
+        ASSERT( deviceId <= MaxU7 );
         ASSERT( msc != NULL );
         ASSERT( isSysExRtMscCmdFmt(msc->CommandFormat.Bytes[0]) );
         ASSERT( isSysExRtMscCmd(msc->Command.Bytes[0]) );
@@ -2206,9 +2206,9 @@ namespace MidiMessage {
     inline uint8_t packSysExNonRtSampleDumpHeader(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t sampleFormat, uint32_t samplePeriod, uint32_t sampleLength, uint32_t loopStartPoint, uint32_t loopEndPoint, uint8_t loopType ){
 
         ASSERT( bytes!= NULL );
-        ASSERT( deviceId <= MaxValue );
+        ASSERT( deviceId <= MaxU7 );
         ASSERT( sampleNumber <= MaxU14 );
-        ASSERT( sampleFormat <= MaxValue );
+        ASSERT( sampleFormat <= MaxU7 );
         ASSERT( samplePeriod <= MaxU21 );
         ASSERT( sampleLength <= MaxU21 );
         ASSERT( loopEndPoint <= MaxU21 );
@@ -2309,10 +2309,10 @@ namespace MidiMessage {
     inline uint8_t packSysExNonRtSampleDumpData(uint8_t *bytes, uint8_t deviceId, uint8_t runningPacketCount, uint8_t * data, uint8_t dataLen ){
 
         ASSERT( bytes!= NULL );
-        ASSERT( deviceId <= MaxValue );
-        ASSERT( runningPacketCount <= MaxValue );
+        ASSERT( deviceId <= MaxU7 );
+        ASSERT( runningPacketCount <= MaxU7 );
         ASSERT( dataLen == 0 || data != NULL );
-        ASSERT( dataLen <= MaxValue );
+        ASSERT( dataLen <= MaxU7 );
 
         uint8_t length = 5;
 
@@ -2407,7 +2407,7 @@ namespace MidiMessage {
     inline uint8_t packSysExNonRtSampleDumpRequest(uint8_t *bytes, uint8_t deviceId, uint16_t requestedSample ){
 
         ASSERT( bytes!= NULL );
-        ASSERT( deviceId <= MaxValue );
+        ASSERT( deviceId <= MaxU7 );
         ASSERT( requestedSample <= MaxU14 );
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -2464,7 +2464,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExNonRtSdsHeader(uint8_t *bytes, uint8_t deviceId, SampleDumpExtHeaderData_t *header){
         ASSERT( bytes != NULL );
-        ASSERT( deviceId <= MaxValue);
+        ASSERT( deviceId <= MaxU7);
         ASSERT(header!=NULL);
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -2505,7 +2505,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t *bytes, uint8_t deviceId, SampleDumpExtLoopPointTransmissionData_t * data){
         ASSERT(bytes!=NULL);
-        ASSERT(deviceId<=MaxValue);
+        ASSERT(deviceId<=MaxU7);
         ASSERT(data!=NULL);
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -2540,7 +2540,7 @@ namespace MidiMessage {
 
     inline uint8_t packSysExNonRtSdsLoopPointRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint16_t loopNumber){
         ASSERT( bytes != NULL);
-        ASSERT(deviceId <= MaxValue);
+        ASSERT(deviceId <= MaxU7);
         ASSERT(sampleNumber <= MaxU14);
         ASSERT(loopNumber <= MaxU14);
 

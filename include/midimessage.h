@@ -61,17 +61,10 @@ namespace MidiMessage {
     /**
      * Data-byte max value
      */
-    const uint8_t MaxValue          = 127;
-
-    /**
-     * Double-data-byte max value
-     */
+    const uint8_t MaxU7          = 127;
     const uint16_t MaxU14   = 0x3FFF;
-
     const uint32_t MaxU21  = 0x001FFFFF;
-
     const uint32_t MaxU28 = 0x0FFFFFFF;
-
     const uint64_t MaxU35 = 0x7FFFFFFFF;
 
     /**
@@ -80,74 +73,6 @@ namespace MidiMessage {
     inline bool isDataByte( uint8_t byte ){
         return (byte & DataMask) == byte;
     }
-
-    /**
-     * Get Data-byte value (safe)
-     */
-    inline uint8_t getData( uint8_t byte ){
-        return byte & DataMask;
-    }
-
-    inline void packU14( uint8_t * bytes, uint16_t value ) {
-        bytes[0] = value & DataMask;
-        bytes[1] = (value >> 7) & DataMask;
-    }
-
-    inline uint16_t unpackU14( uint8_t * bytes ){
-        ASSERT( bytes[0] <= MaxValue );
-        ASSERT( bytes[1] <= MaxValue );
-
-        return (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
-    }
-
-    inline void packU21( uint8_t * bytes, uint32_t value ) {
-        bytes[0] = value & DataMask;
-        bytes[1] = (value >> 7) & DataMask;
-        bytes[2] = (value >> 14) & DataMask;
-    }
-
-    inline uint32_t unpackU21( uint8_t * bytes ){
-        ASSERT( bytes[0] <= MaxValue );
-        ASSERT( bytes[1] <= MaxValue );
-        ASSERT( bytes[2] <= MaxValue );
-
-        return (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
-    }
-
-    inline void packU28( uint8_t * bytes, uint32_t value ){
-        bytes[0] = value & DataMask;
-        bytes[1] = (value >> 7) & DataMask;
-        bytes[2] = (value >> 14) & DataMask;
-        bytes[3] = (value >> 21) & DataMask;
-    }
-
-    inline uint32_t unpackU28( uint8_t * bytes ){
-        ASSERT( bytes[0] <= MaxValue );
-        ASSERT( bytes[1] <= MaxValue );
-        ASSERT( bytes[2] <= MaxValue );
-        ASSERT( bytes[3] <= MaxValue );
-
-        return (((uint32_t)bytes[3]) << 21) | (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
-    }
-
-    inline void packU35( uint8_t * bytes, uint64_t value ){
-        bytes[0] = value & DataMask;
-        bytes[1] = (value >> 7) & DataMask;
-        bytes[2] = (value >> 14) & DataMask;
-        bytes[3] = (value >> 21) & DataMask;
-        bytes[4] = (value >> 28) & DataMask;
-    }
-
-    inline uint64_t unpackU35( uint8_t * bytes ){
-        ASSERT( bytes[0] <= MaxValue );
-        ASSERT( bytes[1] <= MaxValue );
-        ASSERT( bytes[2] <= MaxValue );
-        ASSERT( bytes[3] <= MaxValue );
-        ASSERT( bytes[4] <= MaxValue );
-
-        return (((uint64_t)bytes[3]) << 28) | (((uint64_t)bytes[3]) << 21) | (((uint64_t)bytes[2]) << 14) | (((uint64_t)bytes[1]) << 7) | ((uint64_t)bytes[0]);
-    }
-
 
     /**
      * Get Least-Significant Nibble.
@@ -164,7 +89,87 @@ namespace MidiMessage {
         return (byte >> 4) & NibbleMask;
     }
 
+    inline void packU7( uint8_t * bytes, uint8_t value ){
+        ASSERT( value < MaxU7 );
 
+        bytes[0] = value & DataMask;
+    }
+
+    inline uint8_t unpackU7( uint8_t * bytes ){
+        ASSERT( bytes[0] <= MaxU7 );
+
+        return bytes[0] & DataMask;
+    }
+
+    inline void packU14( uint8_t * bytes, uint16_t value ) {
+        ASSERT( value < MaxU14 );
+
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+    }
+
+    inline uint16_t unpackU14( uint8_t * bytes ){
+        ASSERT( bytes[0] <= MaxU7 );
+        ASSERT( bytes[1] <= MaxU7 );
+
+        return (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
+    }
+
+    inline void packU21( uint8_t * bytes, uint32_t value ) {
+        ASSERT( value < MaxU21 );
+
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+        bytes[2] = (value >> 14) & DataMask;
+    }
+
+    inline uint32_t unpackU21( uint8_t * bytes ){
+        ASSERT( bytes[0] <= MaxU7 );
+        ASSERT( bytes[1] <= MaxU7 );
+        ASSERT( bytes[2] <= MaxU7 );
+
+        return (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
+    }
+
+    inline void packU28( uint8_t * bytes, uint32_t value ){
+        ASSERT( value < MaxU28 );
+
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+        bytes[2] = (value >> 14) & DataMask;
+        bytes[3] = (value >> 21) & DataMask;
+    }
+
+    inline uint32_t unpackU28( uint8_t * bytes ){
+        ASSERT( bytes[0] <= MaxU7 );
+        ASSERT( bytes[1] <= MaxU7 );
+        ASSERT( bytes[2] <= MaxU7 );
+        ASSERT( bytes[3] <= MaxU7 );
+
+        return (((uint32_t)bytes[3]) << 21) | (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
+    }
+
+    inline void packU35( uint8_t * bytes, uint64_t value ){
+        ASSERT( value < MaxU35 );
+
+        bytes[0] = value & DataMask;
+        bytes[1] = (value >> 7) & DataMask;
+        bytes[2] = (value >> 14) & DataMask;
+        bytes[3] = (value >> 21) & DataMask;
+        bytes[4] = (value >> 28) & DataMask;
+    }
+
+    inline uint64_t unpackU35( uint8_t * bytes ){
+        ASSERT( bytes[0] <= MaxU7 );
+        ASSERT( bytes[1] <= MaxU7 );
+        ASSERT( bytes[2] <= MaxU7 );
+        ASSERT( bytes[3] <= MaxU7 );
+        ASSERT( bytes[4] <= MaxU7 );
+
+        return (((uint64_t)bytes[3]) << 28) | (((uint64_t)bytes[3]) << 21) | (((uint64_t)bytes[2]) << 14) | (((uint64_t)bytes[1]) << 7) | ((uint64_t)bytes[0]);
+    }
+
+    
     inline int nibblize( uint8_t * dst, uint8_t * src, int len ){
         for (int i = 0, j = 0; i < len; i++) {
             dst[j++] = getLsNibble( src[i] );
@@ -194,7 +199,7 @@ namespace MidiMessage {
     const uint8_t SysExDeviceIdBroadcast = 0x7F; // for  SysEx (Non-)Realtime Messages
 
     inline bool isSysExDeviceIdGroup( uint8_t value ){
-        ASSERT( (value & DataMask) == value );
+        ASSERT( value <= MaxU7 );
 
         return (0x70 <= value) && (value <= 0x7E);
     }
@@ -1860,7 +1865,7 @@ namespace MidiMessage {
         ASSERT( gpc != NULL );
         ASSERT( gpc->Data != NULL );
         ASSERT( i < gpc->SlotPathLength );
-        ASSERT( (value & DataMask) == value );
+        ASSERT( value <= MaxU7 );
 
         gpc->Data[i] = value & DataMask;
     }
