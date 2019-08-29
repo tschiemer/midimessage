@@ -97,7 +97,7 @@ namespace MidiMessage {
         }
 
         if (msg->StatusClass == StatusClassSystemMessage && msg->SystemMessage == SystemMessageSystemExclusive){
-
+            
             bytes[0] = msg->SystemMessage;
 
             if (msg->Data.SysEx.Id == SysExIdExperimental){

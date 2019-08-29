@@ -11,6 +11,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <midimessage.h>
+#include <util-hex.h>
 
 #include "midimessage.h"
 
@@ -71,8 +72,8 @@ void printHelp( void ) {
     printf("\t u21 (3byte integer) <= 2097151 (0x1FFFFF)\n");
     printf("\t u28 (4byte integer) <= 268435455 (0x0FFFFFFF)\n");
     printf("\t u35 (5byte integer) <= 34359738367 (0x7FFFFFFFF)\n");
-    printf("\t sN ((max) Nbyte ascii string\n");
-    printf("\t xN (Nbyte hex string <> 2Ns)\n");
+    printf("\t sN ((max) N byte ascii string)\n");
+    printf("\t xN (N byte hex string <> 2Ns) (note: data bytes must be <= 0x7F)\n");
 
     printf("\nVoice Commands:\n");
     printf("\t note (on|off) <channel> <key> <velocity>\n");
@@ -509,27 +510,34 @@ void generate(uint8_t argc, char * argv[]){
 
 
         if (strcmp(argv[1], "experimental") == 0) {
+            if (argc < 3 || argc > 4){
+                return;
+            }
+
             msg.Data.SysEx.Id = SysExIdExperimental;
-            if (argc != 4) {
+            if (argc < 4) {
                 msg.Data.SysEx.Length = 0;
             } else {
                 int len = atoi(argv[2]);
-                memcpy((char*)msg.Data.SysEx.ByteData, argv[3], len);
+                if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t*)argv[3], len)){
+                    return;
+                }
                 msg.Data.SysEx.Length = len;
             }
         }
         else if (strcmp(argv[1], "manufacturer") == 0) {
-            if (argc != 3){
+            if (argc < 4 || argc > 5){
                 return;
             }
-
             msg.Data.SysEx.Id = std::strtol(argv[2], NULL, 16);
 
             if (argc < 5) {
                 msg.Data.SysEx.Length = 0;
             } else {
                 int len = atoi(argv[3]);
-                memcpy((char*)msg.Data.SysEx.ByteData, argv[4], len);
+                if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t*)argv[4], len)){
+                    return;
+                }
                 msg.Data.SysEx.Length = len;
             }
         }
@@ -852,6 +860,8 @@ void generate(uint8_t argc, char * argv[]){
 
 uint8_t parse(uint8_t length, uint8_t bytes[]){
 
+    uint8_t buf[256];
+
 //    for(int i = 0; i < length; i++){
 //        printf("%02x ", bytes[i]);
 //    }
@@ -938,7 +948,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             if (msg.Data.SysEx.Id == SysExIdExperimental){
                 printf("experimental %d ", msg.Data.SysEx.Length);
                 for(uint8_t i = 0; i < msg.Data.SysEx.Length; i++){
-                    printf("%c", msg.Data.SysEx.ByteData[i]);
+                    printf("%02X", msg.Data.SysEx.ByteData[i]);
                 }
                 printf("\n");
             }
@@ -946,7 +956,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             if (isSysExManufacturerId(msg.Data.SysEx.Id)){
                 printf("manufacturer %06X %d ", msg.Data.SysEx.Id, msg.Data.SysEx.Length);
                 for(uint8_t i = 0; i < msg.Data.SysEx.Length; i++){
-                    printf("%c", msg.Data.SysEx.ByteData[i]);
+                    printf("%02X", msg.Data.SysEx.ByteData[i]);
                 }
                 printf("\n");
             }

@@ -18,13 +18,14 @@ set(HEADER_FILES
         include/notes.h)
 
 set(SOURCE_FILES
-
         src/midimessage.cpp)
 
 add_library(midimessage ${HEADER_FILES} ${SOURCE_FILES})
 
-add_executable(midimessage-cli src/cli.cpp)
+add_executable(midimessage-cli src/cli.cpp deps/c-utils/lib/util-hex.c)
 target_link_libraries(midimessage-cli midimessage)
+
+target_include_directories(midimessage-cli PRIVATE deps/c-utils/lib)
 
 message("Install path: ${CMAKE_INSTALL_PREFIX}")
 install(TARGETS midimessage midimessage-cli

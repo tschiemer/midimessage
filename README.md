@@ -69,13 +69,13 @@ https://tschiemer.github.com/tschiemer/midimessage
 
 ## Requirements
 
-- `midimessage-cli` requires getopt
+- `midimessage-cli` requires getopt and [c-utils](https://github.com/tschiemer/c-utils)
 - target `manufacturerids` requires wget and php(-cli)
 
 ## Building
 
 ```bash
-git clone https://github.com/tschiemer/midimessage.git
+git clone --recursive https://github.com/tschiemer/midimessage.git
 cd midimessage
 
 cmake .
