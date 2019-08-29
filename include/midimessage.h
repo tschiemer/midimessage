@@ -601,6 +601,14 @@ namespace MidiMessage {
                 value == SysExNonRtACK);
     }
 
+    inline bool isSysExNonRtHandshake( uint8_t value ){
+        return (value == SysExNonRtEndOfFile ||
+                value == SysExNonRtWait ||
+                value == SysExNonRtCancel ||
+                value == SysExNonRtNAK ||
+                value == SysExNonRtACK);
+    }
+
     typedef enum {
         SysExNonRtMtcSpecial                  = 0x00,
         SysExNonRtMtcPunchInPoint             = 0x01,
