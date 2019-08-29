@@ -2462,10 +2462,18 @@ namespace MidiMessage {
         return false;
     }
 
-    inline uint8_t packSysExNonRtSdsHeader(uint8_t *bytes, uint8_t deviceId, SampleDumpExtHeaderData_t *header){
+    inline uint8_t packSysExNonRtSdsHeader(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t sampleFormat, uint32_t sampleRateIntegerPortion, uint32_t sampleRateFractionalPortion, uint64_t sampleLength, uint64_t sustainLoopStart, uint64_t sustainLoopEnd, uint8_t loopType, uint8_t numberofChannels){
         ASSERT( bytes != NULL );
         ASSERT( deviceId <= MaxU7);
-        ASSERT(header!=NULL);
+        ASSERT(sampleNumber <= MaxU14);
+        ASSERT(sampleFormat <= MaxU7);
+        ASSERT(sampleRateIntegerPortion <= MaxU28);
+        ASSERT(sampleRateFractionalPortion <= MaxU28);
+        ASSERT( sampleLength <= MaxU35);
+        ASSERT(sustainLoopStart<= MaxU35);
+        ASSERT(sustainLoopEnd <= MaxU35);
+        ASSERT( loopType <= MaxU7);
+        ASSERT( numberofChannels <= MaxU7);
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTimeByte;
@@ -2473,23 +2481,29 @@ namespace MidiMessage {
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsExtendedDumpHeader;
 
-        packU14( &bytes[5], header->SampleNumber);
+        packU14( &bytes[5], sampleNumber);
 
-        bytes[7] = header->SampleFormat;
+        bytes[7] = sampleFormat;
 
-        packU28( &bytes[8], header->SampleRateIntegerPortion );
-        packU28( &bytes[12], header->SampleRateFractionalPortion );
+        packU28( &bytes[8], sampleRateIntegerPortion );
+        packU28( &bytes[12], sampleRateFractionalPortion );
 
-        packU35( &bytes[16], header->SampleLength );
-        packU35( &bytes[21], header->SustainLoopStart );
-        packU35( &bytes[26], header->SustainLoopEnd );
+        packU35( &bytes[16], sampleLength );
+        packU35( &bytes[21], sustainLoopStart );
+        packU35( &bytes[26], sustainLoopEnd );
 
-        bytes[31] = header->LoopType;
-        bytes[32] = header->NumberofChannels;
+        bytes[31] = loopType;
+        bytes[32] = numberofChannels;
 
         bytes[33] = SystemMessageEndOfExclusive;
 
         return MsgLenSysExNonRtSdsHeader;
+    }
+
+    inline uint8_t packSysExNonRtSdsHeader(uint8_t *bytes, uint8_t deviceId, SampleDumpExtHeaderData_t *header){
+        ASSERT(header!=NULL);
+
+        return packSysExNonRtSdsHeader(bytes, deviceId, header->SampleNumber, header->SampleFormat, header->SampleRateIntegerPortion, header->SampleRateFractionalPortion, header->SampleLength, header->SustainLoopStart, header->SustainLoopEnd, header->LoopType, header->NumberofChannels);
     }
 
     inline uint8_t packSysExNonRtSdsHeader(uint8_t *bytes, Message_t * msg){
@@ -2503,10 +2517,14 @@ namespace MidiMessage {
         return packSysExNonRtSdsHeader(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.Header);
     }
 
-    inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t *bytes, uint8_t deviceId, SampleDumpExtLoopPointTransmissionData_t * data){
+    inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint16_t loopNumber, uint8_t loopType, uint64_t loopStartAddress, uint64_t loopEndAddress){
         ASSERT(bytes!=NULL);
         ASSERT(deviceId<=MaxU7);
-        ASSERT(data!=NULL);
+        ASSERT(sampleNumber <= MaxU14);
+        ASSERT(loopNumber <= MaxU14);
+        ASSERT( loopType <= MaxU7);
+        ASSERT(loopStartAddress <= MaxU35);
+        ASSERT(loopEndAddress <= MaxU35);
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTimeByte;
@@ -2514,17 +2532,23 @@ namespace MidiMessage {
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsExtendedLoopPointsTransmission;
 
-        packU14( &bytes[5], data->SampleNumber );
-        packU14( &bytes[7], data->LoopNumber );
+        packU14( &bytes[5], sampleNumber );
+        packU14( &bytes[7], loopNumber );
 
-        bytes[9] = data->LoopType;
+        bytes[9] = loopType;
 
-        packU35( &bytes[14], data->LoopStartAddress);
-        packU35( &bytes[19], data->LoopEndAddress);
+        packU35( &bytes[14], loopStartAddress);
+        packU35( &bytes[19], loopEndAddress);
 
         bytes[24] = SystemMessageEndOfExclusive;
 
         return MsgLenSysExNonRtSdsExtendedLoopPointTransmission;
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t *bytes, uint8_t deviceId, SampleDumpExtLoopPointTransmissionData_t * data){
+        ASSERT(data!=NULL);
+
+        return packSysExNonRtSdsLoopPointTransmission(bytes, deviceId, data->SampleNumber, data->LoopNumber, data->LoopType, data->LoopStartAddress, data->LoopEndAddress);
     }
 
     inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t *bytes, Message_t *msg){
@@ -2543,6 +2567,7 @@ namespace MidiMessage {
         ASSERT(deviceId <= MaxU7);
         ASSERT(sampleNumber <= MaxU14);
         ASSERT(loopNumber <= MaxU14);
+
 
     }
 

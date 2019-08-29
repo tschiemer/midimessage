@@ -355,10 +355,6 @@ namespace MidiMessage {
                     return false;
                 }
 
-//                msg->Data.SysEx.Id = SysExIdRealTime;
-//                msg->Channel = bytes[2]; // DeviceId
-//                msg->Data.SysEx.SubId1 = bytes[3];
-
                 switch (bytes[3]) {
                     case SysExRtMidiTimeCode:
                         return unpackSysExRtMidiTimeCode(bytes, length, msg);

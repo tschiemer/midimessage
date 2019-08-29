@@ -58,8 +58,14 @@ namespace MidiMessage {
      */
     const uint8_t NibbleMask = 0b00001111;
 
+    typedef uint8_t U7;
+    typedef uint16_t U14;
+    typedef uint32_t U21;
+    typedef uint32_t U28;
+    typedef uint64_t U35;
+
     /**
-     * Data-byte max value
+     * Integer max values
      */
     const uint8_t MaxU7          = 127;
     const uint16_t MaxU14   = 0x3FFF;
