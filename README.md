@@ -196,15 +196,15 @@ System Exclusives*:
 	 sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>
 	 sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)
 	 sysex nonrt <device-id (u7)> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<(u14)>)
-	 sysex nonrt <device-id (u7)> cueing (punch-in|punch-out) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)>
-	 sysex nonrt <device-id (u7)> cueing (event-start|event-stop|cue-point) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> [<event-name (s) ..>]
-	 sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> <event-name (s) ..>
+	 sysex nonrt <device-id (u7)> cueing (punch-in|punch-out) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)>
+	 sysex nonrt <device-id (u7)> cueing (event-start|event-stop|cue-point) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)> [<event-name (s) ..>]
+	 sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)> <event-name (s) ..>
 	 sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
 	 sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>
 	 sysex rt <device-id (u7)> cueing special (system-stop|<(u14)>)
-	 sysex rt <device-id (u7)> cueing (punch-in|punch-out) <event-number (u24)>
-	 sysex rt <device-id (u7)> cueing (event-start|event-stop|cue-point) <event-number (u24)> [<event-name (s) ..>]
-	 sysex rt <device-id (u7)> cueing event-name <event-number (u24)> <event-name (s) ..>
+	 sysex rt <device-id (u7)> cueing (punch-in|punch-out) <event-number (u14)>
+	 sysex rt <device-id (u7)> cueing (event-start|event-stop|cue-point) <event-number (u14)> [<event-name (s) ..>]
+	 sysex rt <device-id (u7)> cueing event-name <event-number (u14)> <event-name (s) ..>
 *<device-id> := 127 is broadcast
 
 Examples:
