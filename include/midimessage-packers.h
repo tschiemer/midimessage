@@ -883,7 +883,71 @@ namespace MidiMessage {
         return false;
     }
 
-///////////// System Exclusive Messages             /////////////
+///////////// SysEx: (General) Handshakes           /////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+
+    inline uint8_t packSysExNonRtHandshake(uint8_t *bytes, uint8_t deviceId, uint8_t subId1, uint8_t packetNumber){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId <= MaxU7);
+        ASSERT( isSysExNonRtHandshake(subId1) );
+        ASSERT( packetNumber <= MaxU7);
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = subId1;
+        bytes[4] = packetNumber;
+        bytes[5] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtGeneralHandshaking;
+    }
+
+    inline uint8_t packSysExNonRtHandshake(uint8_t *bytes, Message_t *msg){
+        ASSERT( msg != NULL );
+        ASSERT( msg->StatusClass == StatusClassSystemMessage );
+        ASSERT( msg->SystemMessage == SystemMessageSystemExclusive );
+        ASSERT( msg->Data.SysEx.Id == SysExIdNonRealTime);
+
+        return packSysExNonRtHandshake(bytes, msg->Channel, msg->Data.SysEx.SubId1, msg->Data.SysEx.Data.PacketNumber );
+    }
+
+    inline bool unpackSysExNonRtHandshake(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint8_t *subId1, uint8_t *packetNumber){
+        ASSERT(bytes != NULL);
+        ASSERT( deviceId != NULL);
+        ASSERT( subId1 != NULL);
+        ASSERT( packetNumber != NULL);
+
+        if (length != MsgLenSysExNonRtGeneralHandshaking){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || !isSysExNonRtHandshake(bytes[3]) ){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *subId1 = bytes[3];
+        *packetNumber = bytes[3];
+
+        return true;
+    }
+
+    inline bool unpackSysExNonRtHandshake(uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT(msg != NULL);
+
+        if (unpackSysExNonRtHandshake(bytes, length, &msg->Channel, &msg->Data.SysEx.SubId1, &msg->Data.SysEx.Data.PacketNumber)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
+            return true;
+        }
+
+        return false;
+    }
+
+///////////// SysEx: Experimental Messages          /////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -956,6 +1020,10 @@ namespace MidiMessage {
         return false;
     }
 
+///////////// SysEx: Manufacturer Messages          /////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     inline uint8_t packSysExManufacturerMessage(uint8_t *bytes, uint32_t manufacturerId, uint8_t *data,
                                                 uint8_t dataLen) {
@@ -1034,6 +1102,12 @@ namespace MidiMessage {
 
         return false;
     }
+
+///////////// SysEx: MIDI Time Code + Cueing         ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
 
     inline uint8_t packSysExRtMtcFullMessage(uint8_t *bytes, uint8_t deviceId, uint8_t fps, uint8_t hour, uint8_t minute,
                                            uint8_t second, uint8_t frame) {
@@ -1487,6 +1561,11 @@ namespace MidiMessage {
         return false;
     }
 
+///////////// SysEx: General Information            /////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
     inline uint8_t packSysExNonRtGenInfoIdentityRequest(uint8_t *bytes, uint8_t deviceId) {
         ASSERT(bytes != NULL);
         ASSERT(deviceId <= MaxU7);
@@ -1671,6 +1750,11 @@ namespace MidiMessage {
 
         return false;
     }
+
+///////////// SysEx: Device Control                  ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     inline uint8_t packSysExRtDcBasic(uint8_t *bytes, uint8_t deviceId, SysExRtDc_t type, uint16_t value) {
         ASSERT(bytes != NULL);
@@ -1857,64 +1941,10 @@ namespace MidiMessage {
         return false;
     }
 
-    inline uint8_t packSysExNonRtHandshake(uint8_t *bytes, uint8_t deviceId, uint8_t subId1, uint8_t packetNumber){
-        ASSERT( bytes != NULL );
-        ASSERT( deviceId <= MaxU7);
-        ASSERT( isSysExNonRtHandshake(subId1) );
-        ASSERT( packetNumber <= MaxU7);
-
-        bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
-        bytes[2] = deviceId;
-        bytes[3] = subId1;
-        bytes[4] = packetNumber;
-        bytes[5] = SystemMessageEndOfExclusive;
-
-        return MsgLenSysExNonRtGeneralHandshaking;
-    }
-
-    inline uint8_t packSysExNonRtHandshake(uint8_t *bytes, Message_t *msg){
-        ASSERT( msg != NULL );
-        ASSERT( msg->StatusClass == StatusClassSystemMessage );
-        ASSERT( msg->SystemMessage == SystemMessageSystemExclusive );
-        ASSERT( msg->Data.SysEx.Id == SysExIdNonRealTime);
-
-        return packSysExNonRtHandshake(bytes, msg->Channel, msg->Data.SysEx.SubId1, msg->Data.SysEx.Data.PacketNumber );
-    }
-
-    inline bool unpackSysExNonRtHandshake(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint8_t *subId1, uint8_t *packetNumber){
-        ASSERT(bytes != NULL);
-        ASSERT( deviceId != NULL);
-        ASSERT( subId1 != NULL);
-        ASSERT( packetNumber != NULL);
-
-        if (length != MsgLenSysExNonRtGeneralHandshaking){
-            return false;
-        }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || !isSysExNonRtHandshake(bytes[3]) ){
-            return false;
-        }
-
-        *deviceId = bytes[2];
-        *subId1 = bytes[3];
-        *packetNumber = bytes[3];
-
-        return true;
-    }
-
-    inline bool unpackSysExNonRtHandshake(uint8_t *bytes, uint8_t length, Message_t *msg){
-        ASSERT(msg != NULL);
-
-        if (unpackSysExNonRtHandshake(bytes, length, &msg->Channel, &msg->Data.SysEx.SubId1, &msg->Data.SysEx.Data.PacketNumber)){
-            msg->StatusClass = StatusClassSystemMessage;
-            msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdNonRealTime;
-            return true;
-        }
-
-        return false;
-    }
-
+///////////// SysEx: General MIDI                    ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     inline uint8_t packSysExNonRtGeneralMidi(uint8_t *bytes, uint8_t deviceId, uint8_t subId2){
         ASSERT( bytes != NULL );
@@ -1973,7 +2003,10 @@ namespace MidiMessage {
         return false;
     }
 
-
+///////////// SysEx: MIDI Machine Control            ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     inline uint8_t packSysExRtMmcCommand(uint8_t *bytes, uint8_t deviceId, uint8_t command, uint8_t *data,
                                   uint8_t dataLen) {
@@ -2066,6 +2099,11 @@ namespace MidiMessage {
 
         return false;
     }
+
+///////////// SysEx: MIDI Show Control               ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     inline uint8_t packSysExRtMidiShowControl( uint8_t * bytes, uint8_t deviceId, MidiShowControlData_t * msc ){
         ASSERT( bytes != NULL );
@@ -2358,6 +2396,11 @@ namespace MidiMessage {
 
         return false;
     }
+
+///////////// SysEx: Sample Dump (Extension)         ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     inline uint8_t packSysExNonRtSampleDumpHeader(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t sampleFormat, uint32_t samplePeriod, uint32_t sampleLength, uint32_t loopStartPoint, uint32_t loopEndPoint, uint8_t loopType ){
 
