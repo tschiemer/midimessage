@@ -1819,6 +1819,63 @@ namespace MidiMessage {
         return false;
     }
 
+    inline uint8_t packSysExNonRtGeneralMidi(uint8_t *bytes, uint8_t deviceId, uint8_t subId2){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId <= MaxU7 );
+        ASSERT( isSysExNonRtGeneralMidi(subId2) );
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtGeneralMidi;
+        bytes[4] = subId2;
+        bytes[5] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtGeneralMidi;
+    }
+
+    inline uint8_t packSysExNonRtGeneralMidi(uint8_t *bytes, Message_t *msg){
+        ASSERT( msg != NULL );
+        ASSERT( msg->StatusClass == StatusClassSystemMessage);
+        ASSERT( msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT( msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT( msg->Data.SysEx.SubId1 == SysExNonRtGeneralMidi);
+
+        return packSysExNonRtGeneralMidi(bytes, msg->Channel, msg->Data.SysEx.SubId2);
+    }
+
+    inline bool unpackSysExNonRtGeneralMidi(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint8_t *subId2){
+        ASSERT( bytes != NULL );
+        ASSERT(deviceId != NULL);
+        ASSERT( subId2 != NULL);
+
+        if (length != MsgLenSysExNonRtGeneralMidi || !isControlByte((bytes[length-1]))){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtGeneralMidi || !isSysExNonRtGeneralMidi(bytes[4]) ){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *subId2 = bytes[4];
+
+        return true;
+    }
+
+    inline bool unpackSysExNonRtGeneralMidi(uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT( msg != NULL );
+
+        if (unpackSysExNonRtGeneralMidi(bytes, length, &msg->Channel, &msg->Data.SysEx.SubId2)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
+            msg->Data.SysEx.SubId1 = SysExNonRtGeneralMidi;
+            return true;
+        }
+
+        return false;
+    }
+
     inline uint8_t packSysExRtMmcCommand(uint8_t *bytes, uint8_t deviceId, uint8_t command, uint8_t *data,
                                   uint8_t dataLen) {
         ASSERT(bytes != NULL);

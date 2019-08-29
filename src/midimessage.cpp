@@ -186,16 +186,6 @@ namespace MidiMessage {
 
                     case SysExNonRtGeneralMidi:
 
-                        ASSERT( isSysExNonRtGeneralMidi(msg->Data.SysEx.SubId2) );
-
-                        bytes[0] = SystemMessageSystemExclusive;
-                        bytes[1] = SysExIdNonRealTimeByte;
-                        bytes[2] = msg->Channel & DataMask;
-                        bytes[3] = msg->Data.SysEx.SubId1;
-                        bytes[4] = msg->Data.SysEx.SubId2;
-                        bytes[5] = SystemMessageEndOfExclusive;
-
-                        return MsgLenSysExNonRtGeneralMidi;
 
                     case SysExNonRtDownloadableSounds:
                         //TODO
@@ -441,17 +431,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtGeneralMidi:
-//                        ASSERT(false);
-                        if (length != MsgLenSysExNonRtGeneralMidi || ! isControlByte(bytes[MsgLenSysExNonRtGeneralMidi-1]) || ! isSysExNonRtGeneralMidi(bytes[4])){
-                            return false;
-                        }
-                        msg->StatusClass = StatusClassSystemMessage;
-                        msg->SystemMessage = SystemMessageSystemExclusive;
-                        msg->Channel = bytes[2] & DataMask;
-                        msg->Data.SysEx.Id = SysExIdNonRealTime;
-                        msg->Data.SysEx.SubId1 = SysExNonRtGeneralMidi;
-                        msg->Data.SysEx.SubId2 = bytes[4];
-                        return true;
+                        return unpackSysExNonRtGeneralMidi( bytes, length, msg );
 
                     case SysExNonRtDownloadableSounds:
                         //TODO
