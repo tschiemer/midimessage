@@ -596,12 +596,12 @@ namespace MidiMessage {
         SysExNonRtMtcDeletePunchOutPoint      = 0x04,
         SysExNonRtMtcEventStartPoint          = 0x05,
         SysExNonRtMtcEventStopPoint           = 0x06,
-        SysExNonRtMtcEventStartPointsWithInfo = 0x07,
-        SysExNonRtMtcEventStopPointsWithInfo  = 0x08,
+        SysExNonRtMtcEventStartPointWithInfo = 0x07,
+        SysExNonRtMtcEventStopPointWithInfo  = 0x08,
         SysExNonRtMtcDeleteEventStartPoint    = 0x09,
         SysExNonRtMtcDeleteEventStopPoint     = 0x0A,
-        SysExNonRtMtcCuePoints                = 0x0B,
-        SysExNonRtMtcCuePointsWithInfo        = 0x0C,
+        SysExNonRtMtcCuePoint                = 0x0B,
+        SysExNonRtMtcCuePointWithInfo        = 0x0C,
         SysExNonRtMtcDeleteCuePoint           = 0x0D,
         SysExNonRtMtcEventName                = 0x0E
     } SysExNonRtMtc_t;
@@ -614,20 +614,20 @@ namespace MidiMessage {
                 value == SysExNonRtMtcDeletePunchOutPoint ||
                 value == SysExNonRtMtcEventStartPoint ||
                 value == SysExNonRtMtcEventStopPoint ||
-                value == SysExNonRtMtcEventStartPointsWithInfo ||
-                value == SysExNonRtMtcEventStopPointsWithInfo ||
+                value == SysExNonRtMtcEventStartPointWithInfo ||
+                value == SysExNonRtMtcEventStopPointWithInfo ||
                 value == SysExNonRtMtcDeleteEventStartPoint ||
                 value == SysExNonRtMtcDeleteEventStopPoint ||
-                value == SysExNonRtMtcCuePoints ||
-                value == SysExNonRtMtcCuePointsWithInfo ||
+                value == SysExNonRtMtcCuePoint ||
+                value == SysExNonRtMtcCuePointWithInfo ||
                 value == SysExNonRtMtcDeleteCuePoint ||
                 value == SysExNonRtMtcEventName);
     }
 
     inline bool isSysExNonRtMtcWithAddInfo( uint8_t value ){
-        return (value == SysExNonRtMtcEventStartPointsWithInfo ||
-                value == SysExNonRtMtcEventStopPointsWithInfo ||
-                value == SysExNonRtMtcCuePointsWithInfo ||
+        return (value == SysExNonRtMtcEventStartPointWithInfo ||
+                value == SysExNonRtMtcEventStopPointWithInfo ||
+                value == SysExNonRtMtcCuePointWithInfo ||
                 value == SysExNonRtMtcEventName);
     }
 
@@ -1179,40 +1179,47 @@ namespace MidiMessage {
 
     typedef enum {
         SysExRtMtcCueingSpecial                    = 0x00, // ??
-        SysExRtMtcCueingPunchInPoints              = 0x01,
-        SysExRtMtcCueingPunchOutPoints             = 0x02,
+        SysExRtMtcCueingPunchInPoint              = 0x01,
+        SysExRtMtcCueingPunchOutPoint             = 0x02,
         // 3 - 4 reserved
-        SysExRtMtcCueingEventStartPoints           = 0x05,
-        SysExRtMtcCueingEventStopPoints            = 0x06,
-        SysExRtMtcCueingEvenStartPointsWithInfo    = 0x07,
-        SysExRtMtcCueingEventStopPointsWithInfo    = 0x08,
+        SysExRtMtcCueingEventStartPoint           = 0x05,
+        SysExRtMtcCueingEventStopPoint            = 0x06,
+        SysExRtMtcCueingEventStartPointWithInfo    = 0x07,
+        SysExRtMtcCueingEventStopPointWithInfo    = 0x08,
         // 9 - A reserved
-        SysExRtMtcCueingCuePoints                  = 0x0B,
-        SysExRtMtcCueingCuePointsWithInfo          = 0x0C,
+        SysExRtMtcCueingCuePoint                  = 0x0B,
+        SysExRtMtcCueingCuePointWithInfo          = 0x0C,
         // D reserved
-        SysExRtMtcCueingEventNameInInfo            = 0x0E
+        SysExRtMtcCueingEventName                 = 0x0E
     } SysExRtMtcCueing_t;
 
     inline bool isSysExRtMtcCueing( uint8_t value ){
         return (value == SysExRtMtcCueingSpecial ||
-                value == SysExRtMtcCueingPunchInPoints ||
-                value == SysExRtMtcCueingPunchOutPoints ||
-                value == SysExRtMtcCueingEventStartPoints ||
-                value == SysExRtMtcCueingEventStopPoints ||
-                value == SysExRtMtcCueingEvenStartPointsWithInfo ||
-                value == SysExRtMtcCueingEventStopPointsWithInfo ||
-                value == SysExRtMtcCueingCuePoints ||
-                value == SysExRtMtcCueingCuePointsWithInfo ||
-                value == SysExRtMtcCueingEventNameInInfo);
+                value == SysExRtMtcCueingPunchInPoint ||
+                value == SysExRtMtcCueingPunchOutPoint ||
+                value == SysExRtMtcCueingEventStartPoint ||
+                value == SysExRtMtcCueingEventStopPoint ||
+                value == SysExRtMtcCueingEventStartPointWithInfo ||
+                value == SysExRtMtcCueingEventStopPointWithInfo ||
+                value == SysExRtMtcCueingCuePoint ||
+                value == SysExRtMtcCueingCuePointWithInfo ||
+                value == SysExRtMtcCueingEventName);
     }
 
     inline bool isSysExRtMtcCueingWithAddInfo( uint8_t value ){
-        return (value == SysExRtMtcCueingEvenStartPointsWithInfo ||
-                value == SysExRtMtcCueingEventStopPointsWithInfo ||
-                value == SysExRtMtcCueingCuePointsWithInfo ||
-                value == SysExRtMtcCueingEventNameInInfo);
+        return (value == SysExRtMtcCueingEventStartPointWithInfo ||
+                value == SysExRtMtcCueingEventStopPointWithInfo ||
+                value == SysExRtMtcCueingCuePointWithInfo ||
+                value == SysExRtMtcCueingEventName);
     }
 
+    typedef enum {
+        SysExRtMtcCueingSpecialSystemStop          = 0x04
+    } SysExRtMtcCueingSpecial_t;
+
+    inline bool isSysExRtMtcCueingSpecial( uint16_t value ){
+        return (value == SysExRtMtcCueingSpecialSystemStop);
+    }
 
     /**
      * Guideline sets:

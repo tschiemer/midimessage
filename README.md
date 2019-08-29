@@ -165,8 +165,8 @@ Data types:
 	 u21 (3byte integer) <= 2097151 (0x1FFFFF)
 	 u28 (4byte integer) <= 268435455 (0x0FFFFFFF)
 	 u35 (5byte integer) <= 34359738367 (0x7FFFFFFFF)
-	 sN ((max) Nbyte ascii string
-	 xN (Nbyte hex string <> 2Ns)
+	 sN ((max) N byte ascii string)
+	 xN (N byte hex string <> 2Ns) (note: data bytes must be <= 0x7F)
 
 Voice Commands:
 	 note (on|off) <channel> <key> <velocity>
@@ -189,8 +189,8 @@ System Commands:
 	 song-select <songNumber>
 
 System Exclusives*:
-	 sysex experimental <n (u7)> <data-of-length-n (xN)>
-	 sysex manufacturer <manufacturer-id (x1, x3)> <n (u7)> <data-of-length-n (xN)>
+	 sysex experimental <data (xN)>
+	 sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>
 	 sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number>
 	 sysex nonrt <device-id (u7)> info request
 	 sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>
@@ -201,6 +201,10 @@ System Exclusives*:
 	 sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> <event-name (s) ..>
 	 sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
 	 sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>
+	 sysex rt <device-id (u7)> cueing special (system-stop|<(u14)>)
+	 sysex rt <device-id (u7)> cueing (punch-in|punch-out) <event-number (u24)>
+	 sysex rt <device-id (u7)> cueing (event-start|event-stop|cue-point) <event-number (u24)> [<event-name (s) ..>]
+	 sysex rt <device-id (u7)> cueing event-name <event-number (u24)> <event-name (s) ..>
 *<device-id> := 127 is broadcast
 
 Examples:

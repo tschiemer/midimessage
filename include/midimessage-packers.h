@@ -1372,42 +1372,42 @@ namespace MidiMessage {
     }
 
 
-    inline uint8_t packSysExRtMtcCueingSetupMessage(uint8_t *bytes, uint8_t msgType, uint8_t deviceId,
+    inline uint8_t packSysExRtMtcCueingSetupMessage(uint8_t *bytes, uint8_t deviceId, uint8_t msgType,
                                                     uint16_t eventNumber, uint8_t *addInfo, uint32_t addInfoLen) {
         ASSERT( isSysExRtMtcCueing(msgType) );
-        ASSERT( addInfoLen == 0 || !isSysExRtMtcCueing(msgType)  );
+        ASSERT( !isSysExRtMtcCueingWithAddInfo(msgType) || addInfoLen > 0  );
         ASSERT( bytes != NULL );
         ASSERT( deviceId <= MaxValue );
         ASSERT( eventNumber <= MaxEventNumber );
 
-        int msgLen = MsgLenSysExRtMtcCueingSetupMessageMin - 1; // min message length (w/o EOX)
+        int len = 7; // min message length (w/o EOX)
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdRealTimeByte;
-        bytes[2] = deviceId & DataMask;
-        bytes[3] = SysExNonRtMidiTimeCode;
+        bytes[2] = deviceId;
+        bytes[3] = SysExRtMidiTimeCodeCueing;
         bytes[4] = msgType;
 
         packDoubleValue(&bytes[5], eventNumber);
 
         if (isSysExRtMtcCueingWithAddInfo(msgType)) {
-            msgLen += nibblize(&bytes[7], addInfo, addInfoLen);
+            len += nibblize(&bytes[7], addInfo, addInfoLen);
         }
 
-        bytes[msgLen++] = SystemMessageEndOfExclusive;
+        bytes[len++] = SystemMessageEndOfExclusive;
 
-        return msgLen;
+        return len;
     }
 
     inline uint8_t packSysExRtMtcCueingSetupMessage( uint8_t * bytes, Message_t * msg ){
         ASSERT( msg != NULL );
 
-        return packSysExRtMtcCueingSetupMessage( bytes, msg->Data.SysEx.SubId2, msg->Channel, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+        return packSysExRtMtcCueingSetupMessage( bytes, msg->Channel, msg->Data.SysEx.SubId2, msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
     }
 
 
-    inline bool unpackSysExRtMtcCueingSetupMessage(uint8_t *bytes, uint8_t len, uint8_t *msgType,
-                                                   uint8_t *deviceId, uint16_t *eventNumber, uint8_t *addInfo,
+    inline bool unpackSysExRtMtcCueingSetupMessage(uint8_t *bytes, uint8_t len, uint8_t *deviceId,
+                                                   uint8_t *msgType, uint16_t *eventNumber, uint8_t *addInfo,
                                                    uint8_t *addInfoLen) {
         ASSERT(bytes != NULL);
         ASSERT(deviceId != NULL);
@@ -1416,38 +1416,20 @@ namespace MidiMessage {
         ASSERT(addInfoLen != NULL);
 
 
-        if (len < MsgLenSysExRtMtcCueingSetupMessageMin - 1) {
+        if (len < MsgLenSysExRtMtcCueingSetupMessageMin || ! isControlByte(bytes[len-1])) {
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive) {
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtMidiTimeCodeCueing || !isSysExRtMtcCueing(bytes[4])) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
-            return false;
-        }
-        if ((bytes[2] & DataMask) != bytes[2]) {
-            return false;
-        }
-        if (bytes[3] != SysExRtMidiTimeCode) {
-            return false;
-        }
-        if (!isSysExRtMtcCueing(bytes[4])) {
-            return false;
-        }
-
 
         *deviceId = bytes[2] & DataMask;
         *msgType = bytes[4];
 
-        *eventNumber = unpackDoubleValue(&bytes[10]);
+        *eventNumber = unpackDoubleValue(&bytes[5]);
 
         if (isSysExRtMtcCueingWithAddInfo(bytes[4])) {
-
-            if (bytes[len - 1] != SystemMessageEndOfExclusive) {
-                len++;
-            }
-
-            *addInfoLen = denibblize(addInfo, &bytes[12], len - MsgLenSysExRtMtcCueingSetupMessageMin);
+            *addInfoLen = denibblize(addInfo, &bytes[7], len - MsgLenSysExRtMtcCueingSetupMessageMin);
         }
 
         return true;
@@ -1456,11 +1438,11 @@ namespace MidiMessage {
     inline bool unpackSysExRtMtcCueingSetupMessage(uint8_t *bytes, uint8_t length, Message_t * msg){
         ASSERT( msg != NULL );
 
-        if (unpackSysExRtMtcCueingSetupMessage( bytes, length, &msg->Data.SysEx.SubId1, &msg->Channel, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
+        if (unpackSysExRtMtcCueingSetupMessage( bytes, length, &msg->Channel, &msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.Cueing.EventNumber, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdRealTimeByte;
-            msg->Data.SysEx.SubId1 = SysExRtMidiTimeCode;
+            msg->Data.SysEx.Id = SysExIdRealTime;
+            msg->Data.SysEx.SubId1 = SysExRtMidiTimeCodeCueing;
             return true;
         }
 

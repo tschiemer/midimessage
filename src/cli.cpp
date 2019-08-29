@@ -601,6 +601,91 @@ void generate(uint8_t argc, char * argv[]){
                     msg.Data.SysEx.Length = 5;
                 }
             }
+            else if (strcmp(argv[3], "cueing") == 0){
+                if (argc < 5){
+                    return;
+                }
+                msg.Data.SysEx.SubId1 = SysExRtMidiTimeCodeCueing;
+
+                if (strcmp(argv[4], "special") == 0){
+                    if (argc != 6){
+                        return;
+                    }
+                    msg.Data.SysEx.SubId2 = SysExRtMtcCueingSpecial;
+
+                    if (strcmp(argv[5], "system-stop") == 0){
+                        msg.Data.SysEx.Data.Cueing.EventNumber = SysExRtMtcCueingSpecialSystemStop;
+                    }
+                    else {
+                        msg.Data.SysEx.Data.Cueing.EventNumber = atoi(argv[5]);
+                    }
+                }
+                else {
+                    if (argc < 6){
+                        return;
+                    }
+
+                    if (strcmp(argv[4], "punch-in") == 0){
+                        msg.Data.SysEx.SubId2 = SysExRtMtcCueingPunchInPoint;
+                    }
+                    else if (strcmp(argv[4], "punch-out") == 0){
+                        msg.Data.SysEx.SubId2 = SysExRtMtcCueingPunchOutPoint;
+                    }
+                    else if (strcmp(argv[4], "event-start") == 0){
+                        if (argc == 6) {
+                            msg.Data.SysEx.SubId2 = SysExRtMtcCueingEventStartPoint;
+                        } else {
+                            msg.Data.SysEx.SubId2 = SysExRtMtcCueingEventStartPointWithInfo;
+                        }
+                    }
+                    else if (strcmp(argv[4], "event-stop") == 0){
+                        if (argc == 6){
+                            msg.Data.SysEx.SubId2 = SysExRtMtcCueingEventStopPoint;
+                        } else {
+                            msg.Data.SysEx.SubId2 = SysExRtMtcCueingEventStopPointWithInfo;
+                        }
+                    }
+                    else if (strcmp(argv[4], "cue-point") == 0){
+                        if (argc == 6) {
+                            msg.Data.SysEx.SubId2 = SysExRtMtcCueingCuePoint;
+                        } else {
+                            msg.Data.SysEx.SubId2 = SysExRtMtcCueingCuePointWithInfo;
+                        }
+                    }
+                    else if (strcmp(argv[4], "event-name") == 0){
+                        if (argc < 7){
+                            return;
+                        }
+                        msg.Data.SysEx.SubId2 = SysExRtMtcCueingEventName;
+                    }
+                    else {
+                        return;
+                    }
+
+                    msg.Data.SysEx.Data.Cueing.EventNumber = atoi(argv[5]);
+
+                    if (isSysExRtMtcCueingWithAddInfo(msg.Data.SysEx.SubId2)){
+                        uint8_t offset = 0;
+                        for(uint8_t i = 0; i < argc - 6; i++){
+                            if (i > 0){
+                                msg.Data.SysEx.ByteData[offset++] = ' ';
+                            }
+                            strcpy((char*)&msg.Data.SysEx.ByteData[offset], argv[6+i]);
+                            offset += strlen(argv[6+i]);
+
+                        }
+                        msg.Data.SysEx.Length += strlen((char*)msg.Data.SysEx.ByteData);
+                    } else {
+//                        if (argc != 13){
+//                            return;
+//                        }
+                    }
+
+                }
+            }
+            else {
+                return;
+            }
 
         }
         else if (strcmp(argv[1], "nonrt") == 0) {
@@ -756,7 +841,7 @@ void generate(uint8_t argc, char * argv[]){
                             if (argc == 13) {
                                 msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStartPoint;
                             } else {
-                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStartPointsWithInfo;
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStartPointWithInfo;
                             }
                         } else if (strcmp(argv[5], "rm") == 0){
                             msg.Data.SysEx.SubId2 = SysExNonRtMtcDeleteEventStartPoint;
@@ -769,7 +854,7 @@ void generate(uint8_t argc, char * argv[]){
                             if (argc == 13){
                                 msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStopPoint;
                             } else {
-                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStopPointsWithInfo;
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcEventStopPointWithInfo;
                             }
                         } else if (strcmp(argv[5], "rm") == 0){
                             msg.Data.SysEx.SubId2 = SysExNonRtMtcDeleteEventStopPoint;
@@ -780,9 +865,9 @@ void generate(uint8_t argc, char * argv[]){
                     else if (strcmp(argv[4], "cue-point") == 0){
                         if (strcmp(argv[5], "add") == 0){
                             if (argc == 13) {
-                                msg.Data.SysEx.SubId2 = SysExNonRtMtcCuePoints;
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcCuePoint;
                             } else {
-                                msg.Data.SysEx.SubId2 = SysExNonRtMtcCuePointsWithInfo;
+                                msg.Data.SysEx.SubId2 = SysExNonRtMtcCuePointWithInfo;
                             }
                         } else if (strcmp(argv[5], "rm") == 0){
                             msg.Data.SysEx.SubId2 = SysExNonRtMtcDeletePunchInPoint;
@@ -1005,6 +1090,44 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
                         );
                     }
                 }
+                else if (msg.Data.SysEx.SubId1 == SysExRtMidiTimeCodeCueing){
+                    printf("cueing ");
+                    if (msg.Data.SysEx.SubId2 == SysExRtMtcCueingSpecial){
+                        printf("special ");
+                        if (msg.Data.SysEx.Data.Cueing.EventNumber == SysExRtMtcCueingSpecialSystemStop){
+                            printf("system-stop\n");
+                        }
+                        else {
+                            printf("%d\n", msg.Data.SysEx.Data.Cueing.EventNumber);
+                        }
+                    }
+                    else {
+
+                        switch (msg.Data.SysEx.SubId2){
+                            case SysExRtMtcCueingPunchInPoint:                 printf("punch-in "); break;
+                            case SysExRtMtcCueingPunchOutPoint:                printf("punch-out "); break;
+                            case SysExRtMtcCueingEventStartPoint:
+                            case SysExRtMtcCueingEventStartPointWithInfo:     printf("event-start "); break;
+                            case SysExRtMtcCueingEventStopPoint:
+                            case SysExRtMtcCueingEventStopPointWithInfo:      printf("event-stop "); break;
+                            case SysExRtMtcCueingCuePoint:
+                            case SysExRtMtcCueingCuePointWithInfo:            printf("cue-point "); break;
+                            case SysExRtMtcCueingEventName:                    printf("event-name "); break;
+                            default:
+                                printf("?? ");
+                        }
+
+                        printf("%d",msg.Data.SysEx.Data.Cueing.EventNumber);
+
+                        if (msg.Data.SysEx.Length > 0){
+                            printf(" %s", msg.Data.SysEx.ByteData);
+                        }
+
+                        printf("\n");
+
+//                        printf("%d\n", msg.Data.SysEx.SubId2);
+                    }
+                }
             }
 
             if (msg.Data.SysEx.Id == SysExIdNonRealTime){
@@ -1068,13 +1191,13 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
                             case SysExNonRtMtcPunchOutPoint:                printf("punch-out add "); break;
                             case SysExNonRtMtcDeletePunchOutPoint:          printf("punch-out rm "); break;
                             case SysExNonRtMtcEventStartPoint:
-                            case SysExNonRtMtcEventStartPointsWithInfo:     printf("event-start add "); break;
+                            case SysExNonRtMtcEventStartPointWithInfo:     printf("event-start add "); break;
                             case SysExNonRtMtcDeleteEventStartPoint:        printf("event-start rm "); break;
                             case SysExNonRtMtcEventStopPoint:
-                            case SysExNonRtMtcEventStopPointsWithInfo:      printf("event-stop add "); break;
+                            case SysExNonRtMtcEventStopPointWithInfo:      printf("event-stop add "); break;
                             case SysExNonRtMtcDeleteEventStopPoint:         printf("event-stop rm "); break;
-                            case SysExNonRtMtcCuePoints:
-                            case SysExNonRtMtcCuePointsWithInfo:            printf("cue-point add "); break;
+                            case SysExNonRtMtcCuePoint:
+                            case SysExNonRtMtcCuePointWithInfo:            printf("cue-point add "); break;
                             case SysExNonRtMtcDeleteCuePoint:               printf("cue-point rm "); break;
                             case SysExNonRtMtcEventName:                    printf("event-name "); break;
                             default:
