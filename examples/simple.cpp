@@ -87,8 +87,8 @@ void sendMidiMessageToSomewhere( uint8_t * buf, int len ){
     }
 
     if (MidiMessage::StatusClassNoteOn == statusClass || MidiMessage::StatusClassNoteOff == statusClass) {
-        std::cout << "key " << (int)MidiMessage::getData(buf[1]) << std::endl;
-        std::cout << "velocity " << (int)MidiMessage::getData(buf[2]) << std::endl;
+        std::cout << "key " << (int)buf[1] << std::endl;
+        std::cout << "velocity " << (int)buf[2] << std::endl;
     }
 
     std::cout << std::endl;
