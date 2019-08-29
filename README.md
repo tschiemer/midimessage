@@ -217,8 +217,6 @@ Examples:
 - https://www.midi.org/specifications-old/category/reference-tables
 - http://www.personal.kent.edu/~sbirch/Music_Production/MP-II/MIDI/an_introduction_to_midi_contents.htm
 - http://www.somascape.org/midi/tech/spec.html
-- http://www.indiana.edu/~emusic/etext/MIDI/chapter3_MIDI6.shtml (standard CC)
-- http://www.nortonmusic.com/midi_cc.html (standard CC)
 
 
 ## License MIT
