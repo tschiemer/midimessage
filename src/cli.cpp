@@ -96,8 +96,8 @@ void printHelp( void ) {
     printf("\t song-select <songNumber>\n");
 
     printf("\nSystem Exclusives*:\n");
-    printf("\t sysex experimental <n (u7)> <data-of-length-n (xN)>\n");
-    printf("\t sysex manufacturer <manufacturer-id (x1, x3)> <n (u7)> <data-of-length-n (xN)>\n");
+    printf("\t sysex experimental <data (xN)>\n");
+    printf("\t sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>\n");
     printf("\t sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number>\n");
     printf("\t sysex nonrt <device-id (u7)> info request\n");
     printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
@@ -108,6 +108,10 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u24)> <event-name (s) ..>\n");
     printf("\t sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
     printf("\t sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>\n");
+    printf("\t sysex rt <device-id (u7)> cueing special (system-stop|<(u14)>)\n");
+    printf("\t sysex rt <device-id (u7)> cueing (punch-in|punch-out) <event-number (u24)>\n");
+    printf("\t sysex rt <device-id (u7)> cueing (event-start|event-stop|cue-point) <event-number (u24)> [<event-name (s) ..>]\n");
+    printf("\t sysex rt <device-id (u7)> cueing event-name <event-number (u24)> <event-name (s) ..>\n");
     printf("*<device-id> := 127 is broadcast\n");
 
 
@@ -510,32 +514,40 @@ void generate(uint8_t argc, char * argv[]){
 
 
         if (strcmp(argv[1], "experimental") == 0) {
-            if (argc < 3 || argc > 4){
+            if (argc < 2 || argc > 3){
                 return;
             }
 
             msg.Data.SysEx.Id = SysExIdExperimental;
-            if (argc < 4) {
+            if (argc < 3) {
                 msg.Data.SysEx.Length = 0;
             } else {
-                int len = atoi(argv[2]);
-                if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t*)argv[3], len)){
+                int len = strlen(argv[2]);
+                if (len % 2 != 0){
+                    return;
+                }
+                len >>= 1;
+                if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t*)argv[2], len)){
                     return;
                 }
                 msg.Data.SysEx.Length = len;
             }
         }
         else if (strcmp(argv[1], "manufacturer") == 0) {
-            if (argc < 4 || argc > 5){
+            if (argc < 3 || argc > 4){
                 return;
             }
             msg.Data.SysEx.Id = std::strtol(argv[2], NULL, 16);
 
-            if (argc < 5) {
+            if (argc < 4) {
                 msg.Data.SysEx.Length = 0;
             } else {
-                int len = atoi(argv[3]);
-                if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t*)argv[4], len)){
+                int len = strlen(argv[3]);
+                if (len % 2 != 0){
+                    return;
+                }
+                len >>= 1;
+                if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t*)argv[3], len)){
                     return;
                 }
                 msg.Data.SysEx.Length = len;
@@ -946,7 +958,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             printf("sysex ");
 
             if (msg.Data.SysEx.Id == SysExIdExperimental){
-                printf("experimental %d ", msg.Data.SysEx.Length);
+                printf("experimental ");
                 for(uint8_t i = 0; i < msg.Data.SysEx.Length; i++){
                     printf("%02X", msg.Data.SysEx.ByteData[i]);
                 }
@@ -954,7 +966,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
             }
 
             if (isSysExManufacturerId(msg.Data.SysEx.Id)){
-                printf("manufacturer %06X %d ", msg.Data.SysEx.Id, msg.Data.SysEx.Length);
+                printf("manufacturer %06X ", msg.Data.SysEx.Id);
                 for(uint8_t i = 0; i < msg.Data.SysEx.Length; i++){
                     printf("%02X", msg.Data.SysEx.ByteData[i]);
                 }
