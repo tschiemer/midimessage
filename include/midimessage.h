@@ -285,22 +285,24 @@ namespace MidiMessage {
     const uint8_t MsgLenSongPositionPointer             = 3;
     const uint8_t MsgLenSongSelect                      = 2;
 
-    const uint8_t MsgLenSysExNonRtGeneralHandshaking    = 6;
-    const uint8_t MsgLenSysExNonRtGeneralMidi           = 6;
+    const uint8_t MsgLenSysExNonRtGeneralHandshaking        = 6;
+    const uint8_t MsgLenSysExNonRtGeneralMidi               = 6;
     const uint8_t MsgLenSysExNonRtMtcCueingSetupMessageMin  = 13;
-    const uint8_t MsgLenSysExNonRtGenInfoIdentityRequest = 6;
-    const uint8_t MsgLenSysExNonRtGenInfoIdentityReply = 15;
-    const uint8_t MsgLenSysExNonRtDeviceControl = 8;
+    const uint8_t MsgLenSysExNonRtGenInfoIdentityRequest    = 6;
+    const uint8_t MsgLenSysExNonRtGenInfoIdentityReply      = 15;
+    const uint8_t MsgLenSysExNonRtDeviceControl             = 8;
 
-    const uint8_t MsgLenSysExRtMtcFullMessage    = 10;
-    const uint8_t MsgLenSysExRtMtcUserBits       = 15;
-    const uint8_t MsgLenSysExRtMtcCueingSetupMessageMin  = 8;
-    const uint8_t MsgLenSysExRtMmcCommandWithoutInfo = 6;
+    const uint8_t MsgLenSysExRtMtcFullMessage               = 10;
+    const uint8_t MsgLenSysExRtMtcUserBits                  = 15;
+    const uint8_t MsgLenSysExRtMtcCueingSetupMessageMin     = 8;
+    const uint8_t MsgLenSysExRtMmcCommandWithoutInfo        = 6;
 
-    const uint8_t MsgLenSysExNonRtSampleDumpHeader = 21;
-    const uint8_t MsgLenSysExNonRtSampleDumpRequest = 7;
-    const uint8_t MsgLenSysExNonRtSdsHeader             = 34;
+    const uint8_t MsgLenSysExNonRtSampleDumpHeader          = 21;
+    const uint8_t MsgLenSysExNonRtSampleDumpRequest         = 7;
+    const uint8_t MsgLenSysExNonRtSdsHeader                 = 34;
     const uint8_t MsgLenSysExNonRtSdsExtendedLoopPointTransmission = 25;
+    const uint8_t MsgLenSysExNonRtSdsLoopPointRequest       = 10;
+    const uint8_t MsgLenSysExNonRtSdsSampleNameRequest      = 8;
 
 
     typedef enum {

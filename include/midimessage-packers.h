@@ -2568,9 +2568,114 @@ namespace MidiMessage {
         ASSERT(sampleNumber <= MaxU14);
         ASSERT(loopNumber <= MaxU14);
 
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpExtension;
+        bytes[4] = SysExNonRtSdsLoopPointsRequest;
 
+        packU14( &bytes[5], sampleNumber );
+        packU14( &bytes[7], loopNumber );
+
+        bytes[9] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSdsLoopPointRequest;
     }
 
+    inline uint8_t packSysExNonRtSdsLoopPointRequest(uint8_t *bytes, Message_t *msg){
+        ASSERT(msg != NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsLoopPointsRequest);
+
+        return packSysExNonRtSdsLoopPointRequest( bytes, msg->Channel, msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.SampleNumber, msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.LoopNumber);
+    }
+
+
+    inline uint8_t packSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t languageTagLength, uint8_t * languageTag, uint8_t nameLength, uint8_t *name){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId<=MaxU7);
+        ASSERT(sampleNumber <= MaxU14);
+        ASSERT(languageTagLength <= MaxU7);
+        ASSERT( languageTagLength == 0 || languageTag != NULL);
+        ASSERT(nameLength <= MaxU7);
+        ASSERT(nameLength == 0 || name != NULL);
+
+        uint8_t length = 7;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpExtension;
+        bytes[4] = SysExNonRtSdsSampleNameTransmission;
+
+        packU14( &bytes[5], sampleNumber );
+
+        bytes[6] = languageTagLength;
+
+        for(uint8_t i = 0; i < languageTagLength; i++){
+            bytes[length++] = languageTag[i];
+        }
+
+        bytes[length++] = nameLength;
+
+        for(uint8_t i = 0; i < nameLength; i++){
+            bytes[length++] = name[i];
+        }
+
+        bytes[length++] = SystemMessageEndOfExclusive;
+
+        return length;
+    }
+
+    inline uint8_t packSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t deviceId, SampleDumpExtNameTransmissionData_t * data){
+        ASSERT(data!=NULL);
+
+        return packSysExNonRtSdsSampleNameTransmission(bytes, deviceId, data->SampleNumber, data->LanguageTagLength, data->LanguageTag, data->NameLength, data->Name);
+    }
+
+    inline uint8_t packSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, Message_t *msg){
+        ASSERT( msg != NULL);
+        ASSERT( msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameTransmission);
+
+        return packSysExNonRtSdsSampleNameTransmission(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.NameTransmission);
+    }
+
+
+    inline uint8_t packSysExNonRtSdsSampleNameRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber){
+        ASSERT( bytes != NULL);
+        ASSERT(deviceId <= MaxU7);
+        ASSERT(sampleNumber <= MaxU14);
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpExtension;
+        bytes[4] = SysExNonRtSdsSampleNameRequest;
+
+        packU14( &bytes[5], sampleNumber );
+
+        bytes[7] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSdsSampleNameRequest;
+    }
+
+    inline uint8_t packSysExNonRtSdsSampleNameRequest(uint8_t *bytes, Message_t *msg){
+        ASSERT(msg != NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameRequest);
+
+        return packSysExNonRtSdsSampleNameRequest( bytes, msg->Channel, msg->Data.SysEx.Data.SampleDumpExt.NameRequest.SampleNumber);
+    }
 
     inline uint8_t packSysExNonRtSds(uint8_t *bytes, Message_t *msg){
         ASSERT( msg != NULL );
@@ -2584,11 +2689,13 @@ namespace MidiMessage {
                 return packSysExNonRtSdsLoopPointTransmission( bytes, msg);
 
             case SysExNonRtSdsSampleNameRequest:
-                break;
+                return packSysExNonRtSdsLoopPointRequest(bytes, msg);
+
             case SysExNonRtSdsExtendedLoopPointsTransmission:
-                break;
+                return packSysExNonRtSdsSampleNameTransmission(bytes, msg);
+
             case SysExNonRtSdsExtendedLoopPointsRequest:
-                break;
+                return packSysExNonRtSdsSampleNameRequest(bytes, msg);
 
         }
 
