@@ -397,10 +397,10 @@ namespace MidiMessage {
     inline uint8_t packPitchBendChange(uint8_t *bytes, uint8_t channel, uint16_t pitch) {
         ASSERT(bytes != NULL);
         ASSERT((channel & ChannelMask) == channel);
-        ASSERT(pitch <= MaxDoubleValue);
+        ASSERT(pitch <= MaxU14);
 
         bytes[0] = StatusClassPitchBendChange | (channel & ChannelMask);
-        packDoubleValue(&bytes[1], pitch);
+        packU14(&bytes[1], pitch);
 
         return MsgLenPitchBendChange;
     }
@@ -427,7 +427,7 @@ namespace MidiMessage {
         }
 
         *channel = bytes[0] & ChannelMask;
-        *pitch = unpackDoubleValue(&bytes[1]);
+        *pitch = unpackU14(&bytes[1]);
 
         return true;
     }
@@ -758,10 +758,10 @@ namespace MidiMessage {
 
     inline uint8_t packSongPositionPointer(uint8_t *bytes, uint16_t position) {
         ASSERT(bytes != NULL);
-        ASSERT(position <= MaxDoubleValue);
+        ASSERT(position <= MaxU14);
 
         bytes[0] = SystemMessageSongPositionPointer;
-        packDoubleValue(&bytes[1], position);
+        packU14(&bytes[1], position);
 
         return MsgLenSongPositionPointer;
     }
@@ -783,7 +783,7 @@ namespace MidiMessage {
             return false;
         }
 
-        *position = unpackDoubleValue(&bytes[1]);
+        *position = unpackU14(&bytes[1]);
 
         return true;
     }
@@ -1267,7 +1267,7 @@ namespace MidiMessage {
             bytes[9] = fractionalFrame & MtcFractionalFrameMask;
         }
 
-        packDoubleValue(&bytes[10], eventNumber);
+        packU14(&bytes[10], eventNumber);
 
         if (isSysExNonRtMtcWithAddInfo(msgType)) {
             msgLen += nibblize(&bytes[12], addInfo, addInfoLen);
@@ -1333,7 +1333,7 @@ namespace MidiMessage {
         *frame = bytes[8] & MtcFrameMask;
         *fractionalFrame = bytes[9] & MtcFractionalFrameMask;
 
-        *eventNumber = unpackDoubleValue(&bytes[10]);
+        *eventNumber = unpackU14(&bytes[10]);
 
         if (len > MsgLenSysExNonRtMtcCueingSetupMessageMin) {
             *addInfoLen = denibblize(addInfo, &bytes[12], len - MsgLenSysExNonRtMtcCueingSetupMessageMin);
@@ -1388,7 +1388,7 @@ namespace MidiMessage {
         bytes[3] = SysExRtMidiTimeCodeCueing;
         bytes[4] = msgType;
 
-        packDoubleValue(&bytes[5], eventNumber);
+        packU14(&bytes[5], eventNumber);
 
         if (isSysExRtMtcCueingWithAddInfo(msgType)) {
             len += nibblize(&bytes[7], addInfo, addInfoLen);
@@ -1426,7 +1426,7 @@ namespace MidiMessage {
         *deviceId = bytes[2] & DataMask;
         *msgType = bytes[4];
 
-        *eventNumber = unpackDoubleValue(&bytes[5]);
+        *eventNumber = unpackU14(&bytes[5]);
 
         if (isSysExRtMtcCueingWithAddInfo(bytes[4])) {
             *addInfoLen = denibblize(addInfo, &bytes[7], len - MsgLenSysExRtMtcCueingSetupMessageMin);
@@ -1469,8 +1469,8 @@ namespace MidiMessage {
                                                        uint8_t *softwareRevision) {
         ASSERT(bytes != NULL);
         ASSERT(deviceId <= MaxValue);
-        ASSERT(deviceFamily <= MaxDoubleValue);
-        ASSERT(deviceFamilyMember <= MaxDoubleValue);
+        ASSERT(deviceFamily <= MaxU14);
+        ASSERT(deviceFamilyMember <= MaxU14);
 
         uint32_t len = 5;
 
@@ -1482,10 +1482,10 @@ namespace MidiMessage {
 
         len += packSysExId(&bytes[5], manufacturerId);
 
-        packDoubleValue(&bytes[len], deviceFamily);
+        packU14(&bytes[len], deviceFamily);
         len += 2;
 
-        packDoubleValue(&bytes[len], deviceFamilyMember);
+        packU14(&bytes[len], deviceFamilyMember);
         len += 2;
 
         bytes[len++] = softwareRevision[0];
@@ -1576,10 +1576,10 @@ namespace MidiMessage {
 
         l += unpackSysExId(&bytes[5], manufacturerId);
 
-        *deviceFamily = unpackDoubleValue(&bytes[l]);
+        *deviceFamily = unpackU14(&bytes[l]);
         l += 2;
 
-        *deviceFamilyMember = unpackDoubleValue(&bytes[l]);
+        *deviceFamilyMember = unpackU14(&bytes[l]);
         l += 2;
 
         softwareRevision[0] = bytes[l++];
@@ -1637,9 +1637,9 @@ namespace MidiMessage {
     inline uint8_t packSysExRtDcBasic(uint8_t *bytes, uint8_t deviceId, SysExRtDc_t type, uint16_t value) {
         ASSERT(bytes != NULL);
         ASSERT(isSysExRtDeviceControl(type) && type != SysExRtDcGlobalParameterControl);
-        ASSERT(type != SysExRtDcMasterVolume || value <= MaxDoubleValue);
-        ASSERT(type != SysExRtDcMasterBalance || value <= MaxDoubleValue);
-        ASSERT(type != SysExRtDcMasterCoarseTuning || value <= CoarseTuningMax); // MaxDoubleValue
+        ASSERT(type != SysExRtDcMasterVolume || value <= MaxU14);
+        ASSERT(type != SysExRtDcMasterBalance || value <= MaxU14);
+        ASSERT(type != SysExRtDcMasterCoarseTuning || value <= CoarseTuningMax); // MaxU14
         ASSERT(type != SysExRtDcMasterFineTuning || value <= FineTuningMax);
 
         bytes[0] = SystemMessageSystemExclusive;
@@ -1648,7 +1648,7 @@ namespace MidiMessage {
         bytes[3] = SysExRtDeviceControl;
         bytes[4] = type;
 
-        packDoubleValue(&bytes[5], value);
+        packU14(&bytes[5], value);
 
         bytes[7] = SystemMessageEndOfExclusive;
 
@@ -1734,7 +1734,7 @@ namespace MidiMessage {
         *deviceId = bytes[2];
         *type = bytes[4];
 
-        *value = unpackDoubleValue(&bytes[5]);
+        *value = unpackU14(&bytes[5]);
 
         return true;
     }
@@ -1946,9 +1946,9 @@ namespace MidiMessage {
                 break;
 
             case SysExRtMscCmdSet:
-                packDoubleValue( &bytes[len], msc->Controller );
+                packU14( &bytes[len], msc->Controller );
                 len += 2;
-                packDoubleValue( &bytes[len], msc->Value );
+                packU14( &bytes[len], msc->Value );
                 len += 2;
                 len += packMidiTimeCodeLong( &bytes[len], &msc->MidiTimeCode );
                 break;
@@ -1983,9 +1983,9 @@ namespace MidiMessage {
 
             case SysExRtMscCmdStandby:
             case SysExRtMscCmdGo2Pc:
-                packDoubleValue( &bytes[len], msc->Checksum );
+                packU14( &bytes[len], msc->Checksum );
                 len += 2;
-                packDoubleValue( &bytes[len], msc->SequenceNumber );
+                packU14( &bytes[len], msc->SequenceNumber );
                 len += 2;
                 bytes[len++] = msc->Data[0];
                 bytes[len++] = msc->Data[1];
@@ -1995,9 +1995,9 @@ namespace MidiMessage {
                 break;
 
             case SysExRtMscCmdStandingBy:
-                packDoubleValue( &bytes[len], msc->Checksum );
+                packU14( &bytes[len], msc->Checksum );
                 len += 2;
-                packDoubleValue( &bytes[len], msc->SequenceNumber );
+                packU14( &bytes[len], msc->SequenceNumber );
                 len += 2;
                 len += packMidiTimeCodeLong( &bytes[len], &msc->MidiTimeCode );
                 len += packMscCueNumber( &bytes[len], msc->CueNumber.Number, msc->CueNumber.List, msc->CueNumber.Path );
@@ -2005,19 +2005,19 @@ namespace MidiMessage {
 
             case SysExRtMscCmdComplete:
             case SysExRtMscCmdCancel:
-                packDoubleValue( &bytes[len], msc->Checksum );
+                packU14( &bytes[len], msc->Checksum );
                 len += 2;
-                packDoubleValue( &bytes[len], msc->SequenceNumber );
+                packU14( &bytes[len], msc->SequenceNumber );
                 len += 2;
                 len += packMscCueNumber( &bytes[len], msc->CueNumber.Number, msc->CueNumber.List, msc->CueNumber.Path );
                 break;
 
             case SysExRtMscCmdCancelled:
             case SysExRtMscCmdAbort:
-                packDoubleValue( &bytes[len], msc->Checksum );
+                packU14( &bytes[len], msc->Checksum );
                 len += 2;
                 len += packSysExRtMscStatus( &bytes[len], msc->Status );
-                packDoubleValue( &bytes[len], msc->SequenceNumber );
+                packU14( &bytes[len], msc->SequenceNumber );
                 len += 2;
                 len += packMscCueNumber( &bytes[len], msc->CueNumber.Number, msc->CueNumber.List, msc->CueNumber.Path );
                 break;
@@ -2099,9 +2099,9 @@ namespace MidiMessage {
                 break;
 
             case SysExRtMscCmdSet:
-                msc->Controller = unpackDoubleValue( &bytes[pos] );
+                msc->Controller = unpackU14( &bytes[pos] );
                 pos += 2;
-                msc->Value = unpackDoubleValue( &bytes[pos] );
+                msc->Value = unpackU14( &bytes[pos] );
                 pos += 2;
                 pos += unpackMidiTimeCodeLong( &bytes[pos], &msc->MidiTimeCode );
                 break;
@@ -2136,9 +2136,9 @@ namespace MidiMessage {
 
             case SysExRtMscCmdStandby:
             case SysExRtMscCmdGo2Pc:
-                msc->Checksum = unpackDoubleValue( &bytes[pos] );
+                msc->Checksum = unpackU14( &bytes[pos] );
                 pos += 2;
-                msc->SequenceNumber = unpackDoubleValue( &bytes[pos] );
+                msc->SequenceNumber = unpackU14( &bytes[pos] );
                 pos += 2;
                 msc->Data[0] = bytes[pos++];
                 msc->Data[1] = bytes[pos++];
@@ -2148,9 +2148,9 @@ namespace MidiMessage {
                 break;
 
             case SysExRtMscCmdStandingBy:
-                msc->Checksum = unpackDoubleValue( &bytes[pos] );
+                msc->Checksum = unpackU14( &bytes[pos] );
                 pos += 2;
-                msc->SequenceNumber = unpackDoubleValue( &bytes[pos]);
+                msc->SequenceNumber = unpackU14( &bytes[pos]);
                 pos += 2;
                 pos += unpackMidiTimeCodeLong( &bytes[pos], &msc->MidiTimeCode );
                 pos += unpackMscCueNumber( &bytes[pos], len - pos, &msc->CueNumber.Number, &msc->CueNumber.List, &msc->CueNumber.Path );
@@ -2158,19 +2158,19 @@ namespace MidiMessage {
 
             case SysExRtMscCmdComplete:
             case SysExRtMscCmdCancel:
-                msc->Checksum = unpackDoubleValue( &bytes[pos]);
+                msc->Checksum = unpackU14( &bytes[pos]);
                 pos += 2;
-                msc->SequenceNumber = unpackDoubleValue( &bytes[pos]);
+                msc->SequenceNumber = unpackU14( &bytes[pos]);
                 pos += 2;
                 pos += unpackMscCueNumber( &bytes[pos], len - pos, &msc->CueNumber.Number, &msc->CueNumber.List, &msc->CueNumber.Path );
                 break;
 
             case SysExRtMscCmdCancelled:
             case SysExRtMscCmdAbort:
-                msc->Checksum = unpackDoubleValue( &bytes[pos]);
+                msc->Checksum = unpackU14( &bytes[pos]);
                 pos += 2;
                 pos += unpackSysExRtMscStatus( &bytes[pos], &msc->Status );
-                msc->SequenceNumber = unpackDoubleValue( &bytes[pos]);
+                msc->SequenceNumber = unpackU14( &bytes[pos]);
                 pos += 2;
                 pos += unpackMscCueNumber( &bytes[len], len - pos, &msc->CueNumber.Number, &msc->CueNumber.List, &msc->CueNumber.Path );
                 break;
@@ -2207,12 +2207,12 @@ namespace MidiMessage {
 
         ASSERT( bytes!= NULL );
         ASSERT( deviceId <= MaxValue );
-        ASSERT( sampleNumber <= MaxDoubleValue );
+        ASSERT( sampleNumber <= MaxU14 );
         ASSERT( sampleFormat <= MaxValue );
-        ASSERT( samplePeriod <= MaxTripleValue );
-        ASSERT( sampleLength <= MaxTripleValue );
-        ASSERT( loopEndPoint <= MaxTripleValue );
-        ASSERT( loopStartPoint <= MaxTripleValue );
+        ASSERT( samplePeriod <= MaxU21 );
+        ASSERT( sampleLength <= MaxU21 );
+        ASSERT( loopEndPoint <= MaxU21 );
+        ASSERT( loopStartPoint <= MaxU21 );
         ASSERT( isSampleDumpLoopType(loopType) );
 
 
@@ -2221,14 +2221,14 @@ namespace MidiMessage {
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpHeader;
 
-        packDoubleValue( &bytes[4], sampleNumber );
+        packU14( &bytes[4], sampleNumber );
 
         bytes[6] = sampleFormat;
 
-        packTripleValue( &bytes[7], samplePeriod );
-        packTripleValue( &bytes[10], sampleLength );
-        packTripleValue( &bytes[13], loopStartPoint );
-        packTripleValue( &bytes[16], loopEndPoint );
+        packU21( &bytes[7], samplePeriod );
+        packU21( &bytes[10], sampleLength );
+        packU21( &bytes[13], loopStartPoint );
+        packU21( &bytes[16], loopEndPoint );
 
         bytes[19] = (uint8_t)loopType;
 
@@ -2272,14 +2272,14 @@ namespace MidiMessage {
 
         *deviceId = bytes[2];
 
-        *sampleNumber = unpackDoubleValue( &bytes[4] );
+        *sampleNumber = unpackU14( &bytes[4] );
 
         *sampleFormat = bytes[6];
 
-        *samplePeriod = unpackTripleValue( &bytes[7] );
-        *sampleLength = unpackTripleValue( &bytes[10] );
-        *loopStartPoint = unpackTripleValue( &bytes[13] );
-        *loopEndPoint  = unpackTripleValue( &bytes[16]);
+        *samplePeriod = unpackU21( &bytes[7] );
+        *sampleLength = unpackU21( &bytes[10] );
+        *loopStartPoint = unpackU21( &bytes[13] );
+        *loopEndPoint  = unpackU21( &bytes[16]);
 
         *loopType  = bytes[19];
 
@@ -2408,14 +2408,14 @@ namespace MidiMessage {
 
         ASSERT( bytes!= NULL );
         ASSERT( deviceId <= MaxValue );
-        ASSERT( requestedSample <= MaxDoubleValue );
+        ASSERT( requestedSample <= MaxU14 );
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTimeByte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpRequest;
 
-        packDoubleValue( &bytes[4], requestedSample );
+        packU14( &bytes[4], requestedSample );
 
         bytes[6] = SystemMessageEndOfExclusive;
 
@@ -2443,7 +2443,7 @@ namespace MidiMessage {
         }
 
         *deviceId = bytes[2];
-        *requestedSample = unpackDoubleValue( &bytes[4] );
+        *requestedSample = unpackU14( &bytes[4] );
 
         return true;
     }
@@ -2473,16 +2473,16 @@ namespace MidiMessage {
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsExtendedDumpHeader;
 
-        packDoubleValue( &bytes[5], header->SampleNumber);
+        packU14( &bytes[5], header->SampleNumber);
 
         bytes[7] = header->SampleFormat;
 
-        packQuadripleValue( &bytes[8], header->SampleRateIntegerPortion );
-        packQuadripleValue( &bytes[12], header->SampleRateFractionalPortion );
+        packU28( &bytes[8], header->SampleRateIntegerPortion );
+        packU28( &bytes[12], header->SampleRateFractionalPortion );
 
-        packQuintupleValue( &bytes[16], header->SampleLength );
-        packQuintupleValue( &bytes[21], header->SustainLoopStart );
-        packQuintupleValue( &bytes[26], header->SustainLoopEnd );
+        packU35( &bytes[16], header->SampleLength );
+        packU35( &bytes[21], header->SustainLoopStart );
+        packU35( &bytes[26], header->SustainLoopEnd );
 
         bytes[31] = header->LoopType;
         bytes[32] = header->NumberofChannels;
@@ -2514,13 +2514,13 @@ namespace MidiMessage {
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsExtendedLoopPointsTransmission;
 
-        packDoubleValue( &bytes[5], data->SampleNumber );
-        packDoubleValue( &bytes[7], data->LoopNumber );
+        packU14( &bytes[5], data->SampleNumber );
+        packU14( &bytes[7], data->LoopNumber );
 
         bytes[9] = data->LoopType;
 
-        packQuintupleValue( &bytes[14], data->LoopStartAddress);
-        packQuintupleValue( &bytes[19], data->LoopEndAddress);
+        packU35( &bytes[14], data->LoopStartAddress);
+        packU35( &bytes[19], data->LoopEndAddress);
 
         bytes[24] = SystemMessageEndOfExclusive;
 
@@ -2541,8 +2541,8 @@ namespace MidiMessage {
     inline uint8_t packSysExNonRtSdsLoopPointRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint16_t loopNumber){
         ASSERT( bytes != NULL);
         ASSERT(deviceId <= MaxValue);
-        ASSERT(sampleNumber <= MaxDoubleValue);
-        ASSERT(loopNumber <= MaxDoubleValue);
+        ASSERT(sampleNumber <= MaxU14);
+        ASSERT(loopNumber <= MaxU14);
 
     }
 

@@ -66,13 +66,13 @@ namespace MidiMessage {
     /**
      * Double-data-byte max value
      */
-    const uint16_t MaxDoubleValue   = 0x3FFF;
+    const uint16_t MaxU14   = 0x3FFF;
 
-    const uint32_t MaxTripleValue  = 0x001FFFFF;
+    const uint32_t MaxU21  = 0x001FFFFF;
 
-    const uint32_t MaxQuadripleValue = 0x0FFFFFFF;
+    const uint32_t MaxU28 = 0x0FFFFFFF;
 
-    const uint64_t MaxQuintupleValue = 0x7FFFFFFFF;
+    const uint64_t MaxU35 = 0x7FFFFFFFF;
 
     /**
      * Is it a data byte?
@@ -88,25 +88,25 @@ namespace MidiMessage {
         return byte & DataMask;
     }
 
-    inline void packDoubleValue( uint8_t * bytes, uint16_t value ) {
+    inline void packU14( uint8_t * bytes, uint16_t value ) {
         bytes[0] = value & DataMask;
         bytes[1] = (value >> 7) & DataMask;
     }
 
-    inline uint16_t unpackDoubleValue( uint8_t * bytes ){
+    inline uint16_t unpackU14( uint8_t * bytes ){
         ASSERT( bytes[0] <= MaxValue );
         ASSERT( bytes[1] <= MaxValue );
 
         return (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
     }
 
-    inline void packTripleValue( uint8_t * bytes, uint32_t value ) {
+    inline void packU21( uint8_t * bytes, uint32_t value ) {
         bytes[0] = value & DataMask;
         bytes[1] = (value >> 7) & DataMask;
         bytes[2] = (value >> 14) & DataMask;
     }
 
-    inline uint32_t unpackTripleValue( uint8_t * bytes ){
+    inline uint32_t unpackU21( uint8_t * bytes ){
         ASSERT( bytes[0] <= MaxValue );
         ASSERT( bytes[1] <= MaxValue );
         ASSERT( bytes[2] <= MaxValue );
@@ -114,14 +114,14 @@ namespace MidiMessage {
         return (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
     }
 
-    inline void packQuadripleValue( uint8_t * bytes, uint32_t value ){
+    inline void packU28( uint8_t * bytes, uint32_t value ){
         bytes[0] = value & DataMask;
         bytes[1] = (value >> 7) & DataMask;
         bytes[2] = (value >> 14) & DataMask;
         bytes[3] = (value >> 21) & DataMask;
     }
 
-    inline uint32_t unpackQuadripleValue( uint8_t * bytes ){
+    inline uint32_t unpackU28( uint8_t * bytes ){
         ASSERT( bytes[0] <= MaxValue );
         ASSERT( bytes[1] <= MaxValue );
         ASSERT( bytes[2] <= MaxValue );
@@ -130,7 +130,7 @@ namespace MidiMessage {
         return (((uint32_t)bytes[3]) << 21) | (((uint32_t)bytes[2]) << 14) | (((uint32_t)bytes[1]) << 7) | ((uint32_t)bytes[0]);
     }
 
-    inline void packQuintupleValue( uint8_t * bytes, uint64_t value ){
+    inline void packU35( uint8_t * bytes, uint64_t value ){
         bytes[0] = value & DataMask;
         bytes[1] = (value >> 7) & DataMask;
         bytes[2] = (value >> 14) & DataMask;
@@ -138,7 +138,7 @@ namespace MidiMessage {
         bytes[4] = (value >> 28) & DataMask;
     }
 
-    inline uint64_t unpackQuintupleValue( uint8_t * bytes ){
+    inline uint64_t unpackU35( uint8_t * bytes ){
         ASSERT( bytes[0] <= MaxValue );
         ASSERT( bytes[1] <= MaxValue );
         ASSERT( bytes[2] <= MaxValue );
@@ -248,7 +248,7 @@ namespace MidiMessage {
 
     /**
      * Pitch center of Pitch Bend Message
-     * @see MaxDoubleValue
+     * @see MaxU14
      * @see packPitchBendChange()
      * @see unpackPitchBendChange()
      */
