@@ -161,7 +161,7 @@ namespace MidiMessage {
                         return packSysExNonRtSampleDumpHeader( bytes, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        return packSysExNonRtSampleDumpData( bytes, msg );
+                        return packSysExNonRtSampleDataPacket( bytes, msg );
 
                     case SysExNonRtSampleDumpRequest:
                         return packSysExNonRtSampleDumpRequest( bytes, msg );
@@ -392,7 +392,7 @@ namespace MidiMessage {
                         return unpackSysExNonRtSampleDumpHeader( bytes, length, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        return unpackSysExNonRtSampleDumpData( bytes, length, msg );
+                        return unpackSysExNonRtSampleDataPacket( bytes, length, msg );
 
                     case SysExNonRtSampleDumpRequest:
                         return unpackSysExNonRtSampleDumpRequest( bytes, length, msg );
@@ -401,8 +401,7 @@ namespace MidiMessage {
                         return unpackSysExNonRtMtcCueingSetupMessage( bytes, length, msg );
 
                     case SysExNonRtSampleDumpExtension:
-                        //TODO
-                        return false;
+                        return unpackSysExNonRtSds( bytes, length, msg);
 
                     case SysExNonRtGeneralInformation:
                         return unpackSysExNonRtGeneralInformation( bytes, length, msg );

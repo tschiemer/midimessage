@@ -299,6 +299,7 @@ namespace MidiMessage {
     const uint8_t MsgLenSysExRtMmcCommandWithoutInfo        = 6;
 
     const uint8_t MsgLenSysExNonRtSampleDumpHeader          = 21;
+    const uint8_t MsgLenSysExNonRtSampleDataPacketMin       = 7;
     const uint8_t MsgLenSysExNonRtSampleDumpRequest         = 7;
     const uint8_t MsgLenSysExNonRtSdsHeader                 = 34;
     const uint8_t MsgLenSysExNonRtSdsExtendedLoopPointTransmission = 25;
@@ -1583,7 +1584,8 @@ namespace MidiMessage {
         uint8_t RunningPacketCount;
         uint8_t Length;
         uint8_t * Data;
-        uint8_t Checksum; // XOR of complete message to end of payload
+        uint8_t ChecksumData; // XOR of complete message to end of payload
+        uint8_t ChecksumComputed;
     } SampleDumpDataPacket_t;
 
     inline uint8_t xorChecksum( uint8_t * bytes, uint8_t length ){
@@ -1700,7 +1702,7 @@ namespace MidiMessage {
                     union {
                         SampleDumpHeaderData_t Header;
                         SampleDumpRequestData_t Request;
-                        SampleDumpDataPacket_t Data;
+                        SampleDumpDataPacket_t DataPacket;
                     } SampleDump;
 
                     union {
