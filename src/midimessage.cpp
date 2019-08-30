@@ -115,7 +115,7 @@ namespace MidiMessage {
                         return packSysExRtMidiTimeCode(bytes, msg);
 
                     case SysExRtMidiShowControl:
-//                        return packSysExRtMidiShowControl( bytes, msg );
+                        return packSysExRtMidiShowControl( bytes, msg );
 
                     case SysExRtDeviceControl:
                         return packSysExRtDeviceControl( bytes, msg );

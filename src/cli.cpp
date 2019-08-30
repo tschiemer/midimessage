@@ -20,6 +20,9 @@
 using namespace std;
 using namespace MidiMessage;
 
+
+///////// Defines
+
 typedef enum {
     ModeUndefined   = 0,
     ModeParse       = 1,
@@ -30,25 +33,62 @@ inline bool isValidMode( Mode_t mode ){
     return (mode == ModeParse || mode == ModeGenerate);
 }
 
-uint8_t buf[128];
-
-Message_t msg = {
-        .Data.SysEx.ByteData = buf
-};
-
 typedef enum {
     ResolutionMicro = 0,
     ResolutionMilli = 1
 } Resolution_t;
 
-Resolution_t resolution = ResolutionMicro;
-bool timed = false;
-unsigned long lastTimestamp, now;
 
+///////// Variables
+
+// Run mode
+Mode_t mode = ModeUndefined;
+
+// Message struct
+uint8_t buf[128];
+Message_t msg = {
+        .Data.SysEx.ByteData = buf
+};
+
+// Timed option
+struct {
+    bool enabled;
+    Resolution_t resolution;
+    unsigned long lastTimestamp;
+} timedOpt = {
+        .enabled = false,
+        .resolution = ResolutionMicro
+};
+
+// Option running status
 bool runningStatusEnabled = false;
 
+// Options prefix/suffix
 char prefix[32] = "";
 char suffix[32] = "";
+
+
+void generate(uint8_t argc,  char  * argv[]);
+uint8_t parse(uint8_t length, uint8_t bytes[]);
+
+
+unsigned long getNow(){
+
+    struct timespec c;
+
+    if (clock_gettime(CLOCK_REALTIME, &c) == -1) {
+        perror("error calling clock_gettime()");
+        exit(EXIT_FAILURE);
+    }
+
+    if (timedOpt.resolution == ResolutionMilli){
+        return c.tv_sec * 1000 + c.tv_nsec / 1000000;
+    }
+
+    return c.tv_sec * 1000000 + c.tv_nsec / 1000;
+}
+
+
 
 void printHelp( void ) {
     printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
@@ -123,36 +163,12 @@ void printHelp( void ) {
     printf("\t cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p\n");
 }
 
-void generateLoop(void);
-void parseLoop(void);
-void generate(uint8_t argc,  char  * argv[]);
-uint8_t parse(uint8_t length, uint8_t bytes[]);
-
-unsigned long getNow(){
-
-    struct timespec c;
-
-    if (clock_gettime(CLOCK_REALTIME, &c) == -1) {
-        perror("error calling clock_gettime()");
-        exit(1);
-    }
-
-    if (resolution == ResolutionMilli){
-        return c.tv_sec * 1000 + c.tv_nsec / 1000000;
-    }
-
-    return c.tv_sec * 1000000 + c.tv_nsec / 1000;
-}
-
-
 
 
 int main(int argc, char * argv[], char * env[]){
 
     int c;
     int digit_optind = 0;
-
-    Mode_t mode = ModeUndefined;
 
     if (argc <= 1){
         printHelp();
@@ -220,12 +236,12 @@ int main(int argc, char * argv[], char * env[]){
                 break;
 
             case 't':
-                timed = true;
+                timedOpt.enabled = true;
                 if (strlen(optarg) > 0){
                     if (strcmp(optarg, "milli") == 0){
-                        resolution = ResolutionMilli;
+                        timedOpt.resolution = ResolutionMilli;
                     } else if (strcmp(optarg, "micro") == 0) {
-                        resolution = ResolutionMicro;
+                        timedOpt.resolution = ResolutionMicro;
                     } else {
                         printf("Error: invalid time scale, either 'milli' or 'micro', %s given\n", optarg);
                         exit(EXIT_FAILURE);
@@ -275,9 +291,9 @@ int main(int argc, char * argv[], char * env[]){
     int ch;
 
     // start timer
-    if (timed){
+    if (timedOpt.enabled){
         // record timer
-        lastTimestamp = getNow();
+        timedOpt.lastTimestamp = getNow();
     }
 
     while( (ch = fgetc(stdin)) != EOF ){
@@ -317,15 +333,15 @@ int main(int argc, char * argv[], char * env[]){
                     argsCount--;
                 }
 
-                if (timed){
+                if (timedOpt.enabled){
                     unsigned long delay = std::strtoul((char*)args[0], NULL, 10);
-                    unsigned long waitUntil = lastTimestamp + delay;
+                    unsigned long waitUntil = timedOpt.lastTimestamp + delay;
                     unsigned long now;
                     do {
                         now = getNow();
                     } while( now < waitUntil );
 
-                    lastTimestamp = now;
+                    timedOpt.lastTimestamp = now;
 
                     generate( argsCount - 1 , (char**)&args[1] );
 
@@ -581,8 +597,8 @@ void generate(uint8_t argc, char * argv[]){
                         default: return;
                     }
 
-                    uint8_t hour = atoi(argv[6]);
-                    msg.Data.SysEx.Data.MidiTimeCode.FpsHour = ((fps << MtcFpsOffset) & MtcFpsMask) | (hour & MtcHourMask);
+                    msg.Data.SysEx.Data.MidiTimeCode.Fps = fps;
+                    msg.Data.SysEx.Data.MidiTimeCode.Fps = atoi(argv[6]);
                     msg.Data.SysEx.Data.MidiTimeCode.Minute = atoi(argv[7]);
                     msg.Data.SysEx.Data.MidiTimeCode.Second = atoi(argv[8]);
                     msg.Data.SysEx.Data.MidiTimeCode.Frame = atoi(argv[9]);
@@ -899,7 +915,8 @@ void generate(uint8_t argc, char * argv[]){
                         default: return;
                     }
 
-                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.FpsHour =((fps << MtcFpsOffset) & MtcFpsMask) | (atoi(argv[7]) & MtcHourMask);
+                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.Fps = fps;
+                    msg.Data.SysEx.Data.Cueing.MidiTimeCode.Hour = atoi(argv[7]);
                     msg.Data.SysEx.Data.Cueing.MidiTimeCode.Minute = atoi(argv[8]);
                     msg.Data.SysEx.Data.Cueing.MidiTimeCode.Second = atoi(argv[9]);
                     msg.Data.SysEx.Data.Cueing.MidiTimeCode.Frame = atoi(argv[10]);
@@ -972,14 +989,14 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
 
 
 
-    if (timed){
+    if (timedOpt.enabled){
 
         unsigned long now = getNow();
-        unsigned long diff = now - lastTimestamp;
+        unsigned long diff = now - timedOpt.lastTimestamp;
 
         printf("%ld ", diff);
 
-        lastTimestamp = now;
+        timedOpt.lastTimestamp = now;
     }
 
 
@@ -1066,7 +1083,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
 
                     if (msg.Data.SysEx.SubId2 == SysExRtMtcFullMessage){
                         uint8_t fps = 0;
-                        switch(getFps(msg.Data.SysEx.Data.MidiTimeCode.FpsHour)){
+                        switch(msg.Data.SysEx.Data.MidiTimeCode.Fps){
                             case MtcFrameRate24fps: fps = 24; break;
                             case MtcFrameRate25fps: fps = 25; break;
                             case MtcFrameRate29_97fps: fps = 29; break;
@@ -1075,7 +1092,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
                         printf("full-message %d%s %d %d %d %d\n",
                                fps,
                                fps == 29 ? ".97" : "",
-                               getHour(msg.Data.SysEx.Data.MidiTimeCode.FpsHour),
+                               msg.Data.SysEx.Data.MidiTimeCode.Hour,
                                msg.Data.SysEx.Data.MidiTimeCode.Minute,
                                msg.Data.SysEx.Data.MidiTimeCode.Second,
                                msg.Data.SysEx.Data.MidiTimeCode.Frame
@@ -1205,7 +1222,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
                         }
 
                         uint8_t fps = 0;
-                        switch(getFps(msg.Data.SysEx.Data.Cueing.MidiTimeCode.FpsHour)){
+                        switch(msg.Data.SysEx.Data.Cueing.MidiTimeCode.Fps){
                             case MtcFrameRate24fps: fps = 24; break;
                             case MtcFrameRate25fps: fps = 25; break;
                             case MtcFrameRate29_97fps: fps = 29; break;
@@ -1214,7 +1231,7 @@ uint8_t parse(uint8_t length, uint8_t bytes[]){
                         printf("%d%s %d %d %d %d %d %d",
                                fps,
                                fps == 29 ? ".97" : "",
-                               getHour(msg.Data.SysEx.Data.MidiTimeCode.FpsHour),
+                               msg.Data.SysEx.Data.MidiTimeCode.Hour,
                                msg.Data.SysEx.Data.Cueing.MidiTimeCode.Minute,
                                msg.Data.SysEx.Data.Cueing.MidiTimeCode.Second,
                                msg.Data.SysEx.Data.Cueing.MidiTimeCode.Frame,

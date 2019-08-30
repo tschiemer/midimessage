@@ -1137,7 +1137,7 @@ namespace MidiMessage {
         ASSERT(bytes != NULL);
         ASSERT(mtc != NULL);
 
-        return packSysExRtMtcFullMessage(bytes, deviceId, getFps(mtc->FpsHour), getHour(mtc->FpsHour), mtc->Minute,
+        return packSysExRtMtcFullMessage(bytes, deviceId, mtc->Fps, mtc->Hour, mtc->Minute,
                                        mtc->Second, mtc->Frame);
     }
 
@@ -1194,17 +1194,13 @@ namespace MidiMessage {
         ASSERT(deviceId != NULL);
         ASSERT(mtc != NULL);
 
-        MtcFrameRate_t fps = MtcFrameRate24fps;
-
-        if (!unpackSysExRtMtcFullMessage(bytes, len, deviceId, (uint8_t *) &fps, &mtc->FpsHour, &mtc->Minute,
+        if (unpackSysExRtMtcFullMessage(bytes, len, deviceId, &mtc->Fps, &mtc->Hour, &mtc->Minute,
                                        &mtc->Second, &mtc->Frame)) {
-            return false;
+            mtc->FractionalFrame = 0;
+            return true;
         }
 
-        mtc->FpsHour |= setFps(fps);
-        mtc->FractionalFrame = 0;
-
-        return true;
+        return false;
     }
 
     inline bool unpackSysExRtMtcFullMessage(uint8_t *bytes, uint8_t len, Message_t *msg) {
@@ -1395,8 +1391,8 @@ namespace MidiMessage {
                                                        uint8_t addInfoLen) {
         ASSERT( cueing != NULL );
 
-        return packSysExNonRtMtcCueingSetupMessage(bytes, msgType, deviceId, getFps(cueing->MidiTimeCode.FpsHour),
-                                                   cueing->MidiTimeCode.FpsHour & MtcHourMask, cueing->MidiTimeCode.Minute, cueing->MidiTimeCode.Second, cueing->MidiTimeCode.Frame,
+        return packSysExNonRtMtcCueingSetupMessage(bytes, msgType, deviceId, cueing->MidiTimeCode.Fps,
+                                                   cueing->MidiTimeCode.Hour, cueing->MidiTimeCode.Minute, cueing->MidiTimeCode.Second, cueing->MidiTimeCode.Frame,
                                                    cueing->MidiTimeCode.FractionalFrame, cueing->EventNumber, addInfo, addInfoLen);
     }
 
@@ -1457,16 +1453,7 @@ namespace MidiMessage {
     inline bool unpackSysExNonRtMtcCueingSetupMessage( uint8_t * bytes, uint8_t len, uint8_t * deviceId, uint8_t * msgType, MtcCueingData_t * cueing, uint8_t *addInfo, uint8_t *addInfoLen){
         ASSERT( cueing != NULL );
 
-        MtcFrameRate_t fps = MtcFrameRate24fps;
-
-        if ( unpackSysExNonRtMtcCueingSetupMessage( bytes, len, deviceId, msgType, (uint8_t*)&fps, &cueing->MidiTimeCode.FpsHour, &cueing->MidiTimeCode.Minute, &cueing->MidiTimeCode.Second, &cueing->MidiTimeCode.Frame, &cueing->MidiTimeCode.FractionalFrame, &cueing->EventNumber, addInfo, addInfoLen) ){
-
-            cueing->MidiTimeCode.FpsHour |= setFps(fps);
-
-            return true;
-        }
-
-        return false;
+        return unpackSysExNonRtMtcCueingSetupMessage( bytes, len, deviceId, msgType, &cueing->MidiTimeCode.Fps, &cueing->MidiTimeCode.Hour, &cueing->MidiTimeCode.Minute, &cueing->MidiTimeCode.Second, &cueing->MidiTimeCode.Frame, &cueing->MidiTimeCode.FractionalFrame, &cueing->EventNumber, addInfo, addInfoLen);
     }
 
     inline bool unpackSysExNonRtMtcCueingSetupMessage(uint8_t * bytes, uint8_t len, Message_t * msg ){

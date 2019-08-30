@@ -1459,17 +1459,17 @@ namespace MidiMessage {
                 fps == MtcFrameRate30fps);
     }
 
-    inline MtcFrameRate_t getFps( uint8_t fpsHour ){
-        return (MtcFrameRate_t)((fpsHour & MtcFpsMask) >> MtcFpsOffset);
+    inline uint8_t getFps( uint8_t fpsHour ){
+        return (fpsHour & MtcFpsMask) >> MtcFpsOffset;
     }
 
-    inline uint8_t setFps( MtcFrameRate_t fps ){
-        return (((uint8_t)fps) << MtcFpsOffset) & MtcFpsMask;
+    inline uint8_t setFps( uint8_t fps ){
+        return (fps << MtcFpsOffset) & MtcFpsMask;
     }
-
-    inline uint8_t getHour( uint8_t fpsHour ){
-        return fpsHour & MtcHourMask;
-    }
+//
+//    inline uint8_t getHour( uint8_t fpsHour ){
+//        return fpsHour & MtcHourMask;
+//    }
 
 
     // Structures
@@ -1487,7 +1487,8 @@ namespace MidiMessage {
 
 
     typedef struct {
-        uint8_t FpsHour;
+        uint8_t Fps;
+        uint8_t Hour;
         uint8_t Minute;
         uint8_t Second;
         uint8_t Frame;
@@ -1793,7 +1794,8 @@ namespace MidiMessage {
         mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
         mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
         mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
-        mtc->FpsHour = (nibbles[7] << 4) | (nibbles[6]);
+        mtc->Fps = (nibbles[7] >> 1);
+        mtc->Hour = ((nibbles[7] << 4) | (nibbles[6])) & MtcHourMask;
         mtc->FractionalFrame = 0;
     }
 
@@ -1811,8 +1813,8 @@ namespace MidiMessage {
             MtcQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
             MtcQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
             MtcQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
-            MtcQuarterFrameMessageTypeHourLS:      return mtc->FpsHour & 0x0F;
-            MtcQuarterFrameMessageTypeHourMS:      return (mtc->FpsHour >> 4) & 0b0111;
+            MtcQuarterFrameMessageTypeHourLS:      return mtc->Hour & 0x0F;
+            MtcQuarterFrameMessageTypeHourMS:      return ((mtc->Fps << 1)| (mtc->Hour >> 4)) & 0b0111;
             default:
                 break;
         }
@@ -1826,7 +1828,7 @@ namespace MidiMessage {
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
-        bytes[0] = mtc->FpsHour;
+        bytes[0] = (mtc->Fps << MtcFpsOffset) | mtc->Hour;
         bytes[1] = mtc->Minute;
         bytes[2] = mtc->Second;
         bytes[3] = mtc->Frame;
@@ -1838,7 +1840,8 @@ namespace MidiMessage {
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
-        mtc->FpsHour = bytes[0];
+        mtc->Fps = bytes[0] >> MtcFpsOffset;
+        mtc->Hour = bytes[0] & MtcHourMask;
         mtc->Minute = bytes[1];
         mtc->Second = bytes[2];
         mtc->Frame = bytes[3];
@@ -1850,7 +1853,7 @@ namespace MidiMessage {
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
-        bytes[0] = mtc->FpsHour;
+        bytes[0] = (mtc->Fps << MtcFpsOffset) || mtc->Hour;
         bytes[1] = mtc->Minute;
         bytes[2] = mtc->Second;
         bytes[3] = mtc->Frame;
@@ -1863,7 +1866,8 @@ namespace MidiMessage {
         ASSERT( bytes != NULL );
         ASSERT( mtc != NULL );
 
-        mtc->FpsHour = bytes[0];
+        mtc->Fps = bytes[0] >> MtcFpsOffset;
+        mtc->Hour = bytes[0] & MtcHourMask;
         mtc->Minute = bytes[1];
         mtc->Second = bytes[2];
         mtc->Frame = bytes[3];
