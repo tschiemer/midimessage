@@ -274,6 +274,8 @@ namespace MidiMessage {
     const uint16_t FineTuningMax      = 0x3FFF; // 0x7F7F
 
 
+    const uint8_t MsgLenMax                             = 127;
+
     const uint8_t MsgLenNoteOff                         = 3;
     const uint8_t MsgLenNoteOn                          = 3;
     const uint8_t MsgLenPolyphonicKeyPressure           = 3;

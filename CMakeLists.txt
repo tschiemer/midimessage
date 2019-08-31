@@ -7,7 +7,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include_directories(include)
+include_directories(
+        include
+        PRIVATE deps/c-utils/lib)
 
 set(HEADER_FILES
         include/midimessage.h
@@ -15,17 +17,20 @@ set(HEADER_FILES
         include/manufacturerids.h
         include/dlsproprietarychunkids.h
         include/commonccs.h
-        include/notes.h)
+        include/notes.h
+        include/stringifier.h)
 
 set(SOURCE_FILES
-        src/midimessage.cpp)
+        src/midimessage.cpp
+        src/stringifier.cpp
+        deps/c-utils/lib/util-hex.c)
 
 add_library(midimessage ${HEADER_FILES} ${SOURCE_FILES})
 
-add_executable(midimessage-cli src/cli.cpp deps/c-utils/lib/util-hex.c)
+add_executable(midimessage-cli src/cli.cpp )
 target_link_libraries(midimessage-cli midimessage)
 
-target_include_directories(midimessage-cli PRIVATE deps/c-utils/lib)
+#target_include_directories(midimessage-cli PRIVATE deps/c-utils/lib)
 
 message("Install path: ${CMAKE_INSTALL_PREFIX}")
 install(TARGETS midimessage midimessage-cli
