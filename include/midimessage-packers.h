@@ -2081,6 +2081,8 @@ namespace MidiMessage {
 
         bytes[len++] = SystemMessageEndOfExclusive;
 
+        ASSERT( len <= MsgLenSysExRtMmcCommandMax );
+
         return len;
     }
 
