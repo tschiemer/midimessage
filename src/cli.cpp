@@ -712,44 +712,30 @@ void generate(uint8_t argc, char * argv[]){
             msg.Channel = atoi(argv[2]);
             msg.Data.SysEx.Id = SysExIdNonRealTime;
 
-            if (strcmp(argv[3], "eof") == 0){
-                if (argc != 5){
-                    return;
+            if (argc == 5){
+                if (strcmp(argv[3], "eof") == 0){
+                    msg.Data.SysEx.SubId1 = SysExNonRtEndOfFile;
+                    msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
                 }
-                msg.Data.SysEx.SubId1 = SysExNonRtEndOfFile;
-                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
-            }
-            else if (strcmp(argv[3], "wait") == 0){
-                if (argc != 5){
-                    return;
+                else if (strcmp(argv[3], "wait") == 0){
+                    msg.Data.SysEx.SubId1 = SysExNonRtWait;
+                    msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
                 }
-                msg.Data.SysEx.SubId1 = SysExNonRtWait;
-                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
-            }
-            else if (strcmp(argv[3], "cancel") == 0){
-                if (argc != 5){
-                    return;
+                else if (strcmp(argv[3], "cancel") == 0){
+                    msg.Data.SysEx.SubId1 = SysExNonRtCancel;
+                    msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
                 }
-                msg.Data.SysEx.SubId1 = SysExNonRtCancel;
-                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
-            }
-            else if (strcmp(argv[3], "nak") == 0){
-                if (argc != 5){
-                    return;
+                else if (strcmp(argv[3], "nak") == 0){
+                    msg.Data.SysEx.SubId1 = SysExNonRtNAK;
+                    msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
                 }
-                msg.Data.SysEx.SubId1 = SysExNonRtNAK;
-                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
-            }
-            else if (strcmp(argv[3], "ack") == 0){
-                if (argc != 5){
-                    return;
+                else if (strcmp(argv[3], "ack") == 0){
+                    msg.Data.SysEx.SubId1 = SysExNonRtACK;
+                    msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
                 }
-                msg.Data.SysEx.SubId1 = SysExNonRtACK;
-                msg.Data.SysEx.Data.PacketNumber = atoi(argv[4]);
             }
 
-
-            else if (strcmp(argv[3], "info") == 0){
+            if (strcmp(argv[3], "info") == 0){
                 if (argc < 5){
                     return ;
                 }
