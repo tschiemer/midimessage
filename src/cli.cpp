@@ -106,13 +106,15 @@ void printHelp( void ) {
     printf("Fancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
     printf("\nData types:\n");
-    printf("\t u4 (data nibble) < 63 (0x0FF)\n");
-    printf("\t u7 (data byte) <= 127 (0x7F)\n");
-    printf("\t u14 (2byte integer) <= 16383 (0x3FFF)\n");
-    printf("\t u21 (3byte integer) <= 2097151 (0x1FFFFF)\n");
-    printf("\t u28 (4byte integer) <= 268435455 (0x0FFFFFFF)\n");
-    printf("\t u35 (5byte integer) <= 34359738367 (0x7FFFFFFFF)\n");
-    printf("\t sN ((max) N byte ascii string)\n");
+    printf("\t uN := N bit unsigned integer)\n");
+    printf("\t\t u4 (data nibble) < 63 (0x0FF)\n");
+    printf("\t\t u7 <= 127 (0x7F)\n");
+    printf("\t\t u14 <= 16383 (0x3FFF)\n");
+    printf("\t\t u21 <= 2097151 (0x1FFFFF)\n");
+    printf("\t\t u28 <= 268435455 (0x0FFFFFFF)\n");
+    printf("\t\t u35 <= 34359738367 (0x7FFFFFFFF)\n");
+    printf("\t sN := N bit signed integer\n");
+    printf("\t strN ((max) N byte ascii string)\n");
     printf("\t xN (N byte hex string <> 2Ns) (note: data bytes must be <= 0x7F)\n");
 
     printf("\nVoice Commands:\n");
@@ -135,24 +137,56 @@ void printHelp( void ) {
     printf("\t song-position <position>\n");
     printf("\t song-select <songNumber>\n");
 
-    printf("\nSystem Exclusives*:\n");
+    printf("\n(General) System Exclusives*:\n");
     printf("\t sysex experimental <data (xN)>\n");
     printf("\t sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>\n");
     printf("\t sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number>\n");
     printf("\t sysex nonrt <device-id (u7)> info request\n");
     printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
     printf("\t sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)\n");
-    printf("\t sysex nonrt <device-id (u7)> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<(u14)>)\n");
-    printf("\t sysex nonrt <device-id (u7)> cueing (punch-in|punch-out) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)>\n");
-    printf("\t sysex nonrt <device-id (u7)> cueing (event-start|event-stop|cue-point) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)> [<event-name (s) ..>]\n");
-    printf("\t sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)> <event-name (s) ..>\n");
+    printf("* <device-id> := 127 is all devices\n");
+
+    printf("\n MIDI Time Code + Cueing\n");
     printf("\t sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
     printf("\t sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<(u14)>)\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing (punch-in|punch-out) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)>\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing (event-start|event-stop|cue-point) (add|rm) <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)> [<event-name (str) ..>]\n");
+    printf("\t sysex nonrt <device-id (u7)> cueing event-name - <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> <fractional-frame <= 99> <event-number (u14)> <event-name (str) ..>\n");
     printf("\t sysex rt <device-id (u7)> cueing special (system-stop|<(u14)>)\n");
     printf("\t sysex rt <device-id (u7)> cueing (punch-in|punch-out) <event-number (u14)>\n");
-    printf("\t sysex rt <device-id (u7)> cueing (event-start|event-stop|cue-point) <event-number (u14)> [<event-name (s) ..>]\n");
-    printf("\t sysex rt <device-id (u7)> cueing event-name <event-number (u14)> <event-name (s) ..>\n");
-    printf("*<device-id> := 127 is broadcast\n");
+    printf("\t sysex rt <device-id (u7)> cueing (event-start|event-stop|cue-point) <event-number (u14)> [<event-name (str) ..>]\n");
+    printf("\t sysex rt <device-id (u7)> cueing event-name <event-number (u14)> <event-name (str) ..>\n");
+    printf("** <cue-number>, <cue-list>, <cue-path> := ascii numbers (0-9) and/or dots (.)\n");
+
+    printf("\nTODO:\n");
+
+    printf("\nMIDI Show Control\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (all-off|restore|reset)\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (go|stop|resume|load|go-off|go-jam-lock) <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> timed-go <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> set <controller (u14)> <value (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> fire <macro-number (u7)>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (standby+|standby-|sequence+|sequence-|start-clock|stop-clock|zero-clock|mtc-chase-on|mtc-chase-off|open-cue-list|close-cue-list) <cue-list**>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (open-cue-path|close-cue-path) <cue-path**>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> set-clock <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-list**>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (standby|go-2-pc) <checksum (u14)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> standing-by <checksum (u14)> <sequence-number (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (cancelled|abort) <checksum (u14)> <status (u16)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+
+    printf("\nMIDI Machine Commands (MMC)\n");
+    printf("For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.\n");
+    printf("\n\t sysex rt <device-id (u7) mmc cmd <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]\n");
+    printf("\t\t <commandN ..> :\n");
+    printf("\t\t (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|cmd-error-reset|mmc-reset|wait|resume)\n");
+    printf("\t\t (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>\n");
+    printf("\t\t step <step (s7)>\n");
+    printf("\t\t write ..\n");
+    printf("\t\t locate <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)\n");
+    printf("\t\t move ..\n");
+    printf("\t\t <data (xN)>\n");
+
+
 
 
     printf("\nExamples:\n");
@@ -691,14 +725,13 @@ void generate(uint8_t argc, char * argv[]){
 
                         }
                         msg.Data.SysEx.Length += strlen((char*)msg.Data.SysEx.ByteData);
-                    } else {
-//                        if (argc != 13){
-//                            return;
-//                        }
                     }
 
                 }
             }
+//            else if (strcmp(argv[2],"msc") == 0){
+//                if ()
+//            }
             else {
                 return;
             }
