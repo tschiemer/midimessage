@@ -605,7 +605,14 @@ namespace MidiMessage {
             return StringifierResultPackError;
         }
 
-        this->writeMidiStream( bytes, length);
+
+        if (this->RunningStatusEnabled && updateRunningStatus( &this->RunningStatusState, bytes[0] )){
+            this->writeMidiStream( &bytes[1], length - 1 );
+        } else {
+            this->writeMidiStream(bytes, length);
+        }
+
+//        this->writeMidiStream( bytes, length);
 
         return StringifierResultOk;
     }

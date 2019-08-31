@@ -286,7 +286,7 @@ int main(int argc, char * argv[], char * env[]){
 
             case 't':
                 timedOpt.enabled = true;
-                if (strlen(optarg) > 0){
+                if (optarg != NULL && strlen(optarg) > 0){
                     if (strcmp(optarg, "milli") == 0){
                         timedOpt.resolution = ResolutionMilli;
                     } else if (strcmp(optarg, "micro") == 0) {
@@ -429,9 +429,22 @@ int main(int argc, char * argv[], char * env[]){
 
             if ( StringifierResultOk == result ) {
                 pos = 0;
+
+                if (timedOpt.enabled){
+
+                    unsigned long now = getNow();
+                    unsigned long diff = now - timedOpt.lastTimestamp;
+
+                    printf("%ld ", diff);
+
+                    timedOpt.lastTimestamp = now;
+                }
+
                 fwrite(stringStream.Buffer, 1, stringStream.Length, stdout);
-                stringStream.Length = 0;
+
                 printf("\n");
+
+                stringStream.Length = 0;
             }
         }
     }
@@ -440,7 +453,14 @@ int main(int argc, char * argv[], char * env[]){
 }
 
 void writeMidiStream( uint8_t * buffer, uint8_t length ){
+
+    printf(prefix, length);
+
     fwrite(buffer, 1, length, stdout);
+
+    printf("%s", suffix);
+
+    fflush(stdout);
 }
 
 
