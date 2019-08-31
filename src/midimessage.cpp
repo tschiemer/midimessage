@@ -158,19 +158,19 @@ namespace MidiMessage {
 
                 switch (msg->Data.SysEx.SubId1) {
                     case SysExNonRtSampleDumpHeader:
-                        return packSysExNonRtSampleDumpHeader( bytes, msg );
+                        return packSysExNonRtSdsHeader( bytes, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        return packSysExNonRtSampleDataPacket( bytes, msg );
+                        return packSysExNonRtSdsDataPacket( bytes, msg );
 
                     case SysExNonRtSampleDumpRequest:
-                        return packSysExNonRtSampleDumpRequest( bytes, msg );
+                        return packSysExNonRtSdsRequest( bytes, msg );
 
                     case SysExNonRtMidiTimeCode:
                         return packSysExNonRtMtcCueingSetupMessage( bytes, msg );
 
                     case SysExNonRtSampleDumpExtension:
-                        return packSysExNonRtSds( bytes, msg );
+                        return packSysExNonRtSdsExt( bytes, msg );
 
                     case SysExNonRtGeneralInformation:
                         return packSysExNonRtGeneralInformation( bytes, msg );
@@ -389,19 +389,19 @@ namespace MidiMessage {
 
                 switch (bytes[3]) {
                     case SysExNonRtSampleDumpHeader:
-                        return unpackSysExNonRtSampleDumpHeader( bytes, length, msg );
+                        return unpackSysExNonRtSdsHeader( bytes, length, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        return unpackSysExNonRtSampleDataPacket( bytes, length, msg );
+                        return unpackSysExNonRtSdsDataPacket( bytes, length, msg );
 
                     case SysExNonRtSampleDumpRequest:
-                        return unpackSysExNonRtSampleDumpRequest( bytes, length, msg );
+                        return unpackSysExNonRtSdsRequest( bytes, length, msg );
 
                     case SysExNonRtMidiTimeCode:
                         return unpackSysExNonRtMtcCueingSetupMessage( bytes, length, msg );
 
                     case SysExNonRtSampleDumpExtension:
-                        return unpackSysExNonRtSds( bytes, length, msg);
+                        return unpackSysExNonRtSdsExt( bytes, length, msg);
 
                     case SysExNonRtGeneralInformation:
                         return unpackSysExNonRtGeneralInformation( bytes, length, msg );

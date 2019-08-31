@@ -298,13 +298,14 @@ namespace MidiMessage {
     const uint8_t MsgLenSysExRtMtcCueingSetupMessageMin     = 8;
     const uint8_t MsgLenSysExRtMmcCommandWithoutInfo        = 6;
 
-    const uint8_t MsgLenSysExNonRtSampleDumpHeader          = 21;
-    const uint8_t MsgLenSysExNonRtSampleDataPacketMin       = 7;
-    const uint8_t MsgLenSysExNonRtSampleDumpRequest         = 7;
-    const uint8_t MsgLenSysExNonRtSdsHeader                 = 34;
-    const uint8_t MsgLenSysExNonRtSdsExtendedLoopPointTransmission = 25;
-    const uint8_t MsgLenSysExNonRtSdsLoopPointRequest       = 10;
-    const uint8_t MsgLenSysExNonRtSdsSampleNameRequest      = 8;
+    const uint8_t MsgLenSysExNonRtSdsHeader                 = 21;
+    const uint8_t MsgLenSysExNonRtSdsDataPacketMin          = 7;
+    const uint8_t MsgLenSysExNonRtSdsRequest                = 7;
+
+    const uint8_t MsgLenSysExNonRtSdsExtHeader                 = 34;
+    const uint8_t MsgLenSysExNonRtSdsExtLoopPointTransmission = 25;
+    const uint8_t MsgLenSysExNonRtSdsExtLoopPointRequest       = 10;
+    const uint8_t MsgLenSysExNonRtSdsExtSampleNameRequest      = 8;
 
 
     typedef enum {
@@ -1265,11 +1266,11 @@ namespace MidiMessage {
         SysExRtMmcCommandChase              = 0x0B, // ---4
         SysExRtMmcCommandCommandErrorReset  = 0x0C, // -234
         SysExRtMmcCommandMmcReset           = 0x0D, // 1234
-        SysExRtMmcCommandWrite              = 0x40, // 1234
+        SysExRtMmcCommandWrite              = 0x40, // 1234*
         SysExRtMmcCommandMaskedWrite        = 0x41, // --3-
         SysExRtMmcCommandRead               = 0x42, // -234
         SysExRtMmcCommandUpdate             = 0x43, // -234
-        SysExRtMmcCommandLocate             = 0x44, // 1234
+        SysExRtMmcCommandLocate             = 0x44, // 1234*
         SysExRtMmcCommandVariablePlay       = 0x45, // -234
         SysExRtMmcCommandSearch             = 0x46, // --34
         SysExRtMmcCommandhuttle             = 0x47, // ----
@@ -1277,7 +1278,7 @@ namespace MidiMessage {
         SysExRtMmcCommandAssignSystemMaster = 0x49, // ----
         SysExRtMmcCommandGeneratorCommand   = 0x4A, // ----
         SysExRtMmcCommandMtcCommand         = 0x4B, // ----
-        SysExRtMmcCommandMove               = 0x4C, // 1234
+        SysExRtMmcCommandMove               = 0x4C, // 1234*
         SysExRtMmcCommandAdd                = 0x4D, // -234
         SysExRtMmcCommandSubstract          = 0x4E, // -234
         SysExRtMmcCommandDropFrameAdjust    = 0x4F, // --34
@@ -1396,6 +1397,190 @@ namespace MidiMessage {
         return false; //TODO
     }
 
+    const uint8_t SysExRtMmcStandardSpeedSignMask              = 0b01000000;
+    const uint8_t SysExRtMmcStandardSpeedSignOffset            = 6;
+    const uint8_t SysExRtMmcStandardSpeedShiftCountMask        = 0b00111000;
+    const uint8_t SysExRtMmcStandardSpeedShiftCountOffset      = 3;
+    const uint8_t SysExRtMmcStandardSpeedMsbIntegerPartMask    = 0b00000111;
+    const uint8_t SysExRtMmcStandardSpeedMsbIntegerPartOffset  = 0;
+
+    /**
+     *
+     */
+    typedef enum {
+        SysExRtMmcStandardSpeedResolution1_16384th = 0,
+        SysExRtMmcStandardSpeedResolution1_8192th  = 1,
+        SysExRtMmcStandardSpeedResolution1_4096th  = 2,
+        SysExRtMmcStandardSpeedResolution1_2048th  = 3,
+        SysExRtMmcStandardSpeedResolution1_1024th  = 4,
+        SysExRtMmcStandardSpeedResolution1_512th   = 5,
+        SysExRtMmcStandardSpeedResolution1_256th   = 6,
+        SysExRtMmcStandardSpeedResolution1_128th   = 7
+    } SysExRtMmcStandardSpeedResolution_t;
+
+    inline bool isSysExRtMmcStandardSpeedResolution( uint8_t value ){
+        return (value == SysExRtMmcStandardSpeedResolution1_16384th ||
+                value == SysExRtMmcStandardSpeedResolution1_8192th ||
+                value == SysExRtMmcStandardSpeedResolution1_4096th ||
+                value == SysExRtMmcStandardSpeedResolution1_2048th ||
+                value == SysExRtMmcStandardSpeedResolution1_1024th ||
+                value == SysExRtMmcStandardSpeedResolution1_512th ||
+                value == SysExRtMmcStandardSpeedResolution1_256th ||
+                value == SysExRtMmcStandardSpeedResolution1_128th);
+    }
+
+    const uint16_t SysExRtMmcStandardSpeedMaxIntegerPart = 1023;
+    const uint16_t SysExRtMmcStandardSpeedMaxIntegerPartByResolution[8] = {7, 15, 31, 63, 127, 255, 511, 1023};
+
+
+    typedef enum {
+        SysExRtMmcStandardSpeedDirectionForward     = 0,
+        SysExRtMmcStandardSpeedDirectionBackward    = -1
+    } SysExRtMmcStandardSpeedDirection_t;
+
+    inline bool isSysExRtMmcStandardSpeedDirection( int8_t value ){
+        return (value == SysExRtMmcStandardSpeedDirectionForward ||
+                value == SysExRtMmcStandardSpeedDirectionBackward);
+    }
+
+    typedef struct {
+        int8_t Direction;
+        uint8_t Resolution;
+        uint16_t IntegerPart;
+        uint16_t FractionalPart;
+    } SysExRtMmcStandardSpeed_t;
+
+    inline void SysExRtMmcStandardSpeedFromFloat( int8_t * direction, uint8_t * shiftCount, uint16_t * integerPart, uint16_t *fractionalPart, float speed ){
+
+        int8_t direction_ = speed > 0.0 ? 1 : -1;
+
+        // abs value
+        if (direction_ == -1){
+            speed *= -1.0;
+        }
+
+        uint16_t integerPart_ = (uint16_t)speed;
+
+        // fractional part only
+        speed -= (float)integerPart_;
+
+        ASSERT( integerPart_ <= SysExRtMmcStandardSpeedMaxIntegerPart );
+
+        uint8_t shiftCount_ = SysExRtMmcStandardSpeedResolution1_16384th;
+        while(shiftCount_){
+
+            if (integerPart_ <= SysExRtMmcStandardSpeedMaxIntegerPartByResolution[shiftCount_]){
+                break;
+            }
+
+            shiftCount_++;
+
+            ASSERT( shiftCount_ <= SysExRtMmcStandardSpeedResolution1_128th ); // shouldnt happen, but in principle we're risking an endless loop (if asserts are off)..
+        }
+
+        uint16_t fractionalPart_ = (uint16_t)(speed * ((float)(1 << shiftCount_)));
+
+        *direction = direction_;
+        *shiftCount = shiftCount_;
+        *integerPart = integerPart_;
+        *fractionalPart = fractionalPart_;
+    }
+
+    inline void SysExRtMmcStandardSpeedFromFloat( SysExRtMmcStandardSpeed_t * ss, float speed ){
+        SysExRtMmcStandardSpeedFromFloat( &ss->Direction, &ss->Resolution, &ss->IntegerPart, &ss->FractionalPart, speed );
+    }
+
+    inline float SysExRtMmcStandardSpeedToFloat( int8_t direction, uint8_t shiftCount, uint16_t integerPart, uint16_t fractionalPart ) {
+        ASSERT( isSysExRtMmcStandardSpeedDirection(direction) );
+        ASSERT( isSysExRtMmcStandardSpeedResolution(shiftCount) );
+
+        return direction * (((float)integerPart) + ((float)fractionalPart) / ((float)(0x4000 >> shiftCount)) );
+    }
+
+    inline float SysExRtMmcStandardSpeedToFloat( SysExRtMmcStandardSpeed_t * ss ){
+        return SysExRtMmcStandardSpeedToFloat( ss->Direction, ss->Resolution, ss->IntegerPart, ss->FractionalPart );
+    }
+
+    /**
+     * Standard speed
+     * Bytes: sh sm sl
+     *  sh := 0 g sss ppp
+     *      g   := sign bit
+     *      sss := shift left count
+     *      ppp := msg bits of integer part
+     *  sm := MSB of nominal fractional part w/ speed value = 0
+     *  sl := LSB of nominal fractional part w/ speed value = 0
+     *
+     *  @param shiftCount   identical to resolution
+     */
+    inline void packSysExRtMmcStandardSpeed( uint8_t * bytes, int8_t direction, uint8_t shiftCount, uint16_t integerPart, uint16_t fractionalPart){
+        ASSERT( bytes != NULL );
+        ASSERT( isSysExRtMmcStandardSpeedDirection(direction) );
+        ASSERT( isSysExRtMmcStandardSpeedResolution(shiftCount) );
+        ASSERT( integerPart <= SysExRtMmcStandardSpeedMaxIntegerPartByResolution[shiftCount] );
+        ASSERT( fractionalPart <= (MaxU14 >> shiftCount) );
+
+        uint8_t signBit = (direction == SysExRtMmcStandardSpeedDirectionForward ? 0 : 1);
+
+        bytes[0] = ((signBit << SysExRtMmcStandardSpeedSignOffset) & SysExRtMmcStandardSpeedSignMask);
+        bytes[0] |= ((shiftCount << SysExRtMmcStandardSpeedShiftCountOffset) & SysExRtMmcStandardSpeedShiftCountMask);
+        bytes[0] |= ((integerPart >> shiftCount) & SysExRtMmcStandardSpeedMsbIntegerPartMask);
+        bytes[1] = ((integerPart & ~(SysExRtMmcStandardSpeedMsbIntegerPartMask << shiftCount)) << shiftCount) | (fractionalPart >> (7 + shiftCount));
+        bytes[2] = fractionalPart & DataMask;
+    }
+
+    inline void packSysExRtMmcStandardSpeed( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
+        ASSERT( ss != NULL );
+
+        packSysExRtMmcStandardSpeed( bytes, ss->Direction, ss->Resolution, ss->IntegerPart, ss->FractionalPart );
+    }
+
+    inline void packSysExRtMmcStandardSpeed( uint8_t * bytes, float speed ){
+
+        int8_t direction = 0;
+        uint8_t resolution = 0;
+        uint16_t integerPart = 0;
+        uint16_t fractionalPart = 0;
+
+        SysExRtMmcStandardSpeedFromFloat( &direction, &resolution, &integerPart, &fractionalPart, speed );
+
+        packSysExRtMmcStandardSpeed( bytes, direction, resolution, integerPart, fractionalPart );
+    }
+
+    inline void unpackSysExRtMmcStandardSpeed( uint8_t * bytes, int8_t * direction, uint8_t *shiftCount, uint16_t *integerPart, uint16_t *fractionalPart){
+        ASSERT( bytes != NULL );
+        ASSERT( direction != NULL );
+        ASSERT( shiftCount != NULL );
+        ASSERT( integerPart != NULL );
+        ASSERT( fractionalPart != NULL);
+
+        uint8_t signBit = (bytes[0] & SysExRtMmcStandardSpeedSignMask) >> SysExRtMmcStandardSpeedSignOffset;
+
+        *direction = (signBit ? SysExRtMmcStandardSpeedDirectionBackward : SysExRtMmcStandardSpeedDirectionForward);
+        *shiftCount = (bytes[0] & SysExRtMmcStandardSpeedShiftCountMask) >> SysExRtMmcStandardSpeedShiftCountOffset;
+        *integerPart = ((bytes[0] & SysExRtMmcStandardSpeedMsbIntegerPartMask) << *shiftCount) | (bytes[1] >> (7 - *shiftCount));
+        *fractionalPart = ((bytes[1] & (0x7F >> *shiftCount)) << 7) | bytes[2];
+    }
+
+    inline void unpackSysExRtMmcStandardSpeed( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
+        ASSERT( ss != NULL );
+
+        unpackSysExRtMmcStandardSpeed( bytes, &ss->Direction, &ss->Resolution, &ss->IntegerPart, &ss->FractionalPart );
+    }
+
+    inline float unpackSysExRtMmcStandardSpeed( uint8_t * bytes ){
+
+        int8_t direction = 0;
+        uint8_t resolution = 0;
+        uint16_t integerPart = 0;
+        uint16_t fractionalPart = 0;
+
+        unpackSysExRtMmcStandardSpeed( bytes, &direction, &resolution, &integerPart, &fractionalPart );
+
+        return SysExRtMmcStandardSpeedToFloat( direction, resolution, integerPart, fractionalPart );
+    }
+
+
     typedef enum {
         SysExRtMtsSingleNoteTuningChange                = 0x01,
         SysExRtMtsSingleNoteTuningChangeWithBankSelect  = 0x02,
@@ -1508,7 +1693,7 @@ namespace MidiMessage {
     typedef union {
         uint16_t Value;
         GlobalParameterControl_t GlobalParameterControl;
-    } DeviceControlData_t;
+    } SysExRtDeviceControlData_t;
 
 
     typedef union {
@@ -1552,19 +1737,19 @@ namespace MidiMessage {
         uint16_t DeviceFamily;
         uint16_t DeviceFamilyMember;
         uint8_t SoftwareRevision[4];
-    } GeneralInformationData_t;
+    } SysExNonRtGeneralInformationData_t;
 
 
     typedef enum {
-        SampleDumpLoopTypeForwardOnly       = 0x00,
-        SampleDumpLoopTypeBackwardForward   = 0x01,
-        SampleDumpLoopTypeLoopOff           = 0x7F
-    } SampleDumpLoopType_t;
+        SysExNonRtSdsLoopTypeForwardOnly       = 0x00,
+        SysExNonRtSdsLoopTypeBackwardForward   = 0x01,
+        SysExNonRtSdsLoopTypeLoopOff           = 0x7F
+    } SysExNonRtSdsLoopType_t;
 
-    inline bool isSampleDumpLoopType( uint8_t value ){
-        return (value == SampleDumpLoopTypeForwardOnly ||
-                value == SampleDumpLoopTypeBackwardForward ||
-                value == SampleDumpLoopTypeLoopOff);
+    inline bool isSysExNonRtSdsLoopType( uint8_t value ){
+        return (value == SysExNonRtSdsLoopTypeForwardOnly ||
+                value == SysExNonRtSdsLoopTypeBackwardForward ||
+                value == SysExNonRtSdsLoopTypeLoopOff);
     }
 
     typedef struct {
@@ -1575,11 +1760,11 @@ namespace MidiMessage {
         uint32_t LoopStartPoint; // Word number (3 bytes)
         uint32_t LoopEndPoint; // Word number (3 bytes)
         uint8_t LoopType; //
-    } SampleDumpHeaderData_t;
+    } SysExNonRtSdsHeaderData_t;
 
     typedef struct {
         uint16_t RequestedSample;
-    } SampleDumpRequestData_t;
+    } SysExNonRtSdsRequestData_t;
 
     typedef struct {
         uint8_t RunningPacketCount;
@@ -1587,7 +1772,7 @@ namespace MidiMessage {
         uint8_t * Data;
         uint8_t ChecksumData; // XOR of complete message to end of payload
         uint8_t ChecksumComputed;
-    } SampleDumpDataPacket_t;
+    } SysExNonRtSdsDataPacket_t;
 
     inline uint8_t xorChecksum( uint8_t * bytes, uint8_t length ){
         uint8_t chk = bytes[0];
@@ -1600,17 +1785,31 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        SampleDumpExtLoopTypeForward                    = 0x00,
-        SampleDumpExtLoopTypeForwardBackward            = 0x01,
-        SampleDumpExtLoopTypeForwardWithRelease         = 0x02,
-        SampleDumpExtLoopTypeForwardBackwardWithRelease = 0x03,
-        SampleDumpExtLoopTypeBackward                   = 0x40,
-        SampleDumpExtLoopTypeBackwardForward            = 0x41,
-        SampleDumpExtLoopTypeBackwardWithRelease        = 0x42,
-        SampleDumpExtLoopTypeBackwardForwardWithRelease = 0x43,
-        SampleDumpExtLoopTypeBackwardOneShot            = 0x7E,
-        SampleDumpExtLoopTypeForwardOneShot             = 0x7F
-    } SampleDumpExtLoopType_t;
+        SysExNonRtSdsExtLoopTypeForward                    = 0x00,
+        SysExNonRtSdsExtLoopTypeForwardBackward            = 0x01,
+        SysExNonRtSdsExtLoopTypeForwardWithRelease         = 0x02,
+        SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease = 0x03,
+        SysExNonRtSdsExtLoopTypeBackward                   = 0x40,
+        SysExNonRtSdsExtLoopTypeBackwardForward            = 0x41,
+        SysExNonRtSdsExtLoopTypeBackwardWithRelease        = 0x42,
+        SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease = 0x43,
+        SysExNonRtSdsExtLoopTypeBackwardOneShot            = 0x7E,
+        SysExNonRtSdsExtLoopTypeForwardOneShot             = 0x7F
+    } SysExNonRtSdsExtLoopType_t;
+    
+    
+    bool inline isSampleDumpExtLoopType( uint8_t value ){
+        return (value == SysExNonRtSdsExtLoopTypeForward ||
+                value == SysExNonRtSdsExtLoopTypeForwardBackward ||
+                value == SysExNonRtSdsExtLoopTypeForwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeBackward ||
+                value == SysExNonRtSdsExtLoopTypeBackwardForward ||
+                value == SysExNonRtSdsExtLoopTypeBackwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeBackwardOneShot ||
+                value == SysExNonRtSdsExtLoopTypeForwardOneShot);
+    }
 
     typedef struct {
         uint16_t SampleNumber;
@@ -1622,7 +1821,7 @@ namespace MidiMessage {
         uint64_t SustainLoopEnd; // word number
         uint8_t LoopType;
         uint8_t NumberofChannels;
-    } SampleDumpExtHeaderData_t;
+    } SysExNonRtSdsExtHeaderData_t;
 
     typedef struct {
         uint16_t SampleNumber;
@@ -1630,12 +1829,12 @@ namespace MidiMessage {
         uint8_t LoopType;
         uint64_t LoopStartAddress;
         uint64_t LoopEndAddress;
-    } SampleDumpExtLoopPointTransmissionData_t;
+    } SysExNonRtSdsExtLoopPointTransmissionData_t;
 
     typedef struct {
         uint16_t SampleNumber;
         uint16_t LoopNumber; // 7F7F = all loops
-    } SampleDumpExtLoopPointRequestData_t;
+    } SysExNonRtSdsExtLoopPointRequestData_t;
 
     typedef struct {
         uint16_t SampleNumber;
@@ -1643,11 +1842,11 @@ namespace MidiMessage {
         uint8_t * LanguageTag;
         uint8_t NameLength;
         uint8_t * Name;
-    } SampleDumpExtNameTransmissionData_t;
+    } SysExNonRtSdsExtNameTransmissionData_t;
 
     typedef struct {
         uint16_t SampleNumber;
-    } SampleDumpExtNameRequestData_t;
+    } SysExNonRtSdsExtNameRequestData_t;
 
     typedef struct {
         StatusClass_t StatusClass;
@@ -1694,24 +1893,24 @@ namespace MidiMessage {
 
                     MtcCueingData_t Cueing;
 
-                    GeneralInformationData_t GeneralInfo;
+                    SysExNonRtGeneralInformationData_t GeneralInfo;
 
-                    DeviceControlData_t DeviceControl;
+                    SysExRtDeviceControlData_t DeviceControl;
 
                     MidiShowControlData_t MidiShowControl;
 
                     union {
-                        SampleDumpHeaderData_t Header;
-                        SampleDumpRequestData_t Request;
-                        SampleDumpDataPacket_t DataPacket;
+                        SysExNonRtSdsHeaderData_t Header;
+                        SysExNonRtSdsRequestData_t Request;
+                        SysExNonRtSdsDataPacket_t DataPacket;
                     } SampleDump;
 
                     union {
-                        SampleDumpExtHeaderData_t Header;
-                        SampleDumpExtLoopPointTransmissionData_t LoopPointTransmission;
-                        SampleDumpExtLoopPointRequestData_t LoopPointRequest;
-                        SampleDumpExtNameTransmissionData_t NameTransmission;
-                        SampleDumpExtNameRequestData_t NameRequest;
+                        SysExNonRtSdsExtHeaderData_t Header;
+                        SysExNonRtSdsExtLoopPointTransmissionData_t LoopPointTransmission;
+                        SysExNonRtSdsExtLoopPointRequestData_t LoopPointRequest;
+                        SysExNonRtSdsExtNameTransmissionData_t NameTransmission;
+                        SysExNonRtSdsExtNameRequestData_t NameRequest;
                     } SampleDumpExt;
 
                 } Data;
@@ -1845,6 +2044,7 @@ namespace MidiMessage {
         mtc->Minute = bytes[1];
         mtc->Second = bytes[2];
         mtc->Frame = bytes[3];
+        mtc->FractionalFrame = 0;
 
         return 4;
     }
