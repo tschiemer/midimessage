@@ -296,7 +296,9 @@ namespace MidiMessage {
     const uint8_t MsgLenSysExRtMtcFullMessage               = 10;
     const uint8_t MsgLenSysExRtMtcUserBits                  = 15;
     const uint8_t MsgLenSysExRtMtcCueingSetupMessageMin     = 8;
-    const uint8_t MsgLenSysExRtMmcCommandWithoutInfo        = 6;
+
+    const uint8_t MsgLenSysExRtMmcCommandMax                = 48; // see spec
+    const uint8_t MsgLenSysExRtMmcCommandWithoutData        = 5;
 
     const uint8_t MsgLenSysExNonRtSdsHeader                 = 21;
     const uint8_t MsgLenSysExNonRtSdsDataPacketMin          = 7;
@@ -1245,6 +1247,13 @@ namespace MidiMessage {
         return (value == SysExRtMtcCueingSpecialSystemStop);
     }
 
+    const uint8_t SysExRtMmcCommandSegmentFirstByteMarker = 0x40;
+
+//    /**
+//     * @see packSysExRtMmcCommand()
+//     */
+//    const uint8_t SysExRtMmcCommandSeeData = 0;
+
     /**
      * Guideline sets:
      * #1   Simple transport, no time code, open loop communications only
@@ -1273,7 +1282,7 @@ namespace MidiMessage {
         SysExRtMmcCommandLocate             = 0x44, // 1234*
         SysExRtMmcCommandVariablePlay       = 0x45, // -234
         SysExRtMmcCommandSearch             = 0x46, // --34
-        SysExRtMmcCommandhuttle             = 0x47, // ----
+        SysExRtMmcCommandShuttle            = 0x47, // ----
         SysExRtMmcCommandStep               = 0x48, // ----
         SysExRtMmcCommandAssignSystemMaster = 0x49, // ----
         SysExRtMmcCommandGeneratorCommand   = 0x4A, // ----
@@ -1313,7 +1322,7 @@ namespace MidiMessage {
                 value == SysExRtMmcCommandLocate ||
                 value == SysExRtMmcCommandVariablePlay ||
                 value == SysExRtMmcCommandSearch ||
-                value == SysExRtMmcCommandhuttle ||
+                value == SysExRtMmcCommandShuttle ||
                 value == SysExRtMmcCommandStep ||
                 value == SysExRtMmcCommandAssignSystemMaster ||
                 value == SysExRtMmcCommandGeneratorCommand ||
@@ -1330,6 +1339,38 @@ namespace MidiMessage {
                 value == SysExRtMmcCommandRecordStrobeVariable ||
                 value == SysExRtMmcCommandWait ||
                 value == SysExRtMmcCommandResume);
+    }
+
+    inline uint8_t SysExRtMmcCmdDataLength( uint8_t * cmdByte ){
+        ASSERT( *cmdByte != 0 ); // reserved..
+
+        if (0x40 <= *cmdByte && *cmdByte <= 0x77) return cmdByte[1];
+
+//        if (0x01 <= *cmdByte && *cmdByte <= 0x3F) return 0;
+        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
+
+        return 0;
+    }
+
+    inline uint8_t SysExRtMmcCmdLength( uint8_t * cmdByte ){
+        ASSERT( *cmdByte != 0 ); // reserved..
+
+        if (0x40 <= *cmdByte && *cmdByte <= 0x77) return 2 + cmdByte[1];
+
+//        if (0x01 <= *cmdByte && *cmdByte <= 0x3F) return 1;
+        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
+        return 1;
+    }
+
+    inline uint8_t SysExRtMmcResponseDataLength( uint8_t * rByte ){
+        ASSERT( *rByte != 0 ); // reserved..
+
+        if (0x01 <= *rByte && *rByte <= 0x1F) return 5; // standard time code fields
+        if (0x20 <= *rByte && *rByte <= 0x3F) return 2; // short time code fields
+        if (0x40 <= *rByte && *rByte <= 0x77) return rByte[1];
+
+        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
+        return 0;
     }
 
 
@@ -1848,6 +1889,12 @@ namespace MidiMessage {
         uint16_t SampleNumber;
     } SysExNonRtSdsExtNameRequestData_t;
 
+
+    typedef union {
+        SysExRtMmcStandardSpeed_t StandardSpeed;
+        uint8_t U7;
+    } SysExRtMmcCommandData_t;
+
     typedef struct {
         StatusClass_t StatusClass;
         uint8_t SystemMessage;
@@ -1912,6 +1959,11 @@ namespace MidiMessage {
                         SysExNonRtSdsExtNameTransmissionData_t NameTransmission;
                         SysExNonRtSdsExtNameRequestData_t NameRequest;
                     } SampleDumpExt;
+
+                    union {
+                        SysExRtMmcCommandData_t Cmd;
+                    } Mmc;
+
 
                 } Data;
 
