@@ -22,7 +22,7 @@ namespace MidiMessage {
             if (this->Length == 0 && isDataByte(data[i])){
 
                 if (this->RunningStatusEnabled && isRunningStatus(this->Buffer[0])){
-                    this->Len++;
+                    this->Length++;
                 } else {
                     // wait for control byte
                     continue;
@@ -38,7 +38,8 @@ namespace MidiMessage {
                     this->Buffer[ this->Length++ ] = SystemMessageEndOfExclusive;
 
                     // try to parse data
-                    uint8_t consumed = unpack(this->Buffer, this->Len, this->Message);
+                    uint8_t consumed = unpack(this->Buffer, this->Length, this->Message);
+                    
                     if (consumed > 0){
                         // emit sysex
                         this->MessageHandler( this->Message );
@@ -52,7 +53,8 @@ namespace MidiMessage {
             this->Buffer[ this->Length++ ] = data[i];
 
             // try to parse data straight away
-            uint8_t consumed = unpack(this->Buffer, this->Len, this->Message);
+            uint8_t consumed = unpack(this->Buffer, this->Length, this->Message);
+
             if (consumed > 0){
                 // emit event
                 this->MessageHandler( this->Message );
