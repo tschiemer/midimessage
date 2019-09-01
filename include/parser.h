@@ -22,8 +22,8 @@ namespace MidiMessage {
 
         uint8_t Length;
 
-        Parser(bool runninStatusEnabled, uint8_t * buffer, uint8_t maxLen, Message_t * msg, void (*messageHandler)(Message_t * message)) {
-            this->RunningStatusEnabled = runninStatusEnabled;
+        Parser(bool runningStatusEnabled, uint8_t * buffer, uint8_t maxLen, Message_t * msg, void (*messageHandler)(Message_t * message)) {
+            this->RunningStatusEnabled = runningStatusEnabled;
 
             this->Buffer = buffer;
             this->MaxLen = maxLen;

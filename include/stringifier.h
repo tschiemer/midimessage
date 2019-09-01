@@ -15,23 +15,28 @@ namespace MidiMessage {
         StringifierResultInvalidValue   = 2,
         StringifierResultWrongArgCount  = 3,
         StringifierResultPackError      = 4,
-        StringifierResultParserFail     = 5
+        StringifierResultParserFail     = 5,
+        StringifierResultNoInput        = 6
     } StringifierResult_t;
 
     struct Stringifier {
         bool RunningStatusEnabled;
         uint8_t RunningStatusState;
 
-        void (*writeMidiStream)(uint8_t * buffer, uint8_t length);
-        void (*printfStringStream)(char const * fmt, ...);
+        Stringifier(bool runningStatusEnabled){
+            this->RunningStatusEnabled = runningStatusEnabled;
+
+            this->RunningStatusState = MidiMessage_RunningStatusNotSet;
+        }
 
 
-        Stringifier(bool runningStatusEnabled, void (*writeMidiStream)(uint8_t * buffer, uint8_t length), void (*printfStringStream)(char const * fmt, ...) );
 
-        uint8_t fromString(uint8_t argc,  uint8_t * argv[]);
-        uint8_t toString(uint8_t length, uint8_t bytes[]);
+        int fromString(Message_t * msg, uint8_t length, uint8_t * bytes);
+        int fromArgs(Message_t * msg, uint8_t argc,  uint8_t * argv[]);
+        int toString(uint8_t * bytes, Message_t * msg);
     };
 
+    uint8_t stringToArgs(uint8_t ** argv, uint8_t max, uint8_t * bytes, uint8_t length);
 }
 
 #endif //MIDIMESSAGE_COMMAND_INTERFACE_H

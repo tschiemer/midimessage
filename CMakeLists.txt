@@ -18,11 +18,13 @@ set(HEADER_FILES
         include/dlsproprietarychunkids.h
         include/commonccs.h
         include/notes.h
-        include/stringifier.h)
+        include/stringifier.h
+        include/parser.h)
 
 set(SOURCE_FILES
         src/midimessage.cpp
         src/stringifier.cpp
+        src/parser.cpp
         deps/c-utils/lib/util-hex.c)
 
 add_library(midimessage ${HEADER_FILES} ${SOURCE_FILES})

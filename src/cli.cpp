@@ -14,6 +14,7 @@
 
 #include <midimessage.h>
 #include <stringifier.h>
+#include <parser.h>
 
 
 #define MAX_LEN 255
@@ -45,11 +46,7 @@ typedef enum {
 // Run mode
 Mode_t mode = ModeUndefined;
 
-// Message struct
-uint8_t buf[128];
-Message_t msg = {
-        .Data.SysEx.ByteData = buf
-};
+bool runningStatusEnabled = false;
 
 // Timed option
 struct {
@@ -68,20 +65,10 @@ char prefix[32] = "";
 char suffix[32] = "";
 
 
-
-struct {
-    char Buffer[MAX_LEN];
-    uint8_t Length;
-} stringStream = {
-        .Length = 0
-};
-
-
-
 void printHelp( void );
 unsigned long getNow();
-void writeMidiStream( uint8_t * buffer, uint8_t length );
-void printfStringStream( char const * fmt, ... );
+void writeMidiPacket( uint8_t * buffer, uint8_t length );
+//void printfStringStream( char const * fmt, ... );
 
 
 
@@ -211,28 +198,62 @@ unsigned long getNow(){
 
 
 
-void writeMidiStream( uint8_t * buffer, uint8_t length ){
+void writeMidiPacket( Message_t * msg ){
+
+
+    uint8_t bytes[128];
+    uint8_t length = pack( bytes, msg );
+
+    if (length == 0){
+        return;
+    }
 
     printf(prefix, length);
 
-    fwrite(buffer, 1, length, stdout);
+    fwrite(bytes, 1, length, stdout);
 
     printf("%s", suffix);
 
     fflush(stdout);
 }
 
+void parsedMessage( Message_t * msg ){
 
+    Stringifier stringifier(runningStatusEnabled);
 
-void printfStringStream( char const * fmt, ... ){
-    va_list args;
-    va_start(args, fmt);
-    int l = vsprintf( &stringStream.Buffer[stringStream.Length], fmt, args);
-    va_end (args);
+    uint8_t stringBuffer[256];
 
-    stringStream.Buffer[stringStream.Length + l] = '\0';
-    stringStream.Length += l;
+    int length = stringifier.toString(  stringBuffer, msg );
+
+    if ( length > 0 ) {
+
+        if (timedOpt.enabled){
+
+            unsigned long now = getNow();
+            unsigned long diff = now - timedOpt.lastTimestamp;
+
+            printf("%ld ", diff);
+
+            timedOpt.lastTimestamp = now;
+        }
+
+        printf("%s\n", stringBuffer);
+        
+        fflush(stdout);
+    }
 }
+//
+//
+//
+//void printfStringStream( char const * fmt, ... ){
+//    va_list args;
+//    va_start(args, fmt);
+//    int l = vsprintf( &stringStream.Buffer[stringStream.Length], fmt, args);
+//    va_end (args);
+//
+//    stringStream.Buffer[stringStream.Length + l] = '\0';
+//    stringStream.Length += l;
+//}
 
 
 int main(int argc, char * argv[], char * env[]){
@@ -244,9 +265,7 @@ int main(int argc, char * argv[], char * env[]){
         printHelp();
         return EXIT_SUCCESS;
     }
-
-
-    Stringifier stringifier( false, writeMidiStream, printfStringStream );
+    
 
     while (1) {
         int this_option_optind = optind ? optind : 1;
@@ -323,7 +342,7 @@ int main(int argc, char * argv[], char * env[]){
                 break;
 
             case 'r':
-                stringifier.RunningStatusEnabled = true;
+                runningStatusEnabled = true;
                 break;
 
             default:
@@ -338,140 +357,230 @@ int main(int argc, char * argv[], char * env[]){
 
 
     if (optind < argc) {
-
         if (mode == ModeGenerate){
-            stringifier.fromString( (uint8_t)(argc - optind), (uint8_t**)&argv[optind] );
+
+            Stringifier stringifier(runningStatusEnabled);
+
+            uint8_t sysexBuffer[128];
+            Message_t msg = {
+                    .Data.SysEx.ByteData = sysexBuffer
+            };
+
+            if (stringifier.fromArgs( &msg, (uint8_t)(argc - optind), (uint8_t**)&argv[optind] ) == StringifierResultOk){
+
+                writeMidiPacket( &msg );
+            }
+
+
+            exit(EXIT_SUCCESS);
         } else {
-            while(optind < argc) {
 
-                if ( StringifierResultOk == stringifier.toString( (uint8_t)strlen(argv[optind]), (uint8_t*)argv[optind] ) ) {
-                    fwrite(stringStream.Buffer, 1, stringStream.Length, stdout);
-                    printf("\n");
-                }
-                optind++;
-            }
-        }
-
-        exit(EXIT_SUCCESS);
-    }
-
-    uint8_t pos = 0;
-    uint8_t line[MAX_LEN];
-
-    line[0] = 0;
-
-    uint8_t argsCount = 1;
-    uint8_t * args[16];
-
-    args[0] = &line[0];
-
-    stringStream.Length = 0;
-
-    int ch;
-
-    // start timer
-    if (timedOpt.enabled){
-        // record timer
-        timedOpt.lastTimestamp = getNow();
-    }
-
-    while( (ch = fgetc(stdin)) != EOF ){
-
-        uint8_t in = (uint8_t)ch;
-
-
-        if (pos >= MAX_LEN){
-            printf("Buffer overflow!\n");
-            return 1;
-        }
-
-
-        if (mode == ModeGenerate){
-
-            if (in == '\r'){
-                continue;
-            }
-            if (in == ' '){
-                if (pos > 0 && line[pos-1] != '\0') {
-                    line[pos++] = '\0';
-                    args[argsCount++] = &line[pos];
-                }
-                continue;
-            }
-            if (in != '\n'){
-                line[pos++] = in;
-                if (pos == 1){
-                    argsCount = 1;
-                }
-                continue;
-            }
-            if (in == '\n'){
-                if (pos > 0 && line[pos-1] != '\0') {
-                    line[pos++] = '\0';
-                } else if (pos > 0 && line[pos-1] == '\0'){
-                    argsCount--;
-                }
-
-                if (timedOpt.enabled){
-                    unsigned long delay = std::strtoul((char*)args[0], NULL, 10);
-                    unsigned long waitUntil = timedOpt.lastTimestamp + delay;
-                    unsigned long now;
-                    do {
-                        now = getNow();
-                    } while( now < waitUntil );
-
-                    timedOpt.lastTimestamp = now;
-
-                    stringifier.fromString(  argsCount - 1 , (uint8_t**)&args[1] );
-
-                } else {
-                    stringifier.fromString(  argsCount, (uint8_t**)args );
-                }
-
-                pos = 0;
-                line[0] = '\0';
-
-                argsCount = 0;
-            }
-
-        }
-        if (mode == ModeParse) {
-
-            if (pos == 0 && isDataByte(in)){
-                if (stringifier.RunningStatusEnabled && isRunningStatus(line[0])){
-                    pos++;
-                } else {
-                    // wait for control byte
-                    continue;
-                }
-            }
-
-
-            line[pos++] = in;
-
-            uint8_t result = stringifier.toString(  pos, (uint8_t *) line);
-
-            if ( StringifierResultOk == result ) {
-                pos = 0;
-
-                if (timedOpt.enabled){
-
-                    unsigned long now = getNow();
-                    unsigned long diff = now - timedOpt.lastTimestamp;
-
-                    printf("%ld ", diff);
-
-                    timedOpt.lastTimestamp = now;
-                }
-
-                fwrite(stringStream.Buffer, 1, stringStream.Length, stdout);
-
-                printf("\n");
-
-                stringStream.Length = 0;
-            }
+            printf("Parser mode may not be called with additional arguments - data is read from stdin only.\n");
+            exit(EXIT_FAILURE);
         }
     }
 
-    return EXIT_SUCCESS;
+    if (mode == ModeParse){
+
+
+        uint8_t sysexBuffer[128];
+        Message_t msg = {
+                .Data.SysEx.ByteData = sysexBuffer
+        };
+
+        uint8_t dataBuffer[128];
+        Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage );
+
+        // start timer
+        if (timedOpt.enabled){
+            // record timer
+            timedOpt.lastTimestamp = getNow();
+        }
+
+
+        int ch;
+        while( (ch = fgetc(stdin)) != EOF ){
+            uint8_t byte = (uint8_t)ch;
+
+            parser.receivedData( &byte, 1 );
+        }
+
+        return EXIT_SUCCESS;
+    }
+    
+    else { //if ( mode == ModeGenerate) {
+
+        Stringifier stringifier(runningStatusEnabled);
+
+        uint8_t sysexBuffer[128];
+        Message_t msg = {
+                .Data.SysEx.ByteData = sysexBuffer
+        };
+
+
+        // start timer
+        if (timedOpt.enabled){
+            // record timer
+            timedOpt.lastTimestamp = getNow();
+        }
+
+        while(true){
+
+            uint8_t *line;
+
+            uint8_t *args[32];
+            uint8_t argsCount = stringToArgs( args, 32, line, strlen((char*)line));
+
+            if (argsCount == 0){
+                continue;
+            }
+
+            int result = 0;
+
+            if (timedOpt.enabled){
+                unsigned long delay = strtoul((char*)args[0], NULL, 10);
+                unsigned long waitUntil = timedOpt.lastTimestamp + delay;
+                unsigned long now;
+                do {
+                    now = getNow();
+                } while( now < waitUntil );
+
+                timedOpt.lastTimestamp = now;
+
+                result = stringifier.fromArgs( &msg,  argsCount - 1 , (uint8_t**)&args[1] );
+
+            } else {
+                result = stringifier.fromArgs( &msg,  argsCount, (uint8_t**)args );
+            }
+
+            if (result == StringifierResultOk){
+
+                writeMidiPacket( &msg );
+            }
+        }
+
+        return EXIT_SUCCESS;
+    }
+//
+//    uint8_t pos = 0;
+//    uint8_t line[MAX_LEN];
+//
+//    line[0] = 0;
+//
+//    uint8_t argsCount = 1;
+//    uint8_t * args[16];
+//
+//    args[0] = &line[0];
+//
+////    stringStream.Length = 0;
+//
+//    int ch;
+//
+//    // start timer
+//    if (timedOpt.enabled){
+//        // record timer
+//        timedOpt.lastTimestamp = getNow();
+//    }
+//
+//    while( (ch = fgetc(stdin)) != EOF ){
+//
+//        uint8_t in = (uint8_t)ch;
+//
+//
+//        if (pos >= MAX_LEN){
+//            printf("Buffer overflow!\n");
+//            return 1;
+//        }
+//
+//
+//        if (mode == ModeGenerate){
+//
+//            if (in == '\r'){
+//                continue;
+//            }
+//            if (in == ' '){
+//                if (pos > 0 && line[pos-1] != '\0') {
+//                    line[pos++] = '\0';
+//                    args[argsCount++] = &line[pos];
+//                }
+//                continue;
+//            }
+//            if (in != '\n'){
+//                line[pos++] = in;
+//                if (pos == 1){
+//                    argsCount = 1;
+//                }
+//                continue;
+//            }
+//            if (in == '\n'){
+//                if (pos > 0 && line[pos-1] != '\0') {
+//                    line[pos++] = '\0';
+//                } else if (pos > 0 && line[pos-1] == '\0'){
+//                    argsCount--;
+//                }
+//
+//                if (timedOpt.enabled){
+//                    unsigned long delay = std::strtoul((char*)args[0], NULL, 10);
+//                    unsigned long waitUntil = timedOpt.lastTimestamp + delay;
+//                    unsigned long now;
+//                    do {
+//                        now = getNow();
+//                    } while( now < waitUntil );
+//
+//                    timedOpt.lastTimestamp = now;
+//
+//                    stringifier.fromString(  argsCount - 1 , (uint8_t**)&args[1] );
+//
+//                } else {
+//                    stringifier.fromString(  argsCount, (uint8_t**)args );
+//                }
+//
+//                pos = 0;
+//                line[0] = '\0';
+//
+//                argsCount = 0;
+//            }
+//
+//        }
+//        if (mode == ModeParse) {
+//
+//
+//
+//            if (pos == 0 && isDataByte(in)){
+//                if (runningStatusEnabled && isRunningStatus(line[0])){
+//                    pos++;
+//                } else {
+//                    // wait for control byte
+//                    continue;
+//                }
+//            }
+//
+//
+//            line[pos++] = in;
+//
+//            uint8_t result = stringifier.toString(  pos, (uint8_t *) line);
+//
+//            if ( StringifierResultOk == result ) {
+//                pos = 0;
+//
+//                if (timedOpt.enabled){
+//
+//                    unsigned long now = getNow();
+//                    unsigned long diff = now - timedOpt.lastTimestamp;
+//
+//                    printf("%ld ", diff);
+//
+//                    timedOpt.lastTimestamp = now;
+//                }
+//
+//                fwrite(stringStream.Buffer, 1, stringStream.Length, stdout);
+//
+//                printf("\n");
+//
+//                stringStream.Length = 0;
+//            }
+//        }
+//    }
+//
+//    return EXIT_SUCCESS;
 }
