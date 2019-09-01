@@ -86,12 +86,11 @@ void printHelp( void ) {
     printf("\t --prefix=<prefix> \t\t Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %%d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).\n");
     printf("\t --suffix=<suffix> \t\t Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
 
-    printf("\nNote: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!\n");
     printf("Fancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
     printf("\nData types:\n");
     printf("\t uN := N bit unsigned integer)\n");
-    printf("\t\t u4 (data nibble) < 63 (0x0FF)\n");
+    printf("\t\t u4 (data nibble) < 15 (0x0F)\n");
     printf("\t\t u7 <= 127 (0x7F)\n");
     printf("\t\t u14 <= 16383 (0x3FFF)\n");
     printf("\t\t u21 <= 2097151 (0x1FFFFF)\n");
@@ -102,12 +101,12 @@ void printHelp( void ) {
     printf("\t xN (N byte hex string <> 2Ns) (note: data bytes must be <= 0x7F)\n");
 
     printf("\nVoice Commands:\n");
-    printf("\t note (on|off) <channel> <key> <velocity>\n");
-    printf("\t cc <channel> <controller> <value>\n");
-    printf("\t pc <channel> <program>\n");
-    printf("\t pressure <channel> <pressure>\n");
-    printf("\t pitch <channel> <pitch>\n");
-    printf("\t poly <channel> <key> <pressure>\n");
+    printf("\t note (on|off) <channel (u4)> <key (u7)> <velocity (u7)>\n");
+    printf("\t cc <channel (u4)> <controller (u7)> <value (u7)>\n");
+    printf("\t pc <channel (u4)> <program (u7)>\n");
+    printf("\t pressure <channel (u4)> <pressure (u7)>\n");
+    printf("\t pitch <channel (u4)> <pitch (u14)>\n");
+    printf("\t poly <channel (u4)> <key (u7)> <pressure (u7)>\n");
 
     printf("\nSystem Commands:\n");
     printf("\t start\n");
@@ -117,9 +116,9 @@ void printHelp( void ) {
     printf("\t active-sensing\n");
     printf("\t tune-request\n");
     printf("\t timing-clock\n");
-    printf("\t quarter-frame <messageType> <nibble>\n");
-    printf("\t song-position <position>\n");
-    printf("\t song-select <songNumber>\n");
+    printf("\t quarter-frame <messageType (u3)> <nibble (u4)>\n");
+    printf("\t song-position <position (u14)>\n");
+    printf("\t song-select <songNumber (u7)>\n");
 
     printf("\n(General) System Exclusives*:\n");
     printf("\t sysex experimental <data (xN)>\n");
