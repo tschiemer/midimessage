@@ -76,29 +76,12 @@ struct {
         .Length = 0
 };
 
+
+
+void printHelp( void );
+unsigned long getNow();
 void writeMidiStream( uint8_t * buffer, uint8_t length );
 void printfStringStream( char const * fmt, ... );
-
-//void generate(uint8_t argc,  char  * argv[]);
-//uint8_t parse(uint8_t length, uint8_t bytes[]);
-
-
-
-unsigned long getNow(){
-
-    struct timespec c;
-
-    if (clock_gettime(CLOCK_REALTIME, &c) == -1) {
-        perror("error calling clock_gettime()");
-        exit(EXIT_FAILURE);
-    }
-
-    if (timedOpt.resolution == ResolutionMilli){
-        return c.tv_sec * 1000 + c.tv_nsec / 1000000;
-    }
-
-    return c.tv_sec * 1000000 + c.tv_nsec / 1000;
-}
 
 
 
@@ -209,6 +192,47 @@ void printHelp( void ) {
     printf("\t cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p\n");
 }
 
+
+unsigned long getNow(){
+
+    struct timespec c;
+
+    if (clock_gettime(CLOCK_REALTIME, &c) == -1) {
+        perror("error calling clock_gettime()");
+        exit(EXIT_FAILURE);
+    }
+
+    if (timedOpt.resolution == ResolutionMilli){
+        return c.tv_sec * 1000 + c.tv_nsec / 1000000;
+    }
+
+    return c.tv_sec * 1000000 + c.tv_nsec / 1000;
+}
+
+
+
+void writeMidiStream( uint8_t * buffer, uint8_t length ){
+
+    printf(prefix, length);
+
+    fwrite(buffer, 1, length, stdout);
+
+    printf("%s", suffix);
+
+    fflush(stdout);
+}
+
+
+
+void printfStringStream( char const * fmt, ... ){
+    va_list args;
+    va_start(args, fmt);
+    int l = vsprintf( &stringStream.Buffer[stringStream.Length], fmt, args);
+    va_end (args);
+
+    stringStream.Buffer[stringStream.Length + l] = '\0';
+    stringStream.Length += l;
+}
 
 
 int main(int argc, char * argv[], char * env[]){
@@ -450,27 +474,4 @@ int main(int argc, char * argv[], char * env[]){
     }
 
     return EXIT_SUCCESS;
-}
-
-void writeMidiStream( uint8_t * buffer, uint8_t length ){
-
-    printf(prefix, length);
-
-    fwrite(buffer, 1, length, stdout);
-
-    printf("%s", suffix);
-
-    fflush(stdout);
-}
-
-
-
-void printfStringStream( char const * fmt, ... ){
-    va_list args;
-    va_start(args, fmt);
-    int l = vsprintf( &stringStream.Buffer[stringStream.Length], fmt, args);
-    va_end (args);
-
-    stringStream.Buffer[stringStream.Length + l] = '\0';
-    stringStream.Length += l;
 }
