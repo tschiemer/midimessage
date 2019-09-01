@@ -65,8 +65,12 @@ char suffix[32] = "";
 
 void printHelp( void );
 unsigned long getNow();
-void writeMidiPacket( uint8_t * buffer, uint8_t length );
-//void printfStringStream( char const * fmt, ... );
+
+void generator(void);
+void writeMidiPacket( Message_t * msg );
+
+void parser(void);
+void parsedMessage( Message_t * msg );
 
 
 
@@ -194,7 +198,56 @@ unsigned long getNow(){
     return c.tv_sec * 1000000 + c.tv_nsec / 1000;
 }
 
+void generator(void){
+    uint8_t line[256];
 
+    Stringifier stringifier(runningStatusEnabled);
+
+    uint8_t sysexBuffer[128];
+    Message_t msg = {
+            .Data.SysEx.ByteData = sysexBuffer
+    };
+
+
+    // start timer
+    if (timedOpt.enabled){
+        // record timer
+        timedOpt.lastTimestamp = getNow();
+    }
+
+    while(fgets((char*)line, sizeof(line), stdin ) != NULL){
+
+        uint8_t *args[32];
+        uint8_t argsCount = stringToArgs( args, 32, line, strlen((char*)line) );
+
+        if (argsCount == 0){
+            continue;
+        }
+
+
+        uint8_t ** firstArg = args;
+
+        // if the next command is delayed, we have to wait and update the arguments correspondingly
+        if (timedOpt.enabled){
+            unsigned long delay = strtoul((char*)args[0], NULL, 10);
+            unsigned long waitUntil = timedOpt.lastTimestamp + delay;
+            unsigned long now;
+            do {
+                now = getNow();
+            } while( now < waitUntil );
+
+            timedOpt.lastTimestamp = now;
+
+            argsCount--;
+            firstArg = &firstArg[1];
+        }
+
+        if (StringifierResultOk == stringifier.fromArgs( &msg,  argsCount, firstArg )){
+
+            writeMidiPacket( &msg );
+        }
+    }
+}
 
 void writeMidiPacket( Message_t * msg ){
 
@@ -213,6 +266,31 @@ void writeMidiPacket( Message_t * msg ){
     printf("%s", suffix);
 
     fflush(stdout);
+}
+
+void parser(void){
+
+    uint8_t sysexBuffer[128];
+    Message_t msg = {
+            .Data.SysEx.ByteData = sysexBuffer
+    };
+
+    uint8_t dataBuffer[128];
+    Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage );
+
+    // start timer
+    if (timedOpt.enabled){
+        // record timer
+        timedOpt.lastTimestamp = getNow();
+    }
+
+
+    int ch;
+    while( (ch = fgetc(stdin)) != EOF ){
+        uint8_t byte = (uint8_t)ch;
+
+        parser.receivedData( &byte, 1 );
+    }
 }
 
 void parsedMessage( Message_t * msg ){
@@ -240,7 +318,6 @@ void parsedMessage( Message_t * msg ){
         fflush(stdout);
     }
 }
-
 
 
 int main(int argc, char * argv[], char * env[]){
@@ -343,8 +420,10 @@ int main(int argc, char * argv[], char * env[]){
     }
 
 
-    if (optind < argc) {
-        if (mode == ModeGenerate){
+    if (mode == ModeGenerate) {
+
+        // if there are additional arguments just try to generate a message from
+        if (optind < argc){
 
             Stringifier stringifier(runningStatusEnabled);
 
@@ -353,102 +432,27 @@ int main(int argc, char * argv[], char * env[]){
                     .Data.SysEx.ByteData = sysexBuffer
             };
 
-            if (stringifier.fromArgs( &msg, (uint8_t)(argc - optind), (uint8_t**)&argv[optind] ) == StringifierResultOk){
-                writeMidiPacket( &msg );
+            if (stringifier.fromArgs(&msg, (uint8_t) (argc - optind), (uint8_t **) &argv[optind]) == StringifierResultOk) {
+                writeMidiPacket(&msg);
+                exit(EXIT_SUCCESS);
+            } else {
+                exit(EXIT_FAILURE);
             }
-
-
-            exit(EXIT_SUCCESS);
-        } else {
-
-            printf("Parser mode may not be called with additional arguments - data is read from stdin only.\n");
-            exit(EXIT_FAILURE);
         }
+
+        // enter generator loop (reads stdin until eof)
+        generator();
     }
 
     if (mode == ModeParse){
-
-
-        uint8_t sysexBuffer[128];
-        Message_t msg = {
-                .Data.SysEx.ByteData = sysexBuffer
-        };
-
-        uint8_t dataBuffer[128];
-        Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage );
-
-        // start timer
-        if (timedOpt.enabled){
-            // record timer
-            timedOpt.lastTimestamp = getNow();
+        if (optind < argc) {
+            printf("Parser mode may not be called with additional arguments - data is read from stdin only.\n");
+            exit(EXIT_FAILURE);
         }
 
-
-        int ch;
-        while( (ch = fgetc(stdin)) != EOF ){
-            uint8_t byte = (uint8_t)ch;
-
-            parser.receivedData( &byte, 1 );
-        }
-
-        return EXIT_SUCCESS;
-    }
-    
-    if ( mode == ModeGenerate) {
-
-        uint8_t line[256];
-
-        Stringifier stringifier(runningStatusEnabled);
-
-        uint8_t sysexBuffer[128];
-        Message_t msg = {
-                .Data.SysEx.ByteData = sysexBuffer
-        };
-
-
-        // start timer
-        if (timedOpt.enabled){
-            // record timer
-            timedOpt.lastTimestamp = getNow();
-        }
-
-        while(fgets((char*)line, sizeof(line), stdin ) != NULL){
-
-            uint8_t *args[32];
-            uint8_t argsCount = stringToArgs( args, 32, line, strlen((char*)line) );
-
-            if (argsCount == 0){
-                continue;
-            }
-
-
-            uint8_t ** firstArg = args;
-
-            // if the next command is delayed, we have to wait and update the arguments correspondingly
-            if (timedOpt.enabled){
-                unsigned long delay = strtoul((char*)args[0], NULL, 10);
-                unsigned long waitUntil = timedOpt.lastTimestamp + delay;
-                unsigned long now;
-                do {
-                    now = getNow();
-                } while( now < waitUntil );
-
-                timedOpt.lastTimestamp = now;
-
-                argsCount--;
-                firstArg = &firstArg[1];
-            }
-
-            if (StringifierResultOk == stringifier.fromArgs( &msg,  argsCount, firstArg )){
-
-                writeMidiPacket( &msg );
-            }
-        }
-
-        return EXIT_SUCCESS;
+        // enter parser loop (reads stdin until eof)
+        parser();
     }
 
-    // should not reach here..
-
-    return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
