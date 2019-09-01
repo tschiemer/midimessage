@@ -201,7 +201,7 @@ unsigned long getNow(){
 void generator(void){
     uint8_t line[256];
 
-    Stringifier stringifier(runningStatusEnabled);
+    Stringifier stringifier;
 
     uint8_t sysexBuffer[128];
     Message_t msg = {
@@ -251,6 +251,7 @@ void generator(void){
 
 void writeMidiPacket( Message_t * msg ){
 
+    static uint8_t runningStatusState = MidiMessage_RunningStatusNotSet;
 
     uint8_t bytes[128];
     uint8_t length = pack( bytes, msg );
@@ -261,7 +262,11 @@ void writeMidiPacket( Message_t * msg ){
 
     printf(prefix, length);
 
-    fwrite(bytes, 1, length, stdout);
+    if (runningStatusEnabled && updateRunningStatus( &runningStatusState, bytes[0] )){
+        fwrite( &bytes[1], 1, length-1, stdout);
+    } else {
+        fwrite(bytes, 1, length, stdout);
+    }
 
     printf("%s", suffix);
 
@@ -295,7 +300,7 @@ void parser(void){
 
 void parsedMessage( Message_t * msg ){
 
-    Stringifier stringifier(runningStatusEnabled);
+    Stringifier stringifier;
 
     uint8_t stringBuffer[256];
 
@@ -425,7 +430,7 @@ int main(int argc, char * argv[], char * env[]){
         // if there are additional arguments just try to generate a message from
         if (optind < argc){
 
-            Stringifier stringifier(runningStatusEnabled);
+            Stringifier stringifier;
 
             uint8_t sysexBuffer[128];
             Message_t msg = {

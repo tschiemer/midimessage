@@ -9,6 +9,11 @@
 
 namespace MidiMessage {
 
+    /**
+     * Parser for continuous parsing of incoming byte stream.
+     *
+     * Can deal with Running Status (if enabled) and interleaved System Real Time Messages (see MIDI spec).
+     */
     struct Parser {
 
         bool RunningStatusEnabled;
@@ -39,6 +44,10 @@ namespace MidiMessage {
             this->Length = 0;
         }
 
+        /**
+         * @param data      incoming data buffer
+         * @param len       length of incoming data
+         */
         void receivedData(uint8_t * data, uint8_t len);
 
     };

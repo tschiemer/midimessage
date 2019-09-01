@@ -19,16 +19,8 @@ namespace MidiMessage {
         StringifierResultNoInput        = 6
     } StringifierResult_t;
 
+
     struct Stringifier {
-
-        bool RunningStatusEnabled;
-        uint8_t RunningStatusState;
-
-        Stringifier(bool runningStatusEnabled){
-            this->RunningStatusEnabled = runningStatusEnabled;
-
-            this->RunningStatusState = MidiMessage_RunningStatusNotSet;
-        }
 
         /**
          * Shorthand for fromArgs() when working with strings instead of argument lists

@@ -803,24 +803,7 @@ namespace MidiMessage {
             return StringifierResultInvalidValue;
         }
 
-
-
         return StringifierResultGenericError;
-//
-//        if (length == 0){
-//            return StringifierResultPackError;
-//        }
-//
-//
-//        if (this->RunningStatusEnabled && updateRunningStatus( &this->RunningStatusState, bytes[0] )){
-//            this->writeMidiStream( &bytes[1], length - 1 );
-//        } else {
-//            this->writeMidiStream(bytes, length);
-//        }
-//
-////        this->writeMidiStream( bytes, length);
-//
-//        return StringifierResultOk;
     }
 
 
