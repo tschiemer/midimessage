@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <midimessage.h>
-#include <midimessage-packers.h>
+#include <midimessage/packers.h>
 
 
 void receivedMidiMessageFromSomewhere( uint8_t * buf, int len );

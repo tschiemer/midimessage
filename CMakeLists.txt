@@ -13,13 +13,13 @@ include_directories(
 
 set(HEADER_FILES
         include/midimessage.h
-        include/midimessage-packers.h
-        include/manufacturerids.h
-        include/dlsproprietarychunkids.h
-        include/commonccs.h
-        include/notes.h
-        include/stringifier.h
-        include/parser.h)
+        include/midimessage/packers.h
+        include/midimessage/manufacturerids.h
+        include/midimessage/dlsproprietarychunkids.h
+        include/midimessage/commonccs.h
+        include/midimessage/notes.h
+        include/midimessage/stringifier.h
+        include/midimessage/parser.h)
 
 set(SOURCE_FILES
         src/midimessage.cpp
@@ -40,12 +40,30 @@ install(TARGETS midimessage midimessage-cli
             DESTINATION lib
             COMPONENT Libraries
             NAMELINK_COMPONENT Development
-        PUBLIC_HEADER
-            DESTINATION include
-            COMPONENT Development
+#        PUBLIC_HEADER
+#            DESTINATION include
+#            COMPONENT Development
         RUNTIME
             DESTINATION bin
             COMPONENT Runtime
+)
+install(FILES
+            include/midimessage.h
+#        PUBLIC_HEADER
+        DESTINATION include
+        COMPONENT Development
+)
+install(FILES
+            include/midimessage/packers.h
+            include/midimessage/manufacturerids.h
+            include/midimessage/dlsproprietarychunkids.h
+            include/midimessage/commonccs.h
+            include/midimessage/notes.h
+            include/midimessage/stringifier.h
+            include/midimessage/parser.h
+#        PUBLIC_HEADER
+        DESTINATION include/midimessage
+        COMPONENT Development
 )
 
 
@@ -55,7 +73,7 @@ message("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 add_custom_target(manufacturerids
         COMMAND wget https://www.midi.org/specifications-old/item/manufacturer-id-numbers
-        COMMAND php ${CMAKE_CURRENT_SOURCE_DIR}/tools/createManufacturerIdsHeader.php manufacturer-id-numbers ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/manufacturerids.h
+        COMMAND php ${CMAKE_CURRENT_SOURCE_DIR}/tools/createManufacturerIdsHeader.php manufacturer-id-numbers ${CMAKE_CURRENT_SOURCE_DIR}/include/midimessage/manufacturerids.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/midimessage/manufacturerids.h
         COMMAND rm manufacturer-id-numbers)
 
 add_custom_target(docs

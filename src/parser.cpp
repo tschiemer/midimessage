@@ -1,6 +1,6 @@
 
-#include <parser.h>
-#include <midimessage-packers.h>
+#include <midimessage/parser.h>
+#include <midimessage/packers.h>
 
 namespace MidiMessage {
     void Parser::receivedData(uint8_t * data, uint8_t len){

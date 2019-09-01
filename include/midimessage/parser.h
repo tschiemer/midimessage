@@ -5,7 +5,7 @@
 #ifndef MIDIMESSAGE_PARSER_H
 #define MIDIMESSAGE_PARSER_H
 
-#include "midimessage.h"
+#include "../midimessage.h"
 
 namespace MidiMessage {
 

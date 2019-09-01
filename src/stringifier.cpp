@@ -1,5 +1,5 @@
 
-#include <stringifier.h>
+#include <midimessage/stringifier.h>
 #include <util-hex.h>
 
 #include <cstdlib>
@@ -965,7 +965,7 @@ namespace MidiMessage {
                                 break;
 
                             case SysExRtMscCmdTimedGo:
-                                length + sprintfMtcLong( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode);
+                                length += sprintfMtcLong( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode);
                                 length += sprintf( (char*)&bytes[length], " ");
                                 length += sprintf( (char*)&bytes[length], "%s %s %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path);
                                 break;

@@ -13,8 +13,8 @@
 #include <sys/time.h>
 
 #include <midimessage.h>
-#include <stringifier.h>
-#include <parser.h>
+#include <midimessage/stringifier.h>
+#include <midimessage/parser.h>
 
 
 #define MAX_LEN 255
@@ -238,7 +238,7 @@ void parsedMessage( Message_t * msg ){
         }
 
         printf("%s\n", stringBuffer);
-        
+
         fflush(stdout);
     }
 }
