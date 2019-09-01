@@ -8,8 +8,108 @@
 
 #define str_eq(x,y)     (strcmp((char*)x,(char*)y) == 0)
 
+#define assertBool(expr)    if (expr) { return StringifierResultInvalidValue; }
+#define assertNibble(x)     if (((x) & NibbleMask) != (x)) { return StringifierResultInvalidValue; }
+#define assertU7(x)         if (x > MaxU7) { return StringifierResultInvalidValue; }
+#define assertU14(x)        if (x > MaxU14) { return StringifierResultInvalidValue; }
+#define assertU21(x)        if (x > MaxU21) { return StringifierResultInvalidValue; }
+#define assertU28(x)        if (x > MaxU28) { return StringifierResultInvalidValue; }
+#define assertU35(x)        if (x > MaxU35) { return StringifierResultInvalidValue; }
+#define assertData(bytes, len)   \
+                            for(uint8_t i = 0; i < len; i++){ \
+                                assertU7(bytes[i]); \
+                            }
 
 namespace MidiMessage {
+
+    bool readHex( uint8_t * bytes, uint8_t * length, uint8_t *argv, uint8_t expectedLength ){
+        int l = strlen((char*)argv);
+
+        if (l % 2 != 0){
+            return false;
+        }
+
+        l >>= 1;
+
+        if (expectedLength > 0 && l != expectedLength){
+            return false;
+        }
+
+        if (hex_to_byte(bytes, argv, l)){
+            if (length != NULL) {
+                *length = l;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    bool readMtc(MidiTimeCode_t * mtc, uint8_t *argv[]){
+        uint8_t fps = atoi((char*)argv[0]);
+
+        switch (fps) {
+            case 24:
+                fps = MtcFrameRate24fps;
+                break;
+            case 25:
+                fps = MtcFrameRate25fps;
+                break;
+            case 29:
+                fps = MtcFrameRate29_97fps;
+                break;
+            case 30:
+                fps = MtcFrameRate30fps;
+                break;
+            default:
+                return false;
+        }
+
+        mtc->Fps = fps;
+        mtc->Hour = atoi((char*)argv[1]);
+        mtc->Minute = atoi((char*)argv[2]);
+        mtc->Second = atoi((char*)argv[3]);
+        mtc->Frame = atoi((char*)argv[4]);
+        mtc->FractionalFrame = 0;
+
+        if (mtc->Hour > MtcMaxHour) return false;
+        if (mtc->Minute > MtcMaxMinute) return false;
+        if (mtc->Second > MtcMaxSecond) return false;
+        if (mtc->Frame > MtcMaxFps[fps]) return false;
+
+        return true;
+    }
+    bool readMtcLong(MidiTimeCode_t * mtc, uint8_t *argv[]){
+        if (readMtc(mtc, argv)){
+            mtc->FractionalFrame = atoi((char*)argv[5]);
+            if (mtc->FractionalFrame > MtcMaxFractionalFrame) return false;
+            return true;
+        }
+        return false;
+    }
+    void printfMtc( void (*printf)(char const * fmt, ...), MidiTimeCode_t * mtc){
+
+        uint8_t fps = 0;
+        switch(mtc->Fps){
+            case MtcFrameRate24fps: fps = 24; break;
+            case MtcFrameRate25fps: fps = 25; break;
+            case MtcFrameRate29_97fps: fps = 29; break;
+            case MtcFrameRate30fps: fps = 30; break;
+        }
+        printf("%d%s %d %d %d %d %d",
+               fps,
+               fps == 29 ? ".97" : "",
+               mtc->Hour,
+               mtc->Minute,
+               mtc->Second,
+               mtc->Frame,
+               mtc->FractionalFrame
+        );
+    }
+    void printfMtcLong(void (*printf)(char const * fmt, ...), MidiTimeCode_t * mtc){
+        printfMtc(printf, mtc);
+
+    }
 
 
     Stringifier::Stringifier( bool runningStatusEnabled, void (*writeMidiStream)(uint8_t * buffer, uint8_t length), void (*printfStringStream)(char const * fmt, ...) ) {
@@ -20,8 +120,6 @@ namespace MidiMessage {
 
         this->RunningStatusState = MidiMessage_RunningStatusNotSet;
     }
-
-
 
 
 
@@ -93,6 +191,10 @@ namespace MidiMessage {
             msg.Channel = atoi((char*)argv[2]);
             msg.Data.Note.Key = atoi((char*)argv[3]);
             msg.Data.Note.Velocity = atoi((char*)argv[4]);
+
+            assertU7(msg.Channel);
+            assertU7(msg.Data.Note.Key);
+            assertU7(msg.Data.Note.Velocity);
         }
 
         else if (str_eq(argv[0], "cc")) {
@@ -103,6 +205,10 @@ namespace MidiMessage {
             msg.Channel = atoi((char*)argv[1]);
             msg.Data.ControlChange.Controller = atoi((char*)argv[2]);
             msg.Data.ControlChange.Value = atoi((char*)argv[3]);
+
+            assertU7(msg.Channel);
+            assertU7(msg.Data.ControlChange.Controller);
+            assertU7(msg.Data.ControlChange.Value);
         }
 
         else if (str_eq(argv[0], "pc")) {
@@ -112,6 +218,9 @@ namespace MidiMessage {
             msg.StatusClass = StatusClassProgramChange;
             msg.Channel = atoi((char*)argv[1]);
             msg.Data.ProgramChange.Program = atoi((char*)argv[2]);
+
+            assertU7(msg.Channel);
+            assertU7(msg.Data.ProgramChange.Program);
         }
 
         else if (str_eq(argv[0], "pressure")) {
@@ -121,6 +230,9 @@ namespace MidiMessage {
             msg.StatusClass = StatusClassChannelPressure;
             msg.Channel = atoi((char*)argv[1]);
             msg.Data.ChannelPressure.Pressure = atoi((char*)argv[2]);
+
+            assertU7(msg.Channel);
+            assertU7(msg.Data.ChannelPressure.Pressure);
         }
 
         else if (str_eq(argv[0], "pitch")) {
@@ -130,6 +242,9 @@ namespace MidiMessage {
             msg.StatusClass = StatusClassPitchBendChange;
             msg.Channel = atoi((char*)argv[1]);
             msg.Data.PitchBendChange.Pitch = atoi((char*)argv[2]);
+
+            assertU7(msg.Channel);
+            assertU14(msg.Data.PitchBendChange.Pitch);
         }
 
         else if (str_eq(argv[0], "poly")) {
@@ -140,6 +255,10 @@ namespace MidiMessage {
             msg.Channel = atoi((char*)argv[1]);
             msg.Data.PolyphonicKeyPressure.Key = atoi((char*)argv[2]);
             msg.Data.PolyphonicKeyPressure.Pressure = atoi((char*)argv[3]);
+
+            assertU7(msg.Channel);
+            assertU7(msg.Data.PolyphonicKeyPressure.Key);
+            assertU7(msg.Data.PolyphonicKeyPressure.Pressure);
         }
 
         else if (str_eq(argv[0], "quarter-frame")) {
@@ -150,6 +269,9 @@ namespace MidiMessage {
             msg.SystemMessage = SystemMessageMtcQuarterFrame;
             msg.Data.MtcQuarterFrame.MessageType = atoi((char*)argv[1]);
             msg.Data.MtcQuarterFrame.Nibble = atoi((char*)argv[2]);
+
+            assertBool(isMtcQuarterMessageType(msg.Data.MtcQuarterFrame.MessageType));
+            assertNibble(msg.Data.MtcQuarterFrame.Nibble);
         }
         else if (str_eq(argv[0], "song-position")) {
             if (argc != 2) {
@@ -158,6 +280,8 @@ namespace MidiMessage {
             msg.StatusClass = StatusClassSystemMessage;
             msg.SystemMessage = SystemMessageSongPositionPointer;
             msg.Data.SongPositionPointer.Position = atoi((char*)argv[1]);
+
+            assertU14(msg.Data.SongPositionPointer.Position);
         }
         else if (str_eq(argv[0], "song-select")) {
             if (argc != 2) {
@@ -166,6 +290,8 @@ namespace MidiMessage {
             msg.StatusClass = StatusClassSystemMessage;
             msg.SystemMessage = SystemMessageSongSelect;
             msg.Data.SongSelect.Song = atoi((char*)argv[1]);
+
+            assertU7(msg.Data.SongSelect.Song);
         }
         
         else if (str_eq(argv[0], "sysex")) {
@@ -186,15 +312,12 @@ namespace MidiMessage {
                 if (argc < 3) {
                     msg.Data.SysEx.Length = 0;
                 } else {
-                    int len = strlen((char*)argv[2]);
-                    if (len % 2 != 0) {
+
+                    if (!readHex(msg.Data.SysEx.ByteData, &msg.Data.SysEx.Length, argv[2], 0)) {
                         return StringifierResultInvalidValue;
                     }
-                    len >>= 1;
-                    if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t *) argv[2], len)) {
-                        return StringifierResultInvalidValue;
-                    }
-                    msg.Data.SysEx.Length = len;
+
+                    assertData(msg.Data.SysEx.ByteData, msg.Data.SysEx.Length);
                 }
             }
             else if (str_eq(argv[1], "manufacturer")) {
@@ -206,15 +329,12 @@ namespace MidiMessage {
                 if (argc < 4) {
                     msg.Data.SysEx.Length = 0;
                 } else {
-                    int len = strlen((char*)argv[3]);
-                    if (len % 2 != 0) {
+
+                    if (!readHex(msg.Data.SysEx.ByteData, &msg.Data.SysEx.Length, argv[3], 0)) {
                         return StringifierResultInvalidValue;
                     }
-                    len >>= 1;
-                    if (!hex_to_byte(msg.Data.SysEx.ByteData, (uint8_t *) argv[3], len)) {
-                        return StringifierResultInvalidValue;
-                    }
-                    msg.Data.SysEx.Length = len;
+
+                    assertData(msg.Data.SysEx.ByteData, msg.Data.SysEx.Length);
                 }
             }
             else if (str_eq(argv[1], "rt")) {
@@ -235,30 +355,10 @@ namespace MidiMessage {
                             return StringifierResultWrongArgCount;
                         }
                         msg.Data.SysEx.SubId2 = SysExRtMtcFullMessage;
-                        uint8_t fps = atoi((char*)argv[5]);
 
-                        switch (fps) {
-                            case 24:
-                                fps = MtcFrameRate24fps;
-                                break;
-                            case 25:
-                                fps = MtcFrameRate25fps;
-                                break;
-                            case 29:
-                                fps = MtcFrameRate29_97fps;
-                                break;
-                            case 30:
-                                fps = MtcFrameRate30fps;
-                                break;
-                            default:
-                                return StringifierResultInvalidValue;
+                        if ( ! readMtc(&msg.Data.SysEx.Data.MidiTimeCode, &argv[5])){
+                            return StringifierResultInvalidValue;
                         }
-
-                        msg.Data.SysEx.Data.MidiTimeCode.Fps = fps;
-                        msg.Data.SysEx.Data.MidiTimeCode.Fps = atoi((char*)argv[6]);
-                        msg.Data.SysEx.Data.MidiTimeCode.Minute = atoi((char*)argv[7]);
-                        msg.Data.SysEx.Data.MidiTimeCode.Second = atoi((char*)argv[8]);
-                        msg.Data.SysEx.Data.MidiTimeCode.Frame = atoi((char*)argv[9]);
                     }
                     if (str_eq(argv[4], "user-bits")) {
                         if (argc < 6) {
@@ -266,7 +366,6 @@ namespace MidiMessage {
                         }
                         msg.Data.SysEx.SubId2 = SysExRtMtcUserBits;
 
-                        unsigned long long bits = strtoull((char*)argv[5], NULL, 16);
                         if ( ! hex_to_byte(msg.Data.SysEx.ByteData, argv[5], 5) ){
                             return StringifierResultInvalidValue;
                         }
@@ -289,7 +388,7 @@ namespace MidiMessage {
                             msg.Data.SysEx.Data.Cueing.EventNumber = SysExRtMtcCueingSpecialSystemStop;
                         }
                         else {
-                            msg.Data.SysEx.Data.Cueing.EventNumber = atoi((char*)argv[5]);
+                            return StringifierResultInvalidValue;
                         }
                     }
                     else {
@@ -336,6 +435,8 @@ namespace MidiMessage {
 
                         msg.Data.SysEx.Data.Cueing.EventNumber = atoi((char*)argv[5]);
 
+                        assertU14(msg.Data.SysEx.Data.Cueing.EventNumber);
+
                         if (isSysExRtMtcCueingWithAddInfo(msg.Data.SysEx.SubId2)) {
                             uint8_t offset = 0;
                             for (uint8_t i = 0; i < argc - 6; i++) {
@@ -368,22 +469,32 @@ namespace MidiMessage {
                     if (str_eq(argv[3], "eof")) {
                         msg.Data.SysEx.SubId1 = SysExNonRtEndOfFile;
                         msg.Data.SysEx.Data.PacketNumber = atoi((char*)argv[4]);
+
+                        assertU7(msg.Data.SysEx.Data.PacketNumber);
                     }
                     else if (str_eq(argv[3], "wait")) {
                         msg.Data.SysEx.SubId1 = SysExNonRtWait;
                         msg.Data.SysEx.Data.PacketNumber = atoi((char*)argv[4]);
+
+                        assertU7(msg.Data.SysEx.Data.PacketNumber);
                     }
                     else if (str_eq(argv[3], "cancel")) {
                         msg.Data.SysEx.SubId1 = SysExNonRtCancel;
                         msg.Data.SysEx.Data.PacketNumber = atoi((char*)argv[4]);
+
+                        assertU7(msg.Data.SysEx.Data.PacketNumber);
                     }
                     else if (str_eq(argv[3], "nak")) {
                         msg.Data.SysEx.SubId1 = SysExNonRtNAK;
                         msg.Data.SysEx.Data.PacketNumber = atoi((char*)argv[4]);
+
+                        assertU7(msg.Data.SysEx.Data.PacketNumber);
                     }
                     else if (str_eq(argv[3], "ack")) {
                         msg.Data.SysEx.SubId1 = SysExNonRtACK;
                         msg.Data.SysEx.Data.PacketNumber = atoi((char*)argv[4]);
+
+                        assertU7(msg.Data.SysEx.Data.PacketNumber);
                     }
                 }
 
@@ -404,11 +515,14 @@ namespace MidiMessage {
                         msg.Data.SysEx.Data.GeneralInfo.ManufacturerId = strtol((char*)argv[5], NULL, 16);
                         msg.Data.SysEx.Data.GeneralInfo.DeviceFamily = atoi((char*)argv[6]);
                         msg.Data.SysEx.Data.GeneralInfo.DeviceFamilyMember = atoi((char*)argv[7]);
-                        uint32_t rev = strtol((char*)argv[8], NULL, 16);
-                        msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[0] = (rev >> 24) & 0xFF;
-                        msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[1] = (rev >> 16) & 0xFF;
-                        msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[2] = (rev >> 8) & 0xFF;
-                        msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision[3] = rev & 0xFF;
+
+                        if (!readHex(msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision, NULL, argv[8], 4)) {
+                            return StringifierResultInvalidValue;
+                        }
+
+                        assertU14(msg.Data.SysEx.Data.GeneralInfo.DeviceFamily);
+                        assertU14(msg.Data.SysEx.Data.GeneralInfo.DeviceFamilyMember);
+                        assertData(msg.Data.SysEx.Data.GeneralInfo.SoftwareRevision, 4);
 
                     } else {
                         return StringifierResultInvalidValue;
@@ -465,6 +579,8 @@ namespace MidiMessage {
                         }
                         else {
                             msg.Data.SysEx.Data.Cueing.EventNumber = atoi((char*)argv[5]);
+
+                            assertU14(msg.Data.SysEx.Data.Cueing.EventNumber);
                         }
                     }
                     else {
@@ -543,31 +659,11 @@ namespace MidiMessage {
                             return StringifierResultInvalidValue;
                         }
 
-                        uint8_t fps = atoi((char*)argv[6]);
 
-                        switch (fps) {
-                            case 24:
-                                fps = MtcFrameRate24fps;
-                                break;
-                            case 25:
-                                fps = MtcFrameRate25fps;
-                                break;
-                            case 29:
-                                fps = MtcFrameRate29_97fps;
-                                break;
-                            case 30:
-                                fps = MtcFrameRate30fps;
-                                break;
-                            default:
-                                return StringifierResultInvalidValue;
+                        if ( ! readMtcLong(&msg.Data.SysEx.Data.Cueing.MidiTimeCode, &argv[6])){
+                            return StringifierResultInvalidValue;
                         }
 
-                        msg.Data.SysEx.Data.Cueing.MidiTimeCode.Fps = fps;
-                        msg.Data.SysEx.Data.Cueing.MidiTimeCode.Hour = atoi((char*)argv[7]);
-                        msg.Data.SysEx.Data.Cueing.MidiTimeCode.Minute = atoi((char*)argv[8]);
-                        msg.Data.SysEx.Data.Cueing.MidiTimeCode.Second = atoi((char*)argv[9]);
-                        msg.Data.SysEx.Data.Cueing.MidiTimeCode.Frame = atoi((char*)argv[10]);
-                        msg.Data.SysEx.Data.Cueing.MidiTimeCode.FractionalFrame = atoi((char*)argv[11]);
                         msg.Data.SysEx.Data.Cueing.EventNumber = atoi((char*)argv[12]);
 
                         if (isSysExNonRtMtcWithAddInfo(msg.Data.SysEx.SubId2)) {
@@ -582,6 +678,9 @@ namespace MidiMessage {
                             }
                             msg.Data.SysEx.Length += strlen((char*)(char *) msg.Data.SysEx.ByteData);
                         }
+
+                        assertU14(msg.Data.SysEx.Data.Cueing.EventNumber);
+                        // Additional info does not need be validate (well, expect for length maybe..) as it will be nibblized
 
                     }
                 }
@@ -723,21 +822,11 @@ namespace MidiMessage {
                         this->printfStringStream("mtc ");
 
                         if (msg.Data.SysEx.SubId2 == SysExRtMtcFullMessage){
-                            uint8_t fps = 0;
-                            switch(msg.Data.SysEx.Data.MidiTimeCode.Fps){
-                                case MtcFrameRate24fps: fps = 24; break;
-                                case MtcFrameRate25fps: fps = 25; break;
-                                case MtcFrameRate29_97fps: fps = 29; break;
-                                case MtcFrameRate30fps: fps = 30; break;
-                            }
-                            this->printfStringStream("full-message %d%s %d %d %d %d",
-                                   fps,
-                                   fps == 29 ? ".97" : "",
-                                   msg.Data.SysEx.Data.MidiTimeCode.Hour,
-                                   msg.Data.SysEx.Data.MidiTimeCode.Minute,
-                                   msg.Data.SysEx.Data.MidiTimeCode.Second,
-                                   msg.Data.SysEx.Data.MidiTimeCode.Frame
-                            );
+
+                            this->printfStringStream("full-message ");
+
+                            printfMtc( this->printfStringStream, &msg.Data.SysEx.Data.MidiTimeCode );
+
                         } else if (msg.Data.SysEx.SubId2 == SysExRtMtcUserBits){
                             this->printfStringStream("user-bits %02X%02X%02X%02X%02X",
                                    msg.Data.SysEx.ByteData[0],
@@ -786,7 +875,147 @@ namespace MidiMessage {
 //                        this->printfStringStream("%d", msg.Data.SysEx.SubId2);
                         }
                     }
+                    else if (msg.Data.SysEx.SubId1 == SysExRtMidiShowControl){
+                        this->printfStringStream("msc ");
+
+                        switch(msg.Data.SysEx.SubId2){
+
+                            case SysExRtMscCmdGo:               this->printfStringStream("go "); break;
+                            case SysExRtMscCmdStop:             this->printfStringStream("stop "); break;
+                            case SysExRtMscCmdResume:           this->printfStringStream("resume "); break;
+                            case SysExRtMscCmdLoad:             this->printfStringStream("load "); break;
+                            case SysExRtMscCmdGoOff:            this->printfStringStream("go-off "); break;
+                            case SysExRtMscCmdGo_JamLock:       this->printfStringStream("go-jam-lock "); break;
+                            case SysExRtMscCmdTimedGo:          this->printfStringStream("timed-go "); break;
+                            case SysExRtMscCmdSet:              this->printfStringStream("set "); break;
+                            case SysExRtMscCmdFire:             this->printfStringStream("fire "); break;
+                            case SysExRtMscCmdStandbyPlus:      this->printfStringStream("standby+ "); break;
+                            case SysExRtMscCmdStandbyMinus:     this->printfStringStream("standby- "); break;
+                            case SysExRtMscCmdSequencePlus:     this->printfStringStream("sequence+ "); break;
+                            case SysExRtMscCmdSequenceMinus:    this->printfStringStream("sequence- "); break;
+                            case SysExRtMscCmdStartClock:       this->printfStringStream("start-clock "); break;
+                            case SysExRtMscCmdStopClock:        this->printfStringStream("stop-clock "); break;
+                            case SysExRtMscCmdZeroClock:        this->printfStringStream("zero-clock "); break;
+                            case SysExRtMscCmdMtcChaseOn:       this->printfStringStream("mtc-chase-on "); break;
+                            case SysExRtMscCmdMtcChaseOff:      this->printfStringStream("mtc-chase-off "); break;
+                            case SysExRtMscCmdOpenCueList:      this->printfStringStream("open-cue-list "); break;
+                            case SysExRtMscCmdCloseCueList:     this->printfStringStream("close-cue-list "); break;
+                            case SysExRtMscCmdOpenCuePath:      this->printfStringStream("open-cue-path "); break;
+                            case SysExRtMscCmdCloseCuePath:     this->printfStringStream("close-cue-path "); break;
+                            case SysExRtMscCmdSetClock:         this->printfStringStream("set-clock "); break;
+                            case SysExRtMscCmdStandby:          this->printfStringStream("standby "); break;
+                            case SysExRtMscCmdGo2Pc:            this->printfStringStream("go-2-pc "); break;
+                            case SysExRtMscCmdStandingBy:       this->printfStringStream("standing-by "); break;
+                            case SysExRtMscCmdComplete:         this->printfStringStream("complete "); break;
+                            case SysExRtMscCmdCancel:           this->printfStringStream("cancel "); break;
+                            case SysExRtMscCmdCancelled:        this->printfStringStream("cancelled "); break;
+                            case SysExRtMscCmdAbort:            this->printfStringStream("abort "); break;
+                            case SysExRtMscCmdAllOff:           this->printfStringStream("all-off"); break;
+                            case SysExRtMscCmdRestore:          this->printfStringStream("restore"); break;
+                            case SysExRtMscCmdReset:            this->printfStringStream("reset"); break;
+                        }
+
+                        switch(msg.Data.SysEx.SubId2){
+
+                            case SysExRtMscCmdGo:
+                            case SysExRtMscCmdStop:
+                            case SysExRtMscCmdResume:
+                            case SysExRtMscCmdLoad:
+
+                            case SysExRtMscCmdGoOff:
+                            case SysExRtMscCmdGo_JamLock:
+                                this->printfStringStream("%s %s %s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg.Data.SysEx.Data.MidiShowControl.CueNumber.List, msg.Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                break;
+
+                            case SysExRtMscCmdTimedGo:
+                                printfMtcLong(this->printfStringStream, &msg.Data.SysEx.Data.MidiShowControl.MidiTimeCode);
+                                this->printfStringStream(" ");
+                                this->printfStringStream("%s %s %s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg.Data.SysEx.Data.MidiShowControl.CueNumber.List, msg.Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                break;
+
+                            case SysExRtMscCmdSet:
+                                this->printfStringStream("%d %d ", msg.Data.SysEx.Data.MidiShowControl.Controller, msg.Data.SysEx.Data.MidiShowControl.Value);
+                                printfMtcLong(this->printfStringStream, &msg.Data.SysEx.Data.MidiShowControl.MidiTimeCode);
+                                break;
+
+                            case SysExRtMscCmdFire:
+                                this->printfStringStream("%d", msg.Data.SysEx.Data.MidiShowControl.MacroNumber);
+                                break;
+
+                            case SysExRtMscCmdStandbyPlus:
+                            case SysExRtMscCmdStandbyMinus:
+                            case SysExRtMscCmdSequencePlus:
+                            case SysExRtMscCmdSequenceMinus:
+                            case SysExRtMscCmdStartClock:
+                            case SysExRtMscCmdStopClock:
+                            case SysExRtMscCmdZeroClock:
+                            case SysExRtMscCmdMtcChaseOn:
+                            case SysExRtMscCmdMtcChaseOff:
+                            case SysExRtMscCmdOpenCueList:
+                            case SysExRtMscCmdCloseCueList:
+                                this->printfStringStream("%s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.List);
+                                break;
+
+                            case SysExRtMscCmdOpenCuePath:
+                            case SysExRtMscCmdCloseCuePath:
+                                this->printfStringStream("%s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                break;
+
+                            case SysExRtMscCmdSetClock:
+                                printfMtcLong(this->printfStringStream, &msg.Data.SysEx.Data.MidiShowControl.MidiTimeCode);
+                                this->printfStringStream(" ");
+                                this->printfStringStream("%s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.List);
+                                break;
+
+                            case SysExRtMscCmdStandby:
+                            case SysExRtMscCmdGo2Pc:
+                                this->printfStringStream("%d %d %02X%02X%02X%02X ",
+                                                         msg.Data.SysEx.Data.MidiShowControl.Checksum,
+                                                         msg.Data.SysEx.Data.MidiShowControl.SequenceNumber,
+                                                         msg.Data.SysEx.Data.MidiShowControl.Data[0],
+                                                         msg.Data.SysEx.Data.MidiShowControl.Data[1],
+                                                         msg.Data.SysEx.Data.MidiShowControl.Data[2],
+                                                         msg.Data.SysEx.Data.MidiShowControl.Data[3]
+                                );
+                                this->printfStringStream("%s %s %s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg.Data.SysEx.Data.MidiShowControl.CueNumber.List, msg.Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                break;
+
+                            case SysExRtMscCmdStandingBy:
+                                this->printfStringStream("%d %d ", msg.Data.SysEx.Data.MidiShowControl.Checksum, msg.Data.SysEx.Data.MidiShowControl.SequenceNumber);
+                                printfMtcLong(this->printfStringStream, &msg.Data.SysEx.Data.MidiShowControl.MidiTimeCode);
+                                this->printfStringStream(" %s %s %s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg.Data.SysEx.Data.MidiShowControl.CueNumber.List, msg.Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                break;
+
+                            case SysExRtMscCmdComplete:
+                            case SysExRtMscCmdCancel:
+                                this->printfStringStream("%d %d ", msg.Data.SysEx.Data.MidiShowControl.Checksum, msg.Data.SysEx.Data.MidiShowControl.SequenceNumber);
+                                this->printfStringStream("%s %s %s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg.Data.SysEx.Data.MidiShowControl.CueNumber.List, msg.Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                break;
+
+                            case SysExRtMscCmdCancelled:
+                            case SysExRtMscCmdAbort:
+                                this->printfStringStream("%d %d %d ", msg.Data.SysEx.Data.MidiShowControl.Checksum, msg.Data.SysEx.Data.MidiShowControl.Status, msg.Data.SysEx.Data.MidiShowControl.SequenceNumber);
+                                this->printfStringStream("%s %s %s", msg.Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg.Data.SysEx.Data.MidiShowControl.CueNumber.List, msg.Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                break;
+
+
+                            default:
+                            case SysExRtMscCmdAllOff:
+                            case SysExRtMscCmdRestore:
+                            case SysExRtMscCmdReset:
+                                break;
+
+                        }
+                    }
+                    else if (msg.Data.SysEx.SubId1 == SysExRtMidiMachineControlCommand){
+                        this->printfStringStream("mcc-cmd ");
+                    }
+                    else if (msg.Data.SysEx.SubId1 == SysExRtMidiMachineControlResponse){
+                        this->printfStringStream("mcc-resp ");
+                    }
+
                 }
+
 
                 if (msg.Data.SysEx.Id == SysExIdNonRealTime){
                     this->printfStringStream("nonrt %d ", msg.Channel);
