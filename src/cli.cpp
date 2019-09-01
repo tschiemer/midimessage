@@ -156,7 +156,7 @@ void printHelp( void ) {
 
     printf("\nTODO:\n");
 
-    printf("\nMIDI Show Control\n");
+    printf("\nMIDI Show Control (MSC)\n");
     printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (all-off|restore|reset)\n");
     printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (go|stop|resume|load|go-off|go-jam-lock) <cue-number**> [<cue-list**> [<cue-path**>]]\n");
     printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> timed-go <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
