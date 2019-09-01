@@ -2,7 +2,7 @@
 
 https://github.com/tschiemer/midimessage
 
-Very basic constants and un-/packer for MIDI Messages.
+Very basic constants, un-/packers, parser, cli and unified human-readable formatters/parser for MIDI Messages.
 
 Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) that do not provide these basics.
 
@@ -12,15 +12,16 @@ No particular structures are enforced such that you can take from it what you wa
 
 - (many) MIDI Message constants + enumerations (see `include/midimessage.h`)
 - *structs* and *types* help to create a unified interface and make handling easier
-- Manufacturer Id list (see `include/manufacturerids.h`)
+- Manufacturer Id list (see `include/midimessage/manufacturerids.h`)
  - tool to generate up-to-date header, run `make manufacturerids` (requires wget + php)
-- Standard/Common CC list (see `include/commonccs.h`)
-- DLS Proprietary Chunk ids (see `include/dlsproprietarychunkids.h`)
-- Basic note helpers (see `include/notes.h`)
-- *packers* construct the right byte sequence for a particular message ASSERTing valid parameters (see `include/midimessage-packers.h`)
-- *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination) (see `include/midimessage-packers.h`)
+- Standard/Common CC list (see `include/midimessage/commonccs.h`)
+- DLS Proprietary Chunk ids (see `include/midimessage/dlsproprietarychunkids.h`)
+- Basic note helpers (see `include/midimessage/notes.h`)
+- *packers* construct the right byte sequence for a particular message ASSERTing valid parameters (see `include/midimessage/packers.h`)
+- *unpackers* for a specific message type try to parse the given byte sequence thereby validating the byte sequence (could be used in any combination) (see `include/midimessage/packers.h`)
 - packers and unpackers are always complementary and are available as literal-based and struct-based variants
-- *stringifier class* to turns binart MIDI messages into a uniform human-readable format and vice versa (see `include/stringifier.h`; see `src/cli.cpp` for application)
+- generic MIDI stream *parser* respecting Running Status and interleaved system real time messages (see `include/midimessage/parser.h`)
+- *stringifier* struct to turn (binary) MIDI messages into a uniform human-readable format and vice versa (see `include/midimessage/stringifier.h`; see `src/cli.cpp` for application)
 - *Command line utility* to turn human-readable commands into corresponding byte sequence and vice versa (see `src/cli.cpp` and below)
 
 
