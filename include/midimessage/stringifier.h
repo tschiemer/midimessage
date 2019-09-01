@@ -36,7 +36,7 @@ namespace MidiMessage {
         int toString(uint8_t * bytes, Message_t * msg);
     };
 
-    uint8_t stringToArgs(uint8_t ** argv, uint8_t max, uint8_t * bytes, uint8_t length);
+    uint8_t stringToArgs(uint8_t ** argv, uint8_t maxArg, uint8_t * bytes, uint8_t length);
 }
 
 #endif //MIDIMESSAGE_COMMAND_INTERFACE_H

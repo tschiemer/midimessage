@@ -121,9 +121,60 @@ namespace MidiMessage {
 
 
 
-    uint8_t stringToArgs(uint8_t ** argv, uint8_t max, uint8_t * bytes, uint8_t length){
+    uint8_t stringToArgs(uint8_t ** argv, uint8_t maxArg, uint8_t * bytes, uint8_t length){
 
-        return 0;
+        uint8_t argc = 0;
+
+        uint8_t beginning = 0;
+
+        for(uint8_t i = 0; i < length; i++){
+
+            // if first argument not yet detected
+            if (argc == 0){
+                // if reached end of string before first argument, then the input is bad.
+                if (bytes[i] == '\0'){
+                    break;
+                }
+                // trim beginning whitespace
+                if (bytes[i] != ' ' && bytes[i] != '\r' && bytes[i] != '\n' && bytes[i] != '\t'){
+                    argv[argc++] = &bytes[i];
+                    beginning = i;
+                }
+                continue;
+            }
+
+            // reached end of line/input
+            if (bytes[i] == '\0' || bytes[i] == '\r' || bytes[i] == '\n'){
+
+                // make sure to properly terminate last argument
+                bytes[i] = '\0';
+
+                break;
+            }
+
+            // replace argument delimiters with EOS
+            if (bytes[i] == ' '){
+                bytes[i] = '\0';
+
+                continue;
+            }
+
+            // otherwise there is  presumably valid argument character
+
+            // if before there was an argument delimiter, register new argument
+            if ( i - beginning > 0 && bytes[i - 1] == '\0'){
+
+                ASSERT(argc < maxArg);
+
+                argv[argc++] = &bytes[i];
+
+                continue;
+            }
+
+            // otherwise go to next input character
+        }
+
+        return argc;
     }
 
     int Stringifier::fromString(Message_t * msg, uint8_t length, uint8_t * bytes){
@@ -137,21 +188,16 @@ namespace MidiMessage {
     }
 
     int Stringifier::fromArgs(Message_t * msg, uint8_t argc, uint8_t *argv[]) {
-//
-//        uint8_t sysexBuffer[MsgLenMax];
-//        Message_t msg;
-//
-//        msg->Data.SysEx.ByteData = sysexBuffer;
+
+//        printf("argc = %d : ", argc);
+//        for(uint8_t i = 0; i < argc; i++){
+//            printf("%s ", argv[i]);
+//        }
+//        printf("\n");
 
         if (argc == 0) {
             return StringifierResultNoInput;
         }
-
-        //    for(int i = 0; i < argc; i++){
-        //        this->printfStringStream("%s ", argv[i]);
-        //    }
-        //    this->printfStringStream("\n");
-        //    fflush(stdout);
 
         if (argc == 1){
             if (str_eq(argv[0], "start")) {
