@@ -123,7 +123,7 @@ void printHelp( void ) {
     printf("\n(General) System Exclusives*:\n");
     printf("\t sysex experimental <data (xN)>\n");
     printf("\t sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>\n");
-    printf("\t sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number>\n");
+    printf("\t sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>\n");
     printf("\t sysex nonrt <device-id (u7)> info request\n");
     printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
     printf("\t sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)\n");
