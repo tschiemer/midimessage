@@ -140,7 +140,6 @@ void printHelp( void ) {
     printf("\t sysex rt <device-id (u7)> cueing (punch-in|punch-out) <event-number (u14)>\n");
     printf("\t sysex rt <device-id (u7)> cueing (event-start|event-stop|cue-point) <event-number (u14)> [<event-name (str) ..>]\n");
     printf("\t sysex rt <device-id (u7)> cueing event-name <event-number (u14)> <event-name (str) ..>\n");
-    printf("** <cue-number>, <cue-list>, <cue-path> := ascii numbers (0-9) and/or dots (.)\n");
 
     printf("\nMIDI Show Control (MSC)\n");
     printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (all-off|restore|reset)\n");
@@ -154,6 +153,7 @@ void printHelp( void ) {
     printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (standby|go-2-pc) <checksum (u14)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
     printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> standing-by <checksum (u14)> <sequence-number (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
     printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (cancelled|abort) <checksum (u14)> <status (u16)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("** <cue-number>, <cue-list>, <cue-path> := ascii numbers (0-9) and/or dots (.)\n");
     printf("*** <cmdFmt> := lighting|moving-lights|color-changers|strobes|lasers|chasers|sound|music|cd-players|eprom-playback|audio-tape-machines|intercoms|amplifiers|audio-fx|equalizers|machinery|rigging|flys|lifts|turntables|trusses|robots|animation|floats|breakaways|barges|video|video-tape-machines|video-cassette-machines|video-disc-players|video-switchers|video-fx|video-char-generators|video-still-stores|video-monitors|projection|film-projects|slide-projectors|video-projectors|dissolvers|shutter-controls|process-control|hydraulic-oil|h2o|co2|compressed-air|natural-gas|fog|smoke|cracked-haze|pyro|fireworks|explosions|flame|smoke-pots|all\n");
 
     printf("\nTODO:\n");
