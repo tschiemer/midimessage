@@ -984,6 +984,7 @@ namespace MidiMessage {
         if (len < 3 || !isControlByte(bytes[len-1]) ) {
             return false;
         }
+//        ASSERT(false);
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }

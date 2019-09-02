@@ -1436,7 +1436,7 @@ namespace MidiMessage {
 
                 if (msg->Data.SysEx.Id == SysExIdExperimental){
                     length += sprintf( (char*)&bytes[length], "experimental ");
-
+//printf("fooof\n");
                     length += sprintfHex( &bytes[length],  msg->Data.SysEx.ByteData,  msg->Data.SysEx.Length);
                 }
 

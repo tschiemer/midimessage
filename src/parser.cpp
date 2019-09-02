@@ -2,6 +2,8 @@
 #include <midimessage/parser.h>
 #include <midimessage/packers.h>
 
+//#include <cstdio>
+
 namespace MidiMessage {
     void Parser::receivedData(uint8_t * data, uint8_t len){
 
@@ -34,7 +36,7 @@ namespace MidiMessage {
             if (this->Length > 1 && isControlByte(data[i]) ){
 
                 // sysexes may end with status bytes other than EOX
-                if (this->Buffer[0] != SystemMessageSystemExclusive){
+                if (this->Buffer[0] == SystemMessageSystemExclusive){
 
                     this->Buffer[ this->Length++ ] = SystemMessageEndOfExclusive;
 
@@ -45,6 +47,11 @@ namespace MidiMessage {
                         // emit sysex
                         this->MessageHandler( this->Message );
                     }
+
+                    // discard previous data
+                    this->Length = 0;
+
+                    continue;
                 }
 
                 // discard previous data
@@ -64,5 +71,11 @@ namespace MidiMessage {
                 this->Length = 0;
             }
         }
+
+//        printf("%d ", this->Length);
+//        for(uint8_t i = 0; i < this->Length; i++){
+//            printf("%02X", this->Buffer[i]);
+//        }
+//        printf("\n");
     }
 }
