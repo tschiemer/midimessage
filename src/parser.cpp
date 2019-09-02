@@ -48,10 +48,10 @@ namespace MidiMessage {
                         this->MessageHandler( this->Message );
                     }
 
-                    // discard previous data
-                    this->Length = 0;
-
-                    continue;
+                    // if was in fact an EOX, skip this byte
+                    if (data[i] == SystemMessageEndOfExclusive){
+                        continue;
+                    }
                 }
 
                 // discard previous data
