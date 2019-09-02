@@ -2,7 +2,7 @@
 
 https://github.com/tschiemer/midimessage
 
-Very basic constants, un-/packers, parser, cli and unified human-readable formatters/parser for MIDI Messages.
+Extensive library for MIDI constants, un-/packers, parser, cli and unified human-readable formatters/parser for MIDI Messages.
 
 Intended for usage with frameworks (such as https://github.com/thestk/rtmidi) that do not provide these basics.
 
@@ -157,12 +157,11 @@ Options:
 	 --prefix=<prefix> 		 Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).
 	 --suffix=<suffix> 		 Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).
 
-Note: Data bytes have a value range of 0-127 - anything above is considered a control byte. There is no input validation!!
 Fancy pants note: the parsing output format is identical to the generation command format ;)
 
 Data types:
 	 uN := N bit unsigned integer)
-		 u4 (data nibble) < 63 (0x0FF)
+		 u4 (data nibble) < 15 (0x0F)
 		 u7 <= 127 (0x7F)
 		 u14 <= 16383 (0x3FFF)
 		 u21 <= 2097151 (0x1FFFFF)
@@ -173,12 +172,12 @@ Data types:
 	 xN (N byte hex string <> 2Ns) (note: data bytes must be <= 0x7F)
 
 Voice Commands:
-	 note (on|off) <channel> <key> <velocity>
-	 cc <channel> <controller> <value>
-	 pc <channel> <program>
-	 pressure <channel> <pressure>
-	 pitch <channel> <pitch>
-	 poly <channel> <key> <pressure>
+	 note (on|off) <channel (u4)> <key (u7)> <velocity (u7)>
+	 cc <channel (u4)> <controller (u7)> <value (u7)>
+	 pc <channel (u4)> <program (u7)>
+	 pressure <channel (u4)> <pressure (u7)>
+	 pitch <channel (u4)> <pitch (u14)>
+	 poly <channel (u4)> <key (u7)> <pressure (u7)>
 
 System Commands:
 	 start
@@ -188,14 +187,14 @@ System Commands:
 	 active-sensing
 	 tune-request
 	 timing-clock
-	 quarter-frame <messageType> <nibble>
-	 song-position <position>
-	 song-select <songNumber>
+	 quarter-frame <messageType (u3)> <nibble (u4)>
+	 song-position <position (u14)>
+	 song-select <songNumber (u7)>
 
 (General) System Exclusives*:
 	 sysex experimental <data (xN)>
 	 sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>
-	 sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number>
+	 sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>
 	 sysex nonrt <device-id (u7)> info request
 	 sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>
 	 sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)
@@ -214,20 +213,21 @@ System Commands:
 	 sysex rt <device-id (u7)> cueing event-name <event-number (u14)> <event-name (str) ..>
 ** <cue-number>, <cue-list>, <cue-path> := ascii numbers (0-9) and/or dots (.)
 
-TODO:
+MIDI Show Control (MSC)
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> (all-off|restore|reset)
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> (go|stop|resume|load|go-off|go-jam-lock) <cue-number**> [<cue-list**> [<cue-path**>]]
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> timed-go <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> set <controller (u14)> <value (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)>
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> fire <macro-number (u7)>
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> (standby+|standby-|sequence+|sequence-|start-clock|stop-clock|zero-clock|mtc-chase-on|mtc-chase-off|open-cue-list|close-cue-list) <cue-list**>
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> (open-cue-path|close-cue-path) <cue-path**>
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> set-clock <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-list**>
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> (standby|go-2-pc) <checksum (u14)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> standing-by <checksum (u14)> <sequence-number (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]
+	 sysex rt <device-id (u7)> msc <cmdFmt ***> (cancelled|abort) <checksum (u14)> <status (u16)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]
+*** <cmdFmt> := lighting|moving-lights|color-changers|strobes|lasers|chasers|sound|music|cd-players|eprom-playback|audio-tape-machines|intercoms|amplifiers|audio-fx|equalizers|machinery|rigging|flys|lifts|turntables|trusses|robots|animation|floats|breakaways|barges|video|video-tape-machines|video-cassette-machines|video-disc-players|video-switchers|video-fx|video-char-generators|video-still-stores|video-monitors|projection|film-projects|slide-projectors|video-projectors|dissolvers|shutter-controls|process-control|hydraulic-oil|h2o|co2|compressed-air|natural-gas|fog|smoke|cracked-haze|pyro|fireworks|explosions|flame|smoke-pots|all
 
-MIDI Show Control
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> (all-off|restore|reset)
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> (go|stop|resume|load|go-off|go-jam-lock) <cue-number**> [<cue-list**> [<cue-path**>]]
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> timed-go <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> set <controller (u14)> <value (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)>
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> fire <macro-number (u7)>
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> (standby+|standby-|sequence+|sequence-|start-clock|stop-clock|zero-clock|mtc-chase-on|mtc-chase-off|open-cue-list|close-cue-list) <cue-list**>
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> (open-cue-path|close-cue-path) <cue-path**>
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> set-clock <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-list**>
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> (standby|go-2-pc) <checksum (u14)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> standing-by <checksum (u14)> <sequence-number (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]
-	 sysex rt <device-id (u7)> msc <cmdFmt (u7)> (cancelled|abort) <checksum (u14)> <status (u16)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]
+TODO:
 
 MIDI Machine Commands (MMC)
 For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.
@@ -244,6 +244,8 @@ For MMC the MIDI format acts as container for a command stream of its own, where
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
+	 bin/midimessage-cli -g sysex experimental 1337
+	 bin/midimessage-cli -g sysex rt 1 msc sound reset
 	 bin/midimessage-cli -g | bin/midimessage-cli -p
 	 bin/midimessage-cli -g --prefix='%d ' --suffix=$'\x0a'
 	 bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording

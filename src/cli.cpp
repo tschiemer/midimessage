@@ -86,7 +86,7 @@ void printHelp( void ) {
     printf("\t --prefix=<prefix> \t\t Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %%d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).\n");
     printf("\t --suffix=<suffix> \t\t Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
 
-    printf("Fancy pants note: the parsing output format is identical to the generation command format ;) \n");
+    printf("\nFancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
     printf("\nData types:\n");
     printf("\t uN := N bit unsigned integer)\n");
@@ -142,20 +142,21 @@ void printHelp( void ) {
     printf("\t sysex rt <device-id (u7)> cueing event-name <event-number (u14)> <event-name (str) ..>\n");
     printf("** <cue-number>, <cue-list>, <cue-path> := ascii numbers (0-9) and/or dots (.)\n");
 
-    printf("\nTODO:\n");
-
     printf("\nMIDI Show Control (MSC)\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (all-off|restore|reset)\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (go|stop|resume|load|go-off|go-jam-lock) <cue-number**> [<cue-list**> [<cue-path**>]]\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> timed-go <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> set <controller (u14)> <value (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)>\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> fire <macro-number (u7)>\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (standby+|standby-|sequence+|sequence-|start-clock|stop-clock|zero-clock|mtc-chase-on|mtc-chase-off|open-cue-list|close-cue-list) <cue-list**>\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (open-cue-path|close-cue-path) <cue-path**>\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> set-clock <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-list**>\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (standby|go-2-pc) <checksum (u14)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> standing-by <checksum (u14)> <sequence-number (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
-    printf("\t sysex rt <device-id (u7)> msc <cmdFmt (u7)> (cancelled|abort) <checksum (u14)> <status (u16)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (all-off|restore|reset)\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (go|stop|resume|load|go-off|go-jam-lock) <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> timed-go <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> set <controller (u14)> <value (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> fire <macro-number (u7)>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (standby+|standby-|sequence+|sequence-|start-clock|stop-clock|zero-clock|mtc-chase-on|mtc-chase-off|open-cue-list|close-cue-list) <cue-list**>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (open-cue-path|close-cue-path) <cue-path**>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> set-clock <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-list**>\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (standby|go-2-pc) <checksum (u14)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> standing-by <checksum (u14)> <sequence-number (u14)> <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps> < (x1)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("\t sysex rt <device-id (u7)> msc <cmdFmt ***> (cancelled|abort) <checksum (u14)> <status (u16)> <sequence-number (u14)> <data (x4)> <cue-number**> [<cue-list**> [<cue-path**>]]\n");
+    printf("*** <cmdFmt> := lighting|moving-lights|color-changers|strobes|lasers|chasers|sound|music|cd-players|eprom-playback|audio-tape-machines|intercoms|amplifiers|audio-fx|equalizers|machinery|rigging|flys|lifts|turntables|trusses|robots|animation|floats|breakaways|barges|video|video-tape-machines|video-cassette-machines|video-disc-players|video-switchers|video-fx|video-char-generators|video-still-stores|video-monitors|projection|film-projects|slide-projectors|video-projectors|dissolvers|shutter-controls|process-control|hydraulic-oil|h2o|co2|compressed-air|natural-gas|fog|smoke|cracked-haze|pyro|fireworks|explosions|flame|smoke-pots|all\n");
+
+    printf("\nTODO:\n");
 
     printf("\nMIDI Machine Commands (MMC)\n");
     printf("For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.\n");
@@ -174,6 +175,8 @@ void printHelp( void ) {
 
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");
+    printf("\t bin/midimessage-cli -g sysex experimental 1337\n");
+    printf("\t bin/midimessage-cli -g sysex rt 1 msc sound reset\n");
     printf("\t bin/midimessage-cli -g | bin/midimessage-cli -p\n");
     printf("\t bin/midimessage-cli -g --prefix='%%d ' --suffix=$'\\x0a'\n");
     printf("\t bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording\n");
