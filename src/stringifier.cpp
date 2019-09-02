@@ -9,7 +9,7 @@
 
 #define str_eq(x,y)     (strcmp((char*)x,(char*)y) == 0)
 
-#define assertBool(expr)    if (expr) { return StringifierResultInvalidValue; }
+#define assertBool(expr)    if (!(expr)) { return StringifierResultInvalidValue; }
 #define assertNibble(x)     if (((x) & NibbleMask) != (x)) { return StringifierResultInvalidValue; }
 #define assertU7(x)         if (x > MaxU7) { return StringifierResultInvalidValue; }
 #define assertU14(x)        if (x > MaxU14) { return StringifierResultInvalidValue; }
@@ -20,6 +20,11 @@
                             for(uint8_t i = 0; i < len; i++){ \
                                 assertU7(bytes[i]); \
                             }
+#define assertCueString(bytes) \
+                            for(uint8_t i = 0; bytes[i] != '\0'; i++){ \
+                                assertBool(isMscCueNumberChar(bytes[i])); \
+                            }
+
 
 namespace MidiMessage {
 
@@ -117,6 +122,83 @@ namespace MidiMessage {
         length += sprintf((char*)&dst[length], " %d", mtc->FractionalFrame);
 
         return length;
+    }
+
+    uint8_t readCueNumberPart( uint8_t * dst, uint8_t * argv ){
+
+        if ( ! isValidMscCueNumberPart(argv) ){
+            return 0;
+        }
+
+        // strcpy + strlen
+        uint8_t i = 0;
+        while( argv[i] != '\0' ){
+            dst[i] = argv[i];
+            i++;
+        }
+
+        dst[i] = '\0';
+
+        return i;
+    }
+
+    bool readCueNumber( uint8_t * dst, MscCueNumber_t *cueNumber, uint8_t argc, uint8_t ** argv ){
+
+        uint8_t len = readCueNumberPart( dst, argv[0] );
+
+        if (len == 0) {
+            return false;
+        }
+
+        cueNumber->Number = dst;
+
+        if (argc == 1){
+            cueNumber->List = NULL;
+            cueNumber->Path = NULL;
+            return true;
+        }
+
+        cueNumber->List = &cueNumber->Number[len];
+
+        len = readCueNumberPart( cueNumber->List, argv[1] );
+
+        if (len == 0) {
+            return false;
+        }
+
+
+        if (argc == 2){
+            cueNumber->Path = NULL;
+            return true;
+        }
+
+        cueNumber->Path = &cueNumber->List[len];
+
+        len = readCueNumberPart( cueNumber->Path, argv[1] );
+
+        if (len == 0){
+            return false;
+        }
+
+        return true;
+    }
+
+    uint8_t sprintfCueNumber( uint8_t * dst, MscCueNumber_t *cueNumber ){
+        uint8_t len = sprintf( (char*)dst, "%s", cueNumber->Number );
+
+        if (cueNumber->List == NULL){
+            return len;
+        }
+
+        len += sprintf( (char*)&dst[len], " %s", cueNumber->List );
+
+        if (cueNumber->Path == NULL){
+            return len;
+        }
+
+        len += sprintf( (char*)&dst[len], " %s", cueNumber->Path );
+
+        return len;
     }
 
 
@@ -542,6 +624,489 @@ namespace MidiMessage {
 
                     }
                 }
+                else if (str_eq(argv[3],"msc")){
+                    if (argc < 6) {
+                        return StringifierResultWrongArgCount;
+                    }
+                    msg->Data.SysEx.SubId1 = SysExRtMidiShowControl;
+
+                    msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Value = 0;
+
+                    msg->Data.SysEx.Data.MidiShowControl.Command.Value = 0;
+
+
+
+                    if (str_eq(argv[4], "lighting")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtLighting;
+                    }
+                    else if (str_eq(argv[4], "moving-lights")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtMovingLights;
+                    }
+                    else if (str_eq(argv[4], "color-changers")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtColorChangers;
+                    }
+                    else if (str_eq(argv[4], "strobes")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtStrobes;
+                    }
+                    else if (str_eq(argv[4], "lasers")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtLasers;
+                    }
+                    else if (str_eq(argv[4], "chasers")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtChasers;
+                    }
+                    else if (str_eq(argv[4], "sound")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtSound;
+                    }
+                    else if (str_eq(argv[4], "music")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtMusic;
+                    }
+                    else if (str_eq(argv[4], "cd-players")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtCdPlayers;
+                    }
+                    else if (str_eq(argv[4], "eprom-playback")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtEpromPlayback;
+                    }
+                    else if (str_eq(argv[4], "audio-tape-machines")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtAudioTapeMachines;
+                    }
+                    else if (str_eq(argv[4], "intercoms")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtIntercoms;
+                    }
+                    else if (str_eq(argv[4], "amplifiers")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtAmplifiers;
+                    }
+                    else if (str_eq(argv[4], "audio-fx")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtAudioEffectsDevices;
+                    }
+                    else if (str_eq(argv[4], "equalizers")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtEqualizers;
+                    }
+                    else if (str_eq(argv[4], "machinery")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtMachinery;
+                    }
+                    else if (str_eq(argv[4], "rigging")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtRigging;
+                    }
+                    else if (str_eq(argv[4], "flys")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtFlys;
+                    }
+                    else if (str_eq(argv[4], "lifts")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtLifts;
+                    }
+                    else if (str_eq(argv[4], "turntables")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtTurntables;
+                    }
+                    else if (str_eq(argv[4], "trusses")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtTrusses;
+                    }
+                    else if (str_eq(argv[4], "robots")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtRobots;
+                    }
+                    else if (str_eq(argv[4], "animation")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtAnimation;
+                    }
+                    else if (str_eq(argv[4], "floats")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtFloats;
+                    }
+                    else if (str_eq(argv[4], "breakaways")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtBreakaways;
+                    }
+                    else if (str_eq(argv[4], "barges")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtBarges;
+                    }
+                    else if (str_eq(argv[4], "video")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideo;
+                    }
+                    else if (str_eq(argv[4], "video-tape-machines")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoTapeMachines;
+                    }
+                    else if (str_eq(argv[4], "video-cassette-machines")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoCassetteMachines;
+                    }
+                    else if (str_eq(argv[4], "video-disc-players")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoDiscPlayers;
+                    }
+                    else if (str_eq(argv[4], "video-switchers")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoSwitchers;
+                    }
+                    else if (str_eq(argv[4], "video-fx")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoEffects;
+                    }
+                    else if (str_eq(argv[4], "video-char-generators")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoCharacterGenerators;
+                    }
+                    else if (str_eq(argv[4], "video-still-stores")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoStillStores;
+                    }
+                    else if (str_eq(argv[4], "video-monitors")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoMonitors;
+                    }
+                    else if (str_eq(argv[4], "projection")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtProjection;
+                    }
+                    else if (str_eq(argv[4], "film-projects")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtFilmProjectors;
+                    }
+                    else if (str_eq(argv[4], "slide-projectors")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtSlideProjectors;
+                    }
+                    else if (str_eq(argv[4], "video-projectors")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtVideoProjectors;
+                    }
+                    else if (str_eq(argv[4], "dissolvers")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtDissolvers;
+                    }
+                    else if (str_eq(argv[4], "shutter-controls")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtShutterControls;
+                    }
+                    else if (str_eq(argv[4], "process-control")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtProcessControl;
+                    }
+                    else if (str_eq(argv[4], "hydraulic-oil")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtHydraulicOil;
+                    }
+                    else if (str_eq(argv[4], "h2o")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtH2O;
+                    }
+                    else if (str_eq(argv[4], "co2")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtCO2;
+                    }
+                    else if (str_eq(argv[4], "compressed-air")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtCompressedAir;
+                    }
+                    else if (str_eq(argv[4], "natural-gas")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtNaturalGas;
+                    }
+                    else if (str_eq(argv[4], "fog")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtFog;
+                    }
+                    else if (str_eq(argv[4], "smoke")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtSmoke;
+                    }
+                    else if (str_eq(argv[4], "cracked-haze")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtCrackedHaze;
+                    }
+                    else if (str_eq(argv[4], "pyro")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtPyro;
+                    }
+                    else if (str_eq(argv[4], "fireworks")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtFireworks;
+                    }
+                    else if (str_eq(argv[4], "explosions")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtExplosions;
+                    }
+                    else if (str_eq(argv[4], "flame")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtFlame;
+                    }
+                    else if (str_eq(argv[4], "smoke-pots")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtSmokePots;
+                    }
+                    else if (str_eq(argv[4], "all")) {
+                        msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0] = SysExRtMscCmdFmtAllTypes;
+                    }
+                    else {
+                        return StringifierResultInvalidValue;
+                    }
+
+                    if (str_eq(argv[5], "go")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdGo;
+                    }
+                    else if (str_eq(argv[5], "stop")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdStop;
+                    }
+                    else if (str_eq(argv[5], "resume")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdResume;
+                    }
+                    else if (str_eq(argv[5], "load")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdLoad;
+                    }
+                    else if (str_eq(argv[5], "go-off")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdGoOff;
+                    }
+                    else if (str_eq(argv[5], "go-jam-lock")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdGo_JamLock;
+                    }
+                    else if (str_eq(argv[5], "timed-go")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdTimedGo;
+                    }
+                    else if (str_eq(argv[5], "set")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdSet;
+                    }
+                    else if (str_eq(argv[5], "fire")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdFire;
+                    }
+                    else if (str_eq(argv[5], "standby+")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdStandbyPlus;
+                    }
+                    else if (str_eq(argv[5], "standby-")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdStandbyMinus;
+                    }
+                    else if (str_eq(argv[5], "sequence+")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdSequencePlus;
+                    }
+                    else if (str_eq(argv[5], "sequence-")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdSequenceMinus;
+                    }
+                    else if (str_eq(argv[5], "start-clock")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdStartClock;
+                    }
+                    else if (str_eq(argv[5], "stop-clock")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdStopClock;
+                    }
+                    else if (str_eq(argv[5], "zero-clock")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdZeroClock;
+                    }
+                    else if (str_eq(argv[5], "mtc-chase-on")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdMtcChaseOn;
+                    }
+                    else if (str_eq(argv[5], "mtc-chase-off")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdMtcChaseOff;
+                    }
+                    else if (str_eq(argv[5], "open-cue-list")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdOpenCueList;
+                    }
+                    else if (str_eq(argv[5], "close-cue-list")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdCloseCueList;
+                    }
+                    else if (str_eq(argv[5], "open-cue-path")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdOpenCuePath;
+                    }
+                    else if (str_eq(argv[5], "close-cue-path")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdCloseCuePath;
+                    }
+                    else if (str_eq(argv[5], "set-clock")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdSetClock;
+                    }
+                    else if (str_eq(argv[5], "standby")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdStandby;
+                    }
+                    else if (str_eq(argv[5], "go-2-pc")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdGo2Pc;
+                    }
+                    else if (str_eq(argv[5], "standing-by")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdStandingBy;
+                    }
+                    else if (str_eq(argv[5], "complete")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdComplete;
+                    }
+                    else if (str_eq(argv[5], "cancel")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdCancel;
+                    }
+                    else if (str_eq(argv[5], "cancelled")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdCancelled;
+                    }
+                    else if (str_eq(argv[5], "abort")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdAbort;
+                    }
+                    else if (str_eq(argv[5], "all-off")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdAllOff;
+                    }
+                    else if (str_eq(argv[5], "restore")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdRestore;
+                    }
+                    else if (str_eq(argv[5], "reset")) {
+                        msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0] = SysExRtMscCmdReset;
+                    }
+                    else {
+                        return StringifierResultInvalidValue;
+                    }
+
+                    switch(msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0]){
+
+                        case SysExRtMscCmdGo:
+                        case SysExRtMscCmdStop:
+                        case SysExRtMscCmdResume:
+                        case SysExRtMscCmdLoad:
+
+                        case SysExRtMscCmdGoOff:
+                        case SysExRtMscCmdGo_JamLock:
+                            if (argc < 7 || 9 < argc) {
+                                return StringifierResultWrongArgCount;
+                            }
+                            if ( ! readCueNumber( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Data.MidiShowControl.CueNumber, argc - 6, &argv[6]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdTimedGo:
+                            if (argc < 13 | 15 < argc) {
+                                return StringifierResultWrongArgCount;
+                            }
+                            if ( ! readMtcLong( &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode, &argv[6]) ){
+                                return StringifierResultInvalidValue;
+                            }
+                            if ( ! readCueNumber( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Data.MidiShowControl.CueNumber, argc - 12, &argv[12]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdSet:
+                            if (argc != 14) {
+                                return StringifierResultWrongArgCount;
+                            }
+                            msg->Data.SysEx.Data.MidiShowControl.Controller = atoi((char*)argv[6]);
+                            msg->Data.SysEx.Data.MidiShowControl.Value = atoi((char*)argv[7]);
+
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.Controller);
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.Value);
+
+                            if ( ! readMtcLong( &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode, &argv[8]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdFire:
+                            if (argc != 7) {
+                                return StringifierResultWrongArgCount;
+                            }
+                            msg->Data.SysEx.Data.MidiShowControl.MacroNumber = atoi((char*)argv[6]);
+
+                            assertU7(msg->Data.SysEx.Data.MidiShowControl.MacroNumber);
+
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdStandbyPlus:
+                        case SysExRtMscCmdStandbyMinus:
+                        case SysExRtMscCmdSequencePlus:
+                        case SysExRtMscCmdSequenceMinus:
+                        case SysExRtMscCmdStartClock:
+                        case SysExRtMscCmdStopClock:
+                        case SysExRtMscCmdZeroClock:
+                        case SysExRtMscCmdMtcChaseOn:
+                        case SysExRtMscCmdMtcChaseOff:
+                        case SysExRtMscCmdOpenCueList:
+                        case SysExRtMscCmdCloseCueList:
+                            if (argc != 7) {
+                                return StringifierResultWrongArgCount;
+                            }
+                            msg->Data.SysEx.Data.MidiShowControl.CueNumber.List = msg->Data.SysEx.ByteData;
+                            if ( ! readCueNumberPart(msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, argv[6]) ){
+                                return StringifierResultInvalidValue;
+                            }
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdOpenCuePath:
+                        case SysExRtMscCmdCloseCuePath:
+                            if (argc != 7) {
+                                return StringifierResultWrongArgCount;
+                            }
+
+                            msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path = msg->Data.SysEx.ByteData;
+                            if ( ! readCueNumberPart(msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path, argv[6]) ){
+                                return StringifierResultInvalidValue;
+                            }
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdSetClock:
+                            if (argc != 13) {
+                                return StringifierResultWrongArgCount;
+                            }
+
+                            if ( ! readMtcLong( &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode, &argv[6]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            msg->Data.SysEx.Data.MidiShowControl.CueNumber.List = msg->Data.SysEx.ByteData;
+                            if ( ! readCueNumberPart(msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, argv[12]) ){
+                                return StringifierResultInvalidValue;
+                            }
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdStandby:
+                        case SysExRtMscCmdGo2Pc:
+                            if (argc < 10 || 12 < argc) {
+                                return StringifierResultWrongArgCount;
+                            }
+
+                            msg->Data.SysEx.Data.MidiShowControl.Checksum = atoi((char*)argv[6]);
+                            msg->Data.SysEx.Data.MidiShowControl.SequenceNumber = atoi((char*)argv[7]);
+
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.Checksum);
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
+
+                            if ( ! readHex(msg->Data.SysEx.Data.MidiShowControl.Data, NULL, argv[8], 4)){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            if ( ! readCueNumber( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Data.MidiShowControl.CueNumber, argc - 9, &argv[9]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdStandingBy:
+                            if (argc < 15 | 17 < argc) {
+                                return StringifierResultWrongArgCount;
+                            }
+
+                            msg->Data.SysEx.Data.MidiShowControl.Checksum = atoi((char*)argv[6]);
+                            msg->Data.SysEx.Data.MidiShowControl.SequenceNumber = atoi((char*)argv[7]);
+
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.Checksum);
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
+
+                            if ( ! readMtcLong( &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode, &argv[8]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            if ( ! readCueNumber( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Data.MidiShowControl.CueNumber, argc - 14, &argv[14]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdComplete:
+                        case SysExRtMscCmdCancel:
+                            if (argc < 9 || 11 < argc) {
+                                return StringifierResultWrongArgCount;
+                            }
+                            msg->Data.SysEx.Data.MidiShowControl.Checksum = atoi((char*)argv[6]);
+                            msg->Data.SysEx.Data.MidiShowControl.SequenceNumber = atoi((char*)argv[7]);
+
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.Checksum);
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
+
+                            if ( ! readCueNumber( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Data.MidiShowControl.CueNumber, argc - 8, &argv[8]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            return StringifierResultOk;
+
+                        case SysExRtMscCmdCancelled:
+                        case SysExRtMscCmdAbort:
+                            if (argc < 10 || 12 < argc) {
+                                return StringifierResultWrongArgCount;
+                            }
+                            msg->Data.SysEx.Data.MidiShowControl.Checksum = atoi((char*)argv[6]);
+                            msg->Data.SysEx.Data.MidiShowControl.Status = atoi((char*)argv[7]);
+                            msg->Data.SysEx.Data.MidiShowControl.SequenceNumber = atoi((char*)argv[8]);
+
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.Checksum);
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.Status);
+                            assertU14(msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
+
+                            if ( ! readCueNumber( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Data.MidiShowControl.CueNumber, argc - 9, &argv[9]) ){
+                                return StringifierResultInvalidValue;
+                            }
+
+                            return StringifierResultOk;
+
+
+                        case SysExRtMscCmdAllOff:
+                        case SysExRtMscCmdRestore:
+                        case SysExRtMscCmdReset:
+                            if (argc != 6) {
+                                return StringifierResultWrongArgCount;
+                            }
+
+//                            printf("cmdFmt=%02X  cmd=%02X\n", msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0], msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0]);
+                            return StringifierResultOk;
+                    }
+
+                }
                 else {
                     return StringifierResultInvalidValue;
                 }
@@ -944,7 +1509,71 @@ namespace MidiMessage {
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiShowControl){
                         length += sprintf( (char*)&bytes[length], "msc ");
 
-                        switch(msg->Data.SysEx.SubId2){
+
+
+                        switch(msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0]) {
+
+                            case SysExRtMscCmdFmtLighting:                  length += sprintf((char *) &bytes[length], "lighting "); break;
+                            case SysExRtMscCmdFmtMovingLights:              length += sprintf((char *) &bytes[length], "moving-lights "); break;
+                            case SysExRtMscCmdFmtColorChangers:             length += sprintf((char *) &bytes[length], "color-changers "); break;
+                            case SysExRtMscCmdFmtStrobes:                   length += sprintf((char *) &bytes[length], "strobes "); break;
+                            case SysExRtMscCmdFmtLasers:                    length += sprintf((char *) &bytes[length], "lasers "); break;
+                            case SysExRtMscCmdFmtChasers:                   length += sprintf((char *) &bytes[length], "chasers "); break;
+                            case SysExRtMscCmdFmtSound:                     length += sprintf((char *) &bytes[length], "sound "); break;
+                            case SysExRtMscCmdFmtMusic:                     length += sprintf((char *) &bytes[length], "music "); break;
+                            case SysExRtMscCmdFmtCdPlayers:                 length += sprintf((char *) &bytes[length], "cd-players "); break;
+                            case SysExRtMscCmdFmtEpromPlayback:             length += sprintf((char *) &bytes[length], "eprom-playback "); break;
+                            case SysExRtMscCmdFmtAudioTapeMachines:         length += sprintf((char *) &bytes[length], "audio-tape-machines "); break;
+                            case SysExRtMscCmdFmtIntercoms:                 length += sprintf((char *) &bytes[length], "intercoms "); break;
+                            case SysExRtMscCmdFmtAmplifiers:                length += sprintf((char *) &bytes[length], "amplifiers "); break;
+                            case SysExRtMscCmdFmtAudioEffectsDevices:       length += sprintf((char *) &bytes[length], "audio-fx "); break;
+                            case SysExRtMscCmdFmtEqualizers:                length += sprintf((char *) &bytes[length], "equalizers "); break;
+                            case SysExRtMscCmdFmtMachinery:                 length += sprintf((char *) &bytes[length], "machinery "); break;
+                            case SysExRtMscCmdFmtRigging:                   length += sprintf((char *) &bytes[length], "rigging "); break;
+                            case SysExRtMscCmdFmtFlys:                      length += sprintf((char *) &bytes[length], "flys "); break;
+                            case SysExRtMscCmdFmtLifts:                     length += sprintf((char *) &bytes[length], "lifts "); break;
+                            case SysExRtMscCmdFmtTurntables:                length += sprintf((char *) &bytes[length], "turntables "); break;
+                            case SysExRtMscCmdFmtTrusses:                   length += sprintf((char *) &bytes[length], "trusses "); break;
+                            case SysExRtMscCmdFmtRobots:                    length += sprintf((char *) &bytes[length], "robots "); break;
+                            case SysExRtMscCmdFmtAnimation:                 length += sprintf((char *) &bytes[length], "animation "); break;
+                            case SysExRtMscCmdFmtFloats:                    length += sprintf((char *) &bytes[length], "floats "); break;
+                            case SysExRtMscCmdFmtBreakaways:                length += sprintf((char *) &bytes[length], "breakaways "); break;
+                            case SysExRtMscCmdFmtBarges:                    length += sprintf((char *) &bytes[length], "barges "); break;
+                            case SysExRtMscCmdFmtVideo:                     length += sprintf((char *) &bytes[length], "video "); break;
+                            case SysExRtMscCmdFmtVideoTapeMachines:         length += sprintf((char *) &bytes[length], "video-tape-machines "); break;
+                            case SysExRtMscCmdFmtVideoCassetteMachines:     length += sprintf((char *) &bytes[length], "video-cassette-machines "); break;
+                            case SysExRtMscCmdFmtVideoDiscPlayers:          length += sprintf((char *) &bytes[length], "video-disc-players "); break;
+                            case SysExRtMscCmdFmtVideoSwitchers:            length += sprintf((char *) &bytes[length], "video-switchers "); break;
+                            case SysExRtMscCmdFmtVideoEffects:              length += sprintf((char *) &bytes[length], "video-fx "); break;
+                            case SysExRtMscCmdFmtVideoCharacterGenerators:  length += sprintf((char *) &bytes[length], "video-char-generators "); break;
+                            case SysExRtMscCmdFmtVideoStillStores:          length += sprintf((char *) &bytes[length], "video-still-stores "); break;
+                            case SysExRtMscCmdFmtVideoMonitors:             length += sprintf((char *) &bytes[length], "video-monitors "); break;
+                            case SysExRtMscCmdFmtProjection:                length += sprintf((char *) &bytes[length], "projection "); break;
+                            case SysExRtMscCmdFmtFilmProjectors:            length += sprintf((char *) &bytes[length], "film-projects "); break;
+                            case SysExRtMscCmdFmtSlideProjectors:           length += sprintf((char *) &bytes[length], "slide-projectors "); break;
+                            case SysExRtMscCmdFmtVideoProjectors:           length += sprintf((char *) &bytes[length], "video-projectors "); break;
+                            case SysExRtMscCmdFmtDissolvers:                length += sprintf((char *) &bytes[length], "dissolvers "); break;
+                            case SysExRtMscCmdFmtShutterControls:           length += sprintf((char *) &bytes[length], "shutter-controls "); break;
+                            case SysExRtMscCmdFmtProcessControl:            length += sprintf((char *) &bytes[length], "process-control "); break;
+                            case SysExRtMscCmdFmtHydraulicOil:              length += sprintf((char *) &bytes[length], "hydraulic-oil "); break;
+                            case SysExRtMscCmdFmtH2O:                       length += sprintf((char *) &bytes[length], "h2o "); break;
+                            case SysExRtMscCmdFmtCO2:                       length += sprintf((char *) &bytes[length], "co2 "); break;
+                            case SysExRtMscCmdFmtCompressedAir:             length += sprintf((char *) &bytes[length], "compressed-air "); break;
+                            case SysExRtMscCmdFmtNaturalGas:                length += sprintf((char *) &bytes[length], "natural-gas "); break;
+                            case SysExRtMscCmdFmtFog:                       length += sprintf((char *) &bytes[length], "fog "); break;
+                            case SysExRtMscCmdFmtSmoke:                     length += sprintf((char *) &bytes[length], "smoke "); break;
+                            case SysExRtMscCmdFmtCrackedHaze:               length += sprintf((char *) &bytes[length], "cracked-haze "); break;
+                            case SysExRtMscCmdFmtPyro:                      length += sprintf((char *) &bytes[length], "pyro "); break;
+                            case SysExRtMscCmdFmtFireworks:                 length += sprintf((char *) &bytes[length], "fireworks "); break;
+                            case SysExRtMscCmdFmtExplosions:                length += sprintf((char *) &bytes[length], "explosions "); break;
+                            case SysExRtMscCmdFmtFlame:                     length += sprintf((char *) &bytes[length], "flame "); break;
+                            case SysExRtMscCmdFmtSmokePots:                 length += sprintf((char *) &bytes[length], "smoke-pots "); break;
+                            case SysExRtMscCmdFmtAllTypes:                  length += sprintf((char *) &bytes[length], "all "); break;
+                        }
+
+
+
+                        switch(msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0]){
 
                             case SysExRtMscCmdGo:               length += sprintf( (char*)&bytes[length], "go "); break;
                             case SysExRtMscCmdStop:             length += sprintf( (char*)&bytes[length], "stop "); break;
@@ -981,7 +1610,7 @@ namespace MidiMessage {
                             case SysExRtMscCmdReset:            length += sprintf( (char*)&bytes[length], "reset"); break;
                         }
 
-                        switch(msg->Data.SysEx.SubId2){
+                        switch(msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0]){
 
                             case SysExRtMscCmdGo:
                             case SysExRtMscCmdStop:
@@ -990,13 +1619,13 @@ namespace MidiMessage {
 
                             case SysExRtMscCmdGoOff:
                             case SysExRtMscCmdGo_JamLock:
-                                length += sprintf( (char*)&bytes[length], "%s %s %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                length += sprintfCueNumber( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.CueNumber );
                                 break;
 
                             case SysExRtMscCmdTimedGo:
                                 length += sprintfMtcLong( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode);
-                                length += sprintf( (char*)&bytes[length], " ");
-                                length += sprintf( (char*)&bytes[length], "%s %s %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                length += sprintf( (char*)&bytes[length], " " );
+                                length += sprintfCueNumber( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.CueNumber );
                                 break;
 
                             case SysExRtMscCmdSet:
@@ -1029,8 +1658,7 @@ namespace MidiMessage {
 
                             case SysExRtMscCmdSetClock:
                                 length += sprintfMtcLong( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode);
-                                length += sprintf( (char*)&bytes[length], " ");
-                                length += sprintf( (char*)&bytes[length], "%s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.List);
+                                length += sprintf( (char*)&bytes[length], " %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.List);
                                 break;
 
                             case SysExRtMscCmdStandby:
@@ -1043,25 +1671,26 @@ namespace MidiMessage {
                                                          msg->Data.SysEx.Data.MidiShowControl.Data[2],
                                                          msg->Data.SysEx.Data.MidiShowControl.Data[3]
                                 );
-                                length += sprintf( (char*)&bytes[length], "%s %s %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                length += sprintfCueNumber( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.CueNumber );
                                 break;
 
                             case SysExRtMscCmdStandingBy:
                                 length += sprintf( (char*)&bytes[length], "%d %d ", msg->Data.SysEx.Data.MidiShowControl.Checksum, msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
                                 length += sprintfMtcLong( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.MidiTimeCode);
-                                length += sprintf( (char*)&bytes[length], " %s %s %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                length += sprintf( (char*)&bytes[length], " " );
+                                length += sprintfCueNumber( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.CueNumber );
                                 break;
 
                             case SysExRtMscCmdComplete:
                             case SysExRtMscCmdCancel:
                                 length += sprintf( (char*)&bytes[length], "%d %d ", msg->Data.SysEx.Data.MidiShowControl.Checksum, msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
-                                length += sprintf( (char*)&bytes[length], "%s %s %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                length += sprintfCueNumber( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.CueNumber );
                                 break;
 
                             case SysExRtMscCmdCancelled:
                             case SysExRtMscCmdAbort:
                                 length += sprintf( (char*)&bytes[length], "%d %d %d ", msg->Data.SysEx.Data.MidiShowControl.Checksum, msg->Data.SysEx.Data.MidiShowControl.Status, msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
-                                length += sprintf( (char*)&bytes[length], "%s %s %s", msg->Data.SysEx.Data.MidiShowControl.CueNumber.Number, msg->Data.SysEx.Data.MidiShowControl.CueNumber.List, msg->Data.SysEx.Data.MidiShowControl.CueNumber.Path);
+                                length += sprintfCueNumber( &bytes[length], &msg->Data.SysEx.Data.MidiShowControl.CueNumber );
                                 break;
 
 

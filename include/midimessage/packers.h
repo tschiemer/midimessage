@@ -2317,10 +2317,11 @@ namespace MidiMessage {
 
         pos += copyMscExtensibleCommandField( msc->CommandFormat.Bytes, &bytes[pos] );
 
-        if ( ! isSysExRtMscCmd(bytes[len]) ){
+        if ( ! isSysExRtMscCmd(msc->CommandFormat.Bytes[0]) ){
             return false;
         }
 
+//        ASSERT(false);
         pos += copyMscExtensibleCommandField( msc->Command.Bytes, &bytes[pos] );
 
 

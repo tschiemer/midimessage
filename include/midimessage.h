@@ -867,6 +867,7 @@ namespace MidiMessage {
 
     typedef enum {
         SysExRtMscCmdFmtExtension                     = 0x00,
+
         SysExRtMscCmdFmtLighting                      = 0x01,
         SysExRtMscCmdFmtMovingLights                  = 0x02,
         SysExRtMscCmdFmtColorChangers                 = 0x03,
@@ -942,6 +943,7 @@ namespace MidiMessage {
                 value == SysExRtMscCmdFmtStrobes ||
                 value == SysExRtMscCmdFmtLasers ||
                 value == SysExRtMscCmdFmtChasers ||
+                value == SysExRtMscCmdFmtSound ||
                 value == SysExRtMscCmdFmtMusic ||
                 value == SysExRtMscCmdFmtCdPlayers ||
                 value == SysExRtMscCmdFmtEpromPlayback ||
