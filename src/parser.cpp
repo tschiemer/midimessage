@@ -50,6 +50,7 @@ namespace MidiMessage {
 
                     // if was in fact an EOX, skip this byte
                     if (data[i] == SystemMessageEndOfExclusive){
+                        this->Length = 0;
                         continue;
                     }
                 }
