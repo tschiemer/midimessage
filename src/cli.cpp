@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include <midimessage.h>
 #include <midimessage/stringifier.h>
@@ -206,9 +207,8 @@ void generator(void){
     Stringifier stringifier;
 
     uint8_t sysexBuffer[128];
-    Message_t msg = {
-            .Data.SysEx.ByteData = sysexBuffer
-    };
+    Message_t msg;
+    msg.Data.SysEx.ByteData = sysexBuffer;
 
 
     // start timer
@@ -278,9 +278,8 @@ void writeMidiPacket( Message_t * msg ){
 void parser(void){
 
     uint8_t sysexBuffer[128];
-    Message_t msg = {
-            .Data.SysEx.ByteData = sysexBuffer
-    };
+    Message_t msg;
+    msg.Data.SysEx.ByteData = sysexBuffer;
 
     uint8_t dataBuffer[128];
     Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage );
@@ -435,9 +434,8 @@ int main(int argc, char * argv[], char * env[]){
             Stringifier stringifier;
 
             uint8_t sysexBuffer[128];
-            Message_t msg = {
-                    .Data.SysEx.ByteData = sysexBuffer
-            };
+            Message_t msg;
+            msg.Data.SysEx.ByteData = sysexBuffer;
 
             if (stringifier.fromArgs(&msg, (uint8_t) (argc - optind), (uint8_t **) &argv[optind]) == StringifierResultOk) {
                 writeMidiPacket(&msg);
