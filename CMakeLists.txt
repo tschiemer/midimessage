@@ -40,6 +40,8 @@ install(TARGETS midimessage midimessage-cli
             DESTINATION lib
             COMPONENT Libraries
             NAMELINK_COMPONENT Development
+        ARCHIVE
+            DESTINATION lib
 #        PUBLIC_HEADER
 #            DESTINATION include
 #            COMPONENT Development
