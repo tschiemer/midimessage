@@ -68,6 +68,7 @@ namespace MidiMessage {
                 this->Length = 0;
             }
 
+
             this->Buffer[ this->Length++ ] = data[i];
 
             // try to parse data straight away
@@ -78,6 +79,16 @@ namespace MidiMessage {
                 this->MessageHandler( this->Message );
 
                 // reset data
+                this->Length = 0;
+            }
+
+            // in case the buffer would overflow next time, discard current contents
+            if ( this->Length >= this->MaxLength ){
+
+                if (this->DiscardingDataHandler != NULL){
+                    this->DiscardingDataHandler( this->Buffer, this->Length );
+                }
+
                 this->Length = 0;
             }
         }
