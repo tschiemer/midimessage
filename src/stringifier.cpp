@@ -425,12 +425,24 @@ namespace MidiMessage {
                     }
                     break;
 
+                case SysExRtMmcCommandAssignSystemMaster:
+                    if (argc < 2){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    cmd.Data.U7 = atoi((char*)argv[1]);
+
+                    assertU7( cmd.Data.U7 );
+
+                    consumedArgs ++;
+                    break;
+
+
                 case SysExRtMmcCommandWrite: ////////
 
                 case SysExRtMmcCommandMaskedWrite:
                 case SysExRtMmcCommandRead:
                 case SysExRtMmcCommandUpdate:
-                case SysExRtMmcCommandAssignSystemMaster:
                 case SysExRtMmcCommandGeneratorCommand:
                 case SysExRtMmcCommandMtcCommand:
                 case SysExRtMmcCommandMove:
@@ -578,12 +590,15 @@ namespace MidiMessage {
 
                     break;
 
+                case SysExRtMmcCommandAssignSystemMaster:
+                    strLength += sprintf( (char*)&bytes[strLength], "%d", cmd.Data.U7);
+                    break;
+
                 case SysExRtMmcCommandWrite: ////////
 
                 case SysExRtMmcCommandMaskedWrite:
                 case SysExRtMmcCommandRead:
                 case SysExRtMmcCommandUpdate:
-                case SysExRtMmcCommandAssignSystemMaster:
                 case SysExRtMmcCommandGeneratorCommand:
                 case SysExRtMmcCommandMtcCommand:
                 case SysExRtMmcCommandMove:

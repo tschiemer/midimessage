@@ -236,6 +236,7 @@ For MMC the MIDI format acts as container for a command stream of its own, where
 		 (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>
 		 step <step (s7)>
 		 locate (field <field>|mtc <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)
+		 assign-system-master <master (u7)>
 TODO:
 		 write ..
 		 move ..

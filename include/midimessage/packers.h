@@ -2154,12 +2154,16 @@ namespace MidiMessage {
                     return 0;
                 }
 
+            case SysExRtMmcCommandAssignSystemMaster:
+                bytes[len++] = 1; // length
+                bytes[len++] = cmd->Data.U7;
+                return len;
+
             case SysExRtMmcCommandWrite: ////////
 
             case SysExRtMmcCommandMaskedWrite:
             case SysExRtMmcCommandRead:
             case SysExRtMmcCommandUpdate:
-            case SysExRtMmcCommandAssignSystemMaster:
             case SysExRtMmcCommandGeneratorCommand:
             case SysExRtMmcCommandMtcCommand:
             case SysExRtMmcCommandMove:
@@ -2260,12 +2264,18 @@ namespace MidiMessage {
                     return true;
                 }
 
+            case SysExRtMmcCommandAssignSystemMaster:
+                if (length < 3 || bytes[1] != 1){
+                    return false;
+                }
+                cmd->Data.U7 = bytes[2];
+                return true;
+
             case SysExRtMmcCommandWrite: ////////
 
             case SysExRtMmcCommandMaskedWrite:
             case SysExRtMmcCommandRead:
             case SysExRtMmcCommandUpdate:
-            case SysExRtMmcCommandAssignSystemMaster:
             case SysExRtMmcCommandGeneratorCommand:
             case SysExRtMmcCommandMtcCommand:
             case SysExRtMmcCommandMove:
