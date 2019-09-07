@@ -174,7 +174,7 @@ void printHelp( void ) {
     printf("\t\t (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>\n");
     printf("\t\t step <step (s7)>\n");
     printf("\t\t write ..\n");
-    printf("\t\t locate <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)\n");
+    printf("\t\t locate (field <field>|mtc <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)\n");
     printf("\t\t move ..\n");
     printf("\t\t <data (xN)>\n");
 

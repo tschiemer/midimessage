@@ -2093,11 +2093,13 @@ namespace MidiMessage {
     inline uint8_t packSysExRtMmcCommand( uint8_t * bytes, SysExRtMmcCommandData_t * cmd ){
         ASSERT( bytes != NULL );
         ASSERT( cmd != NULL );
-        ASSERT( isSysExRtMmcCommand(cmd->Command) );
+        ASSERT( isSysExRtMmcCommand(cmd->Command.Bytes[0]) );
 
-        bytes[0] = cmd->Command;
+        uint8_t len = 0;
 
-        switch(cmd->Command){
+        len += copyMmcExtensibleCommand( bytes, cmd->Command.Bytes );
+
+        switch(cmd->Command.Bytes[0]){
 
             case SysExRtMmcCommandStop:
             case SysExRtMmcCommandPlay:
@@ -2115,28 +2117,48 @@ namespace MidiMessage {
             case SysExRtMmcCommandWait:
             case SysExRtMmcCommandResume:
                 // no data
-                return 1;
+                return len;
 
             case SysExRtMmcCommandVariablePlay:
             case SysExRtMmcCommandSearch:
             case SysExRtMmcCommandShuttle:
             case SysExRtMmcCommandDeferredVariablePlay:
             case SysExRtMmcCommandRecordStrobeVariable:
-                bytes[1] = 0x03;
-                packSysExRtMmcStandardSpeed(&bytes[2], &cmd->Data.StandardSpeed);
-                return 5;
+                bytes[len++] = 0x03;
+                len += packSysExRtMmcStandardSpeed(&bytes[2], &cmd->Data.StandardSpeed);
+                return len;
 
             case SysExRtMmcCommandStep:
-                bytes[1] = 0x01;
-                bytes[2] = cmd->Data.I7 & DataMask;
-                return 3;
+                bytes[len++] = 0x01;
+                bytes[len++] = cmd->Data.I7 & DataMask;
+                return len;
+
+
+            case SysExRtMmcCommandLocate:
+                ASSERT( isSysExRtMmcCommandLocateSubCommand(cmd->Data.Locate.SubCommand));
+
+                if (cmd->Data.Locate.SubCommand == SysExRtMmcCommandLocateSubCommandInformationField){
+                    bytes[len++] = 2; // length
+                    bytes[len++] = SysExRtMmcCommandLocateSubCommandInformationField;
+                    bytes[len++] = cmd->Data.Locate.InformationField;
+                    return len;
+                }
+                else if (cmd->Data.Locate.SubCommand == SysExRtMmcCommandLocateSubCommandTarget){
+                    bytes[len++] = 6; // length
+                    bytes[len++] = SysExRtMmcCommandLocateSubCommandTarget;
+                    len += packMidiTimeCodeLong( &bytes[len], &cmd->Data.Locate.MidiTimeCode);
+                    return len;
+                }
+                else {
+                    ASSERT(false);
+                    return 0;
+                }
 
             case SysExRtMmcCommandWrite: ////////
 
             case SysExRtMmcCommandMaskedWrite:
             case SysExRtMmcCommandRead:
             case SysExRtMmcCommandUpdate:
-            case SysExRtMmcCommandLocate:
             case SysExRtMmcCommandAssignSystemMaster:
             case SysExRtMmcCommandGeneratorCommand:
             case SysExRtMmcCommandMtcCommand:
@@ -2167,9 +2189,14 @@ namespace MidiMessage {
             return false;
         }
 
-        cmd->Command = bytes[0];
+        cmd->Command.Value = 0;
 
-        switch(cmd->Command){
+
+        uint8_t len = 0;
+
+        len += copyMmcExtensibleCommand( cmd->Command.Bytes, bytes );
+
+        switch(cmd->Command.Bytes[0]){
 
             case SysExRtMmcCommandStop:
             case SysExRtMmcCommandPlay:
@@ -2211,12 +2238,33 @@ namespace MidiMessage {
                 }
                 return true;
 
+            case SysExRtMmcCommandLocate:
+                if ( ! isSysExRtMmcCommandLocateSubCommand(bytes[2])){
+                    return false;
+                }
+
+                cmd->Data.Locate.SubCommand = bytes[2];
+
+                if (cmd->Data.Locate.SubCommand == SysExRtMmcCommandLocateSubCommandInformationField){
+                    if (length < 3 || bytes[1] != 2){
+                        return false;
+                    }
+                    cmd->Data.Locate.InformationField = bytes[3];
+                    return true;
+                }
+                else if (cmd->Data.Locate.SubCommand == SysExRtMmcCommandLocateSubCommandTarget){
+                    if (length < 7 || bytes[1] != 6){
+                        return false;
+                    }
+                    unpackMidiTimeCodeLong( &bytes[3], &cmd->Data.Locate.MidiTimeCode);
+                    return true;
+                }
+
             case SysExRtMmcCommandWrite: ////////
 
             case SysExRtMmcCommandMaskedWrite:
             case SysExRtMmcCommandRead:
             case SysExRtMmcCommandUpdate:
-            case SysExRtMmcCommandLocate:
             case SysExRtMmcCommandAssignSystemMaster:
             case SysExRtMmcCommandGeneratorCommand:
             case SysExRtMmcCommandMtcCommand:

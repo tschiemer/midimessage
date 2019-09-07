@@ -1271,6 +1271,7 @@ namespace MidiMessage {
      * #4   Basic Synchronizer, closed loop communications
      */
     typedef enum {
+        SysExRtMmcCommandExtension          = 0x00,
         SysExRtMmcCommandStop               = 0x01, // 1234 (guideline min sets)
         SysExRtMmcCommandPlay               = 0x02, // -234
         SysExRtMmcCommandDeferredPlay       = 0x03, // 1234
@@ -1661,7 +1662,7 @@ namespace MidiMessage {
      *
      *  @param shiftCount   identical to resolution
      */
-    inline void packSysExRtMmcStandardSpeed( uint8_t * bytes, int8_t direction, uint8_t shiftCount, uint16_t integerPart, uint16_t fractionalPart){
+    inline uint8_t packSysExRtMmcStandardSpeed( uint8_t * bytes, int8_t direction, uint8_t shiftCount, uint16_t integerPart, uint16_t fractionalPart){
         ASSERT( bytes != NULL );
         ASSERT( isSysExRtMmcStandardSpeedDirection(direction) );
         ASSERT( isSysExRtMmcStandardSpeedResolution(shiftCount) );
@@ -1675,15 +1676,17 @@ namespace MidiMessage {
         bytes[0] |= ((integerPart >> shiftCount) & SysExRtMmcStandardSpeedMsbIntegerPartMask);
         bytes[1] = ((integerPart & ~(SysExRtMmcStandardSpeedMsbIntegerPartMask << shiftCount)) << shiftCount) | (fractionalPart >> (7 + shiftCount));
         bytes[2] = fractionalPart & DataMask;
+
+        return 3;
     }
 
-    inline void packSysExRtMmcStandardSpeed( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
+    inline uint8_t packSysExRtMmcStandardSpeed( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
         ASSERT( ss != NULL );
 
-        packSysExRtMmcStandardSpeed( bytes, ss->Direction, ss->Resolution, ss->IntegerPart, ss->FractionalPart );
+        return packSysExRtMmcStandardSpeed( bytes, ss->Direction, ss->Resolution, ss->IntegerPart, ss->FractionalPart );
     }
 
-    inline void packSysExRtMmcStandardSpeed( uint8_t * bytes, float speed ){
+    inline uint8_t packSysExRtMmcStandardSpeed( uint8_t * bytes, float speed ){
 
         int8_t direction = 0;
         uint8_t resolution = 0;
@@ -1692,7 +1695,7 @@ namespace MidiMessage {
 
         SysExRtMmcStandardSpeedFromFloat( &direction, &resolution, &integerPart, &fractionalPart, speed );
 
-        packSysExRtMmcStandardSpeed( bytes, direction, resolution, integerPart, fractionalPart );
+        return packSysExRtMmcStandardSpeed( bytes, direction, resolution, integerPart, fractionalPart );
     }
 
     inline void unpackSysExRtMmcStandardSpeed( uint8_t * bytes, int8_t * direction, uint8_t *shiftCount, uint16_t *integerPart, uint16_t *fractionalPart){
@@ -1996,15 +1999,36 @@ namespace MidiMessage {
         uint16_t SampleNumber;
     } SysExNonRtSdsExtNameRequestData_t;
 
+    typedef enum {
+        SysExRtMmcCommandLocateSubCommandInformationField        = 0,
+        SysExRtMmcCommandLocateSubCommandTarget    = 1
+    } SysExRtMmcCommandLocateSubCommand_t;
+
+    inline bool isSysExRtMmcCommandLocateSubCommand(uint8_t value){
+        return (value == SysExRtMmcCommandLocateSubCommandInformationField ||
+                value == SysExRtMmcCommandLocateSubCommandTarget );
+    }
+
+    typedef union {
+        uint32_t Value;
+        uint8_t Bytes[3];
+    } SysExRtMmcCommandExtensible_t;
 
     typedef struct {
-        uint8_t Command;
+        SysExRtMmcCommandExtensible_t Command;
         union {
             SysExRtMmcStandardSpeed_t StandardSpeed;
             uint8_t U7;
             int8_t I7;
+            struct {
+                uint8_t SubCommand;
+                uint8_t InformationField;
+                MidiTimeCode_t MidiTimeCode;
+            } Locate;
         } Data;
     } SysExRtMmcCommandData_t;
+
+
 
     typedef struct {
         StatusClass_t StatusClass;
@@ -2407,6 +2431,26 @@ namespace MidiMessage {
 
         dst[1] = src[1];
         if (src[1] != SysExRtMscCmdExtension) {
+            return 2;
+        }
+
+        dst[2] = src[2];
+
+        return 3;
+    }
+
+
+    inline uint8_t copyMmcExtensibleCommand( uint8_t * dst, uint8_t * src ) {
+        ASSERT(dst != NULL);
+        ASSERT(src != NULL);
+
+        dst[0] = src[0];
+        if (src[0] != SysExRtMmcCommandExtension) {
+            return 1;
+        }
+
+        dst[1] = src[1];
+        if (src[1] != SysExRtMmcCommandExtension) {
             return 2;
         }
 

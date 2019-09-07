@@ -213,118 +213,122 @@ namespace MidiMessage {
 
         do {
 
+//            printf("cmd =[%s]\n",  argv[0]);
+
             SysExRtMmcCommandData_t cmd;
 
+            cmd.Command.Value = 0;
+
             if (str_eq(argv[0], "stop")) {
-                cmd.Command = SysExRtMmcCommandStop;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandStop;
             }
             else if (str_eq(argv[0], "play")) {
-                cmd.Command = SysExRtMmcCommandPlay;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandPlay;
             }
             else if (str_eq(argv[0], "deferred-play")) {
-                cmd.Command = SysExRtMmcCommandDeferredPlay;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandDeferredPlay;
             }
             else if (str_eq(argv[0], "fast-forward")) {
-                cmd.Command = SysExRtMmcCommandFastForward;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandFastForward;
             }
             else if (str_eq(argv[0], "rewind")) {
-                cmd.Command = SysExRtMmcCommandRewind;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandRewind;
             }
             else if (str_eq(argv[0], "record-strobe")) {
-                cmd.Command = SysExRtMmcCommandRecordStrobe;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandRecordStrobe;
             }
             else if (str_eq(argv[0], "record-exit")) {
-                cmd.Command = SysExRtMmcCommandRecordExit;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandRecordExit;
             }
             else if (str_eq(argv[0], "record-pause")) {
-                cmd.Command = SysExRtMmcCommandRecordPause;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandRecordPause;
             }
             else if (str_eq(argv[0], "pause")) {
-                cmd.Command = SysExRtMmcCommandPause;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandPause;
             }
             else if (str_eq(argv[0], "eject")) {
-                cmd.Command = SysExRtMmcCommandEject;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandEject;
             }
             else if (str_eq(argv[0], "chase")) {
-                cmd.Command = SysExRtMmcCommandChase;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandChase;
             }
             else if (str_eq(argv[0], "command-error-reset")) {
-                cmd.Command = SysExRtMmcCommandCommandErrorReset;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandCommandErrorReset;
             }
             else if (str_eq(argv[0], "mmc-reset")) {
-                cmd.Command = SysExRtMmcCommandMmcReset;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandMmcReset;
             }
             else if (str_eq(argv[0], "wait")) {
-                cmd.Command = SysExRtMmcCommandWait;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandWait;
             }
             else if (str_eq(argv[0], "resume")) {
-                cmd.Command = SysExRtMmcCommandResume;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandResume;
             }
             else if (str_eq(argv[0], "variable-play")) {
-                cmd.Command = SysExRtMmcCommandVariablePlay;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandVariablePlay;
             }
             else if (str_eq(argv[0], "search")) {
-                cmd.Command = SysExRtMmcCommandSearch;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandSearch;
             }
             else if (str_eq(argv[0], "shuttle")) {
-                cmd.Command = SysExRtMmcCommandShuttle;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandShuttle;
             }
             else if (str_eq(argv[0], "deferred-variable-play")) {
-                cmd.Command = SysExRtMmcCommandDeferredVariablePlay;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandDeferredVariablePlay;
             }
             else if (str_eq(argv[0], "record-strobe-variable")) {
-                cmd.Command = SysExRtMmcCommandRecordStrobeVariable;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandRecordStrobeVariable;
             }
             else if (str_eq(argv[0], "step")) {
-                cmd.Command = SysExRtMmcCommandStep;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandStep;
             }
             else if (str_eq(argv[0], "write")) {
-                cmd.Command = SysExRtMmcCommandWrite;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandWrite;
             }
             else if (str_eq(argv[0], "masked-write")) {
-                cmd.Command = SysExRtMmcCommandMaskedWrite;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandMaskedWrite;
             }
             else if (str_eq(argv[0], "read")) {
-                cmd.Command = SysExRtMmcCommandRead;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandRead;
             }
             else if (str_eq(argv[0], "update")) {
-                cmd.Command = SysExRtMmcCommandUpdate;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandUpdate;
             }
             else if (str_eq(argv[0], "locate")) {
-                cmd.Command = SysExRtMmcCommandLocate;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandLocate;
             }
             else if (str_eq(argv[0], "assign-system-master")) {
-                cmd.Command = SysExRtMmcCommandAssignSystemMaster;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandAssignSystemMaster;
             }
             else if (str_eq(argv[0], "generator-command")) {
-                cmd.Command = SysExRtMmcCommandGeneratorCommand;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandGeneratorCommand;
             }
             else if (str_eq(argv[0], "mtc-command")) {
-                cmd.Command = SysExRtMmcCommandMtcCommand;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandMtcCommand;
             }
             else if (str_eq(argv[0], "move")) {
-                cmd.Command = SysExRtMmcCommandMove;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandMove;
             }
             else if (str_eq(argv[0], "add")) {
-                cmd.Command = SysExRtMmcCommandAdd;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandAdd;
             }
             else if (str_eq(argv[0], "substract")) {
-                cmd.Command = SysExRtMmcCommandSubstract;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandSubstract;
             }
             else if (str_eq(argv[0], "drop-frame-adjust")) {
-                cmd.Command = SysExRtMmcCommandDropFrameAdjust;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandDropFrameAdjust;
             }
             else if (str_eq(argv[0], "procedure")) {
-                cmd.Command = SysExRtMmcCommandProcedure;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandProcedure;
             }
             else if (str_eq(argv[0], "event")) {
-                cmd.Command = SysExRtMmcCommandEvent;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandEvent;
             }
             else if (str_eq(argv[0], "group")) {
-                cmd.Command = SysExRtMmcCommandGroup;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandGroup;
             }
             else if (str_eq(argv[0], "command-segment")) {
-                cmd.Command = SysExRtMmcCommandCommandSegment;
+                cmd.Command.Bytes[0] = SysExRtMmcCommandCommandSegment;
             }
             else {
                 return StringifierResultInvalidValue;
@@ -334,7 +338,7 @@ namespace MidiMessage {
             uint8_t consumedArgs = 1; // command arg = 1
             float speed = 0.0;
 
-            switch (cmd.Command) {
+            switch (cmd.Command.Bytes[0]) {
 
                 case SysExRtMmcCommandStop:
                 case SysExRtMmcCommandPlay:
@@ -359,6 +363,10 @@ namespace MidiMessage {
                 case SysExRtMmcCommandDeferredVariablePlay:
                 case SysExRtMmcCommandRecordStrobeVariable:
 
+                    if (argc < 2){
+                        return StringifierResultWrongArgCount;
+                    }
+
                     speed = atof((char*)argv[1]);
 
                     if (! SysExRtMmcStandardSpeedFromFloat( &cmd.Data.StandardSpeed, speed )){
@@ -372,6 +380,10 @@ namespace MidiMessage {
                     break;
 
                 case SysExRtMmcCommandStep:
+                    if (argc < 2){
+                        return StringifierResultWrongArgCount;
+                    }
+
                     cmd.Data.I7 = atoi((char*)argv[1]);
 
                     assertI7( cmd.Data.I7 );
@@ -382,12 +394,42 @@ namespace MidiMessage {
                     consumedArgs ++;
                     break;
 
+                case SysExRtMmcCommandLocate:
+                    if (argc < 3){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    if (str_eq(argv[1], "field")){
+                        cmd.Data.Locate.SubCommand = SysExRtMmcCommandLocateSubCommandInformationField;
+                        cmd.Data.Locate.InformationField = atoi((char*)argv[2]);
+
+                        assertU7( cmd.Data.U7 );
+
+                        consumedArgs += 2;
+                    }
+                    else if (str_eq(argv[1], "mtc")){
+                        if (argc < 8){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        cmd.Data.Locate.SubCommand = SysExRtMmcCommandLocateSubCommandTarget;
+                        if ( ! readMtcLong( &cmd.Data.Locate.MidiTimeCode, &argv[2]) ){
+                            assert(false);
+                            return StringifierResultInvalidValue;
+                        }
+
+                        consumedArgs += 7;
+                    }
+                    else {
+                        return StringifierResultInvalidValue;
+                    }
+                    break;
+
                 case SysExRtMmcCommandWrite: ////////
 
                 case SysExRtMmcCommandMaskedWrite:
                 case SysExRtMmcCommandRead:
                 case SysExRtMmcCommandUpdate:
-                case SysExRtMmcCommandLocate:
                 case SysExRtMmcCommandAssignSystemMaster:
                 case SysExRtMmcCommandGeneratorCommand:
                 case SysExRtMmcCommandMtcCommand:
@@ -407,9 +449,8 @@ namespace MidiMessage {
             }
 
 //            printf("cmd = %d [%s]\n", cmd.Command, argv[0]);
-//
 //            printf("argc = %d -> %d\n", argc, consumedArgs);
-//
+
             argc -= consumedArgs;
             argv = &argv[consumedArgs];
 
@@ -439,7 +480,7 @@ namespace MidiMessage {
                 bytes[strLength] = '\0'; // safety
             }
 
-            switch (cmd.Command) {
+            switch (cmd.Command.Bytes[0]) {
 
                 case SysExRtMmcCommandStop:                     strLength += sprintf( (char*)&bytes[strLength], "stop"); break;
                 case SysExRtMmcCommandPlay:                     strLength += sprintf( (char*)&bytes[strLength], "play"); break;
@@ -489,7 +530,7 @@ namespace MidiMessage {
 
             float speed = 0.0;
 
-            switch (cmd.Command) {
+            switch (cmd.Command.Bytes[0]) {
 
                 case SysExRtMmcCommandStop:
                 case SysExRtMmcCommandPlay:
@@ -527,12 +568,21 @@ namespace MidiMessage {
                     strLength += sprintf( (char*)&bytes[strLength], "%d", cmd.Data.I7 );
                     break;
 
+                case SysExRtMmcCommandLocate:
+                    if (cmd.Data.Locate.SubCommand == SysExRtMmcCommandLocateSubCommandInformationField)  {
+                        strLength += sprintf( (char*)&bytes[strLength], "field %d", cmd.Data.Locate.InformationField);
+                    } else if (cmd.Data.Locate.SubCommand == SysExRtMmcCommandLocateSubCommandTarget)  {
+                        strLength += sprintf( (char*)&bytes[strLength], "mtc ");
+                        strLength += sprintfMtcLong(&bytes[strLength], &cmd.Data.Locate.MidiTimeCode);
+                    }
+
+                    break;
+
                 case SysExRtMmcCommandWrite: ////////
 
                 case SysExRtMmcCommandMaskedWrite:
                 case SysExRtMmcCommandRead:
                 case SysExRtMmcCommandUpdate:
-                case SysExRtMmcCommandLocate:
                 case SysExRtMmcCommandAssignSystemMaster:
                 case SysExRtMmcCommandGeneratorCommand:
                 case SysExRtMmcCommandMtcCommand:
