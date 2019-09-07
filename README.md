@@ -227,20 +227,19 @@ MIDI Show Control (MSC)
 ** <cue-number>, <cue-list>, <cue-path> := ascii numbers (0-9) and/or dots (.)
 *** <cmdFmt> := lighting|moving-lights|color-changers|strobes|lasers|chasers|sound|music|cd-players|eprom-playback|audio-tape-machines|intercoms|amplifiers|audio-fx|equalizers|machinery|rigging|flys|lifts|turntables|trusses|robots|animation|floats|breakaways|barges|video|video-tape-machines|video-cassette-machines|video-disc-players|video-switchers|video-fx|video-char-generators|video-still-stores|video-monitors|projection|film-projects|slide-projectors|video-projectors|dissolvers|shutter-controls|process-control|hydraulic-oil|h2o|co2|compressed-air|natural-gas|fog|smoke|cracked-haze|pyro|fireworks|explosions|flame|smoke-pots|all
 
-TODO:
-
 MIDI Machine Commands (MMC)
 For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.
 
-	 sysex rt <device-id (u7) mmc cmd <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]
+	 sysex rt <device-id (u7) mcc <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]
 		 <commandN ..> :
-		 (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|cmd-error-reset|mmc-reset|wait|resume)
+		 (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|command-error-reset|mmc-reset|wait|resume)
 		 (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>
 		 step <step (s7)>
+		 locate (field <field>|mtc <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)
+TODO:
 		 write ..
-		 locate <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)
 		 move ..
-		 <data (xN)>
+		 etc
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1

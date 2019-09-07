@@ -164,8 +164,6 @@ void printHelp( void ) {
     printf("** <cue-number>, <cue-list>, <cue-path> := ascii numbers (0-9) and/or dots (.)\n");
     printf("*** <cmdFmt> := lighting|moving-lights|color-changers|strobes|lasers|chasers|sound|music|cd-players|eprom-playback|audio-tape-machines|intercoms|amplifiers|audio-fx|equalizers|machinery|rigging|flys|lifts|turntables|trusses|robots|animation|floats|breakaways|barges|video|video-tape-machines|video-cassette-machines|video-disc-players|video-switchers|video-fx|video-char-generators|video-still-stores|video-monitors|projection|film-projects|slide-projectors|video-projectors|dissolvers|shutter-controls|process-control|hydraulic-oil|h2o|co2|compressed-air|natural-gas|fog|smoke|cracked-haze|pyro|fireworks|explosions|flame|smoke-pots|all\n");
 
-    printf("\nTODO:\n");
-
     printf("\nMIDI Machine Commands (MMC)\n");
     printf("For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.\n");
     printf("\n\t sysex rt <device-id (u7) mcc <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]\n");
@@ -173,10 +171,11 @@ void printHelp( void ) {
     printf("\t\t (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|command-error-reset|mmc-reset|wait|resume)\n");
     printf("\t\t (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>\n");
     printf("\t\t step <step (s7)>\n");
-    printf("\t\t write ..\n");
     printf("\t\t locate (field <field>|mtc <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)\n");
+    printf("TODO:\n");
+    printf("\t\t write ..\n");
     printf("\t\t move ..\n");
-    printf("\t\t <data (xN)>\n");
+    printf("\t\t etc\n");
 
 
 
