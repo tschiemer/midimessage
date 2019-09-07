@@ -1345,39 +1345,6 @@ namespace MidiMessage {
                 value == SysExRtMmcCommandResume);
     }
 
-    inline uint8_t SysExRtMmcCmdDataLength( uint8_t * cmdByte ){
-        ASSERT( *cmdByte != 0 ); // reserved..
-
-        if (0x40 <= *cmdByte && *cmdByte <= 0x77) return cmdByte[1];
-
-//        if (0x01 <= *cmdByte && *cmdByte <= 0x3F) return 0;
-        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
-
-        return 0;
-    }
-
-    inline uint8_t SysExRtMmcCmdLength( uint8_t * cmdByte ){
-        ASSERT( *cmdByte != 0 ); // reserved..
-
-        if (0x40 <= *cmdByte && *cmdByte <= 0x77) return 2 + cmdByte[1];
-
-//        if (0x01 <= *cmdByte && *cmdByte <= 0x3F) return 1;
-        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
-        return 1;
-    }
-
-    inline uint8_t SysExRtMmcResponseDataLength( uint8_t * rByte ){
-        ASSERT( *rByte != 0 ); // reserved..
-
-        if (0x01 <= *rByte && *rByte <= 0x1F) return 5; // standard time code fields
-        if (0x20 <= *rByte && *rByte <= 0x3F) return 2; // short time code fields
-        if (0x40 <= *rByte && *rByte <= 0x77) return rByte[1];
-
-        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
-        return 0;
-    }
-
-
     typedef enum {
         SysExRtMmcResponseSelectedTimeCode                  = 0x01, // 1234
         SysExRtMmcResponseSelectedMasterCode                = 0x02, // ---4
@@ -1441,6 +1408,80 @@ namespace MidiMessage {
     inline bool isSysExRtMidiMachineControlResponse( uint8_t value ) {
         return false; //TODO
     }
+
+
+    inline uint8_t getSysExRtMmcCommandDataLength( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( *bytes != 0 ); // reserved..
+
+        if (0x40 <= *bytes && *bytes <= 0x77) return bytes[1];
+
+//        if (0x01 <= *cmdByte && *cmdByte <= 0x3F) return 0;
+        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
+
+        return 0;
+    }
+
+    inline uint8_t getSysExRtMmcCommandLength( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( *bytes != 0 ); // reserved..
+
+        if (0x40 <= *bytes && *bytes <= 0x77) return 2 + bytes[1];
+
+//        if (0x01 <= *cmdByte && *cmdByte <= 0x3F) return 1;
+        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
+        return 1;
+    }
+
+    inline uint8_t * getSysExRtMmcCommandNext( uint8_t * current, uint8_t length ){
+        ASSERT( current != NULL );
+
+        uint8_t len = getSysExRtMmcCommandLength( current );
+
+        if (len >= length){
+            return NULL;
+        }
+
+        return &current[len];
+    }
+
+    inline uint8_t getSysExRtMmcResponseDataLength( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( *bytes != 0 ); // reserved..
+
+        if (0x01 <= *bytes && *bytes <= 0x1F) return 5; // standard time code fields
+        if (0x20 <= *bytes && *bytes <= 0x3F) return 2; // short time code fields
+        if (0x40 <= *bytes && *bytes <= 0x77) return bytes[1];
+
+        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
+        return 0;
+    }
+
+    inline uint8_t getSysExRtMmcResponseLength( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( *bytes != 0 ); // reserved..
+
+        if (0x01 <= *bytes && *bytes <= 0x1F) return 6; // standard time code fields
+        if (0x20 <= *bytes && *bytes <= 0x3F) return 3; // short time code fields
+        if (0x40 <= *bytes && *bytes <= 0x77) return 2 + bytes[1];
+
+        //if (0x78 <= *cmdByte && *cmdByte <= 0x7F)
+        return 1;
+    }
+
+    inline uint8_t * getSysExRtMmcResponseNext( uint8_t * current, uint8_t length ){
+        ASSERT( current != NULL );
+
+        uint8_t len = getSysExRtMmcResponseLength( current );
+
+        if (len >= length){
+            return NULL;
+        }
+
+        return &current[len];
+    }
+
+
 
     const uint8_t SysExRtMmcStandardSpeedSignMask              = 0b01000000;
     const uint8_t SysExRtMmcStandardSpeedSignOffset            = 6;
