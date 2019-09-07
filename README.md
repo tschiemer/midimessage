@@ -52,6 +52,7 @@ tt = to test
 | | Non Real Time MTC Cueing | SysEx Non-Real Time | tt |
 | MIDI Machine Control | Basics | | tt |
 | MIDI Show Control | | SysEx Real Time | tt |
+| MIDI Visual Control | | SysEx Non-Real Time | TODO |
 | MIDI Tuning Standard | | | TODO |
 | General Handshaking | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
 | Experimental messages |  | SysEx Experimental | tt |
