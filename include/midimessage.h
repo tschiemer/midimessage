@@ -1490,14 +1490,16 @@ namespace MidiMessage {
         return 1;
     }
 
-    inline uint8_t * getSysExRtMmcCommandNext( uint8_t * current, uint8_t length ){
+    inline uint8_t * getSysExRtMmcCommandNext( uint8_t * current, uint8_t * length ){
         ASSERT( current != NULL );
 
         uint8_t len = getSysExRtMmcCommandLength( current );
 
-        if (len >= length){
+        if (len >= *length){
             return NULL;
         }
+
+        *length -= len;
 
         return &current[len];
     }
@@ -1526,12 +1528,12 @@ namespace MidiMessage {
         return 1;
     }
 
-    inline uint8_t * getSysExRtMmcResponseNext( uint8_t * current, uint8_t length ){
+    inline uint8_t * getSysExRtMmcResponseNext( uint8_t * current, uint8_t *length ){
         ASSERT( current != NULL );
 
         uint8_t len = getSysExRtMmcResponseLength( current );
 
-        if (len >= length){
+        if (len >= *length){
             return NULL;
         }
 
@@ -1992,9 +1994,12 @@ namespace MidiMessage {
     } SysExNonRtSdsExtNameRequestData_t;
 
 
-    typedef union {
-        SysExRtMmcStandardSpeed_t StandardSpeed;
-        uint8_t U7;
+    typedef struct {
+        uint8_t Command;
+        union {
+            SysExRtMmcStandardSpeed_t StandardSpeed;
+            uint8_t U7;
+        } Data;
     } SysExRtMmcCommandData_t;
 
     typedef struct {
@@ -2061,11 +2066,6 @@ namespace MidiMessage {
                         SysExNonRtSdsExtNameTransmissionData_t NameTransmission;
                         SysExNonRtSdsExtNameRequestData_t NameRequest;
                     } SampleDumpExt;
-
-                    union {
-                        SysExRtMmcCommandData_t Cmd;
-                    } Mmc;
-
 
                 } Data;
 

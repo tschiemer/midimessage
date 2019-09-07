@@ -123,11 +123,10 @@ namespace MidiMessage {
                         return packSysExRtMtcCueingSetupMessage( bytes, msg );
 
                     case SysExRtMidiMachineControlCommand:
-                        return packSysExRtMmcCommand( bytes, msg );
+                        return packSysExRtMmcCommandMessage( bytes, msg );
 
                     case SysExRtMidiMachineControlResponse:
-                        //TODO
-                        return false;
+                        return packSysExRtMmcResponseMessage( bytes, msg );
 
                     case SysExRtMidiTuningStandard:
                         //TODO
@@ -344,11 +343,10 @@ namespace MidiMessage {
                         return unpackSysExRtMtcCueingSetupMessage( bytes, length, msg );
 
                     case SysExRtMidiMachineControlCommand:
-                        return unpackSysExRtMmcCommand( bytes, length, msg);
+                        return unpackSysExRtMmcCommandMessage( bytes, length, msg);
 
                     case SysExRtMidiMachineControlResponse:
-                        //TODO
-                        return false;
+                        return unpackSysExRtMmcResponseMessage( bytes, length, msg);
 
                     case SysExRtMidiTuningStandard:
                         //TODO

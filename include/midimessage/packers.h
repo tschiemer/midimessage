@@ -2002,7 +2002,7 @@ namespace MidiMessage {
      * if command == 0, it is assumed the data structure is taken care of externally by the caller. That is, any commands must be
      * given by <data> where of <data[0]> would be the first (and possibly only) command.
      */
-    inline uint8_t packSysExRtMmcCommand(uint8_t *bytes, uint8_t deviceId, uint8_t *data,
+    inline uint8_t packSysExRtMmcCommandMessage(uint8_t *bytes, uint8_t deviceId, uint8_t *data,
                                          uint8_t dataLen) {
         ASSERT(bytes != NULL);
         ASSERT(deviceId <= MaxU7);
@@ -2021,65 +2021,6 @@ namespace MidiMessage {
             bytes[len++] = data[i];
         }
 
-//        switch(command){
-//
-//            case SysExRtMmcCommandStop:
-//            case SysExRtMmcCommandPlay:
-//            case SysExRtMmcCommandDeferredPlay:
-//            case SysExRtMmcCommandFastForward:
-//            case SysExRtMmcCommandRewind:
-//            case SysExRtMmcCommandRecordStrobe:
-//            case SysExRtMmcCommandRecordExit:
-//            case SysExRtMmcCommandRecordPause:
-//            case SysExRtMmcCommandPause:
-//            case SysExRtMmcCommandEject:
-//            case SysExRtMmcCommandChase:
-//            case SysExRtMmcCommandCommandErrorReset:
-//            case SysExRtMmcCommandMmcReset:
-//            case SysExRtMmcCommandWait:
-//            case SysExRtMmcCommandResume:
-//                // no data
-//                break;
-//
-//            case SysExRtMmcCommandVariablePlay:
-//            case SysExRtMmcCommandSearch:
-//            case SysExRtMmcCommandShuttle:
-//            case SysExRtMmcCommandDeferredVariablePlay:
-//            case SysExRtMmcCommandRecordStrobeVariable:
-//                bytes[len++] = 0x03;
-//                packSysExRtMmcStandardSpeed(&bytes[len], &data->StandardSpeed);
-//                len += 3;
-//                break;
-//
-//            case SysExRtMmcCommandStep:
-//                bytes[len++] = 0x01;
-//                bytes[len++] = data->U7;
-//                break;
-//
-//            case SysExRtMmcCommandWrite: ////////
-//
-//            case SysExRtMmcCommandMaskedWrite:
-//            case SysExRtMmcCommandRead:
-//            case SysExRtMmcCommandUpdate:
-//            case SysExRtMmcCommandLocate:
-//            case SysExRtMmcCommandAssignSystemMaster:
-//            case SysExRtMmcCommandGeneratorCommand:
-//            case SysExRtMmcCommandMtcCommand:
-//            case SysExRtMmcCommandMove:
-//            case SysExRtMmcCommandAdd:
-//            case SysExRtMmcCommandSubstract:
-//            case SysExRtMmcCommandDropFrameAdjust:
-//            case SysExRtMmcCommandProcedure:
-//            case SysExRtMmcCommandEvent:
-//            case SysExRtMmcCommandGroup:
-//            case SysExRtMmcCommandCommandSegment:
-//                //TODO
-//
-//            default:
-
-
-//        }
-
         bytes[len++] = SystemMessageEndOfExclusive;
 
         ASSERT( len <= MsgLenSysExRtMmcCommandMax );
@@ -2087,14 +2028,14 @@ namespace MidiMessage {
         return len;
     }
 
-    inline uint8_t packSysExRtMmcCommand( uint8_t *bytes, Message_t * msg ){
+    inline uint8_t packSysExRtMmcCommandMessage( uint8_t *bytes, Message_t * msg ){
         ASSERT( msg != NULL );
 
-        return packSysExRtMmcCommand( bytes, msg->Channel, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+        return packSysExRtMmcCommandMessage( bytes, msg->Channel, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
     }
 
-    inline bool unpackSysExRtMmcCommand(uint8_t *bytes, uint8_t len, uint8_t *deviceId,
-                                 uint8_t *data, uint8_t *dataLen) {
+    inline bool unpackSysExRtMmcCommandMessage(uint8_t *bytes, uint8_t len, uint8_t *deviceId,
+                                        uint8_t *data, uint8_t *dataLen) {
         ASSERT(bytes != NULL);
         ASSERT(deviceId != NULL);
         ASSERT(data != NULL);
@@ -2134,15 +2075,248 @@ namespace MidiMessage {
     }
 
 
-    inline bool unpackSysExRtMmcCommand(uint8_t *bytes, uint8_t length, Message_t * msg){
+    inline bool unpackSysExRtMmcCommandMessage(uint8_t *bytes, uint8_t length, Message_t * msg){
         ASSERT( msg != NULL );
 
-        if ( unpackSysExRtMmcCommand( bytes, length, &msg->Channel, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
+        if ( unpackSysExRtMmcCommandMessage( bytes, length, &msg->Channel, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdRealTimeByte;
             msg->Data.SysEx.SubId1 = SysExRtMidiMachineControlCommand;
             msg->Data.SysEx.SubId2 = 0; // see data (mmc commands can be a stream of commands and need not only be one)
+            return true;
+        }
+
+        return false;
+    }
+
+    inline uint8_t packSysExRtMmcCommand( uint8_t * bytes, SysExRtMmcCommandData_t * cmd ){
+        ASSERT( bytes != NULL );
+        ASSERT( cmd != NULL );
+        ASSERT( isSysExRtMmcCommand(cmd->Command) );
+
+        bytes[0] = cmd->Command;
+
+        switch(cmd->Command){
+
+            case SysExRtMmcCommandStop:
+            case SysExRtMmcCommandPlay:
+            case SysExRtMmcCommandDeferredPlay:
+            case SysExRtMmcCommandFastForward:
+            case SysExRtMmcCommandRewind:
+            case SysExRtMmcCommandRecordStrobe:
+            case SysExRtMmcCommandRecordExit:
+            case SysExRtMmcCommandRecordPause:
+            case SysExRtMmcCommandPause:
+            case SysExRtMmcCommandEject:
+            case SysExRtMmcCommandChase:
+            case SysExRtMmcCommandCommandErrorReset:
+            case SysExRtMmcCommandMmcReset:
+            case SysExRtMmcCommandWait:
+            case SysExRtMmcCommandResume:
+                // no data
+                return 1;
+
+            case SysExRtMmcCommandVariablePlay:
+            case SysExRtMmcCommandSearch:
+            case SysExRtMmcCommandShuttle:
+            case SysExRtMmcCommandDeferredVariablePlay:
+            case SysExRtMmcCommandRecordStrobeVariable:
+                bytes[1] = 0x03;
+                packSysExRtMmcStandardSpeed(&bytes[2], &cmd->Data.StandardSpeed);
+                return 5;
+
+            case SysExRtMmcCommandStep:
+                bytes[1] = 0x01;
+                bytes[2] = cmd->Data.U7;
+                return 3;
+
+            case SysExRtMmcCommandWrite: ////////
+
+            case SysExRtMmcCommandMaskedWrite:
+            case SysExRtMmcCommandRead:
+            case SysExRtMmcCommandUpdate:
+            case SysExRtMmcCommandLocate:
+            case SysExRtMmcCommandAssignSystemMaster:
+            case SysExRtMmcCommandGeneratorCommand:
+            case SysExRtMmcCommandMtcCommand:
+            case SysExRtMmcCommandMove:
+            case SysExRtMmcCommandAdd:
+            case SysExRtMmcCommandSubstract:
+            case SysExRtMmcCommandDropFrameAdjust:
+            case SysExRtMmcCommandProcedure:
+            case SysExRtMmcCommandEvent:
+            case SysExRtMmcCommandGroup:
+            case SysExRtMmcCommandCommandSegment:
+                //TODO
+
+            default:
+                return 0;
+
+        }
+    }
+
+    inline bool unpackSysExRtMmcCommand( uint8_t * bytes, uint8_t length, SysExRtMmcCommandData_t * cmd ){
+        ASSERT( bytes != NULL );
+        ASSERT( cmd != NULL );
+
+        if (length < 1){
+            return false;
+        }
+        if ( ! isSysExRtMmcCommand(bytes[0]) ){
+            return false;
+        }
+
+        cmd->Command = bytes[0];
+
+        switch(cmd->Command){
+
+            case SysExRtMmcCommandStop:
+            case SysExRtMmcCommandPlay:
+            case SysExRtMmcCommandDeferredPlay:
+            case SysExRtMmcCommandFastForward:
+            case SysExRtMmcCommandRewind:
+            case SysExRtMmcCommandRecordStrobe:
+            case SysExRtMmcCommandRecordExit:
+            case SysExRtMmcCommandRecordPause:
+            case SysExRtMmcCommandPause:
+            case SysExRtMmcCommandEject:
+            case SysExRtMmcCommandChase:
+            case SysExRtMmcCommandCommandErrorReset:
+            case SysExRtMmcCommandMmcReset:
+            case SysExRtMmcCommandWait:
+            case SysExRtMmcCommandResume:
+                // no data
+                return true;
+
+            case SysExRtMmcCommandVariablePlay:
+            case SysExRtMmcCommandSearch:
+            case SysExRtMmcCommandShuttle:
+            case SysExRtMmcCommandDeferredVariablePlay:
+            case SysExRtMmcCommandRecordStrobeVariable:
+                if (length < 5 || bytes[1] != 0x03){
+                    return false;
+                }
+                unpackSysExRtMmcStandardSpeed(&bytes[2], &cmd->Data.StandardSpeed);
+                return true;
+
+            case SysExRtMmcCommandStep:
+                if (length < 5 || bytes[1] != 0x01){
+                    return false;
+                }
+                cmd->Data.U7 = bytes[2];
+                return true;
+
+            case SysExRtMmcCommandWrite: ////////
+
+            case SysExRtMmcCommandMaskedWrite:
+            case SysExRtMmcCommandRead:
+            case SysExRtMmcCommandUpdate:
+            case SysExRtMmcCommandLocate:
+            case SysExRtMmcCommandAssignSystemMaster:
+            case SysExRtMmcCommandGeneratorCommand:
+            case SysExRtMmcCommandMtcCommand:
+            case SysExRtMmcCommandMove:
+            case SysExRtMmcCommandAdd:
+            case SysExRtMmcCommandSubstract:
+            case SysExRtMmcCommandDropFrameAdjust:
+            case SysExRtMmcCommandProcedure:
+            case SysExRtMmcCommandEvent:
+            case SysExRtMmcCommandGroup:
+            case SysExRtMmcCommandCommandSegment:
+                //TODO
+
+            default:
+                return false;
+
+        }
+    }
+
+    /**
+     * MMC Responses allow for multiple responses in a sysex message
+     */
+    inline uint8_t packSysExRtMmcResponseMessage(uint8_t *bytes, uint8_t deviceId, uint8_t *data,
+                                         uint8_t dataLen) {
+        ASSERT(bytes != NULL);
+        ASSERT(deviceId <= MaxU7);
+        ASSERT((dataLen == 0) || (data != NULL));
+        ASSERT(dataLen <= MaxU7);
+        ASSERT(isSysExRtMmcCommand(data[0]));
+
+        uint32_t len = 5;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdRealTimeByte;
+        bytes[2] = deviceId & DataMask;
+        bytes[3] = SysExRtMidiMachineControlResponse;
+
+        for (uint8_t i = 0; i < dataLen; i++) {
+            bytes[len++] = data[i];
+        }
+
+        bytes[len++] = SystemMessageEndOfExclusive;
+
+        ASSERT( len <= MsgLenSysExRtMmcCommandMax );
+
+        return len;
+    }
+
+    inline uint8_t packSysExRtMmcResponseMessage( uint8_t *bytes, Message_t * msg ){
+        ASSERT( msg != NULL );
+
+        return packSysExRtMmcResponseMessage( bytes, msg->Channel, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+    }
+
+    inline bool unpackSysExRtMmcResponseMessage(uint8_t *bytes, uint8_t len, uint8_t *deviceId,
+                                        uint8_t *data, uint8_t *dataLen) {
+        ASSERT(bytes != NULL);
+        ASSERT(deviceId != NULL);
+        ASSERT(data != NULL);
+        ASSERT(dataLen != NULL);
+
+
+        if (len <= MsgLenSysExRtMmcResponseWithoutData || ! isControlByte(bytes[len-1])) {
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive) {
+            return false;
+        }
+        if (bytes[1] != SysExIdRealTimeByte) {
+            return false;
+        }
+        if ((bytes[2] & DataMask) != bytes[2]) {
+            return false;
+        }
+        if (bytes[3] != SysExRtMidiMachineControlResponse) {
+            return false;
+        }
+        if (!isSysExRtMmcResponse(bytes[4])) {
+            return false;
+        }
+
+        *deviceId = bytes[2];
+
+        uint8_t l = len - MsgLenSysExRtMmcResponseWithoutData;
+
+        for (uint8_t i = 4, j = 0; j < l; i++, j++) {
+            data[j] = bytes[i];
+        }
+
+        *dataLen = l;
+
+        return true;
+    }
+
+
+    inline bool unpackSysExRtMmcResponseMessage(uint8_t *bytes, uint8_t length, Message_t * msg){
+        ASSERT( msg != NULL );
+
+        if ( unpackSysExRtMmcResponseMessage( bytes, length, &msg->Channel, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdRealTimeByte;
+            msg->Data.SysEx.SubId1 = SysExRtMidiMachineControlResponse;
+            msg->Data.SysEx.SubId2 = 0; // see data (mmc responses can be a stream of commands and need not only be one)
             return true;
         }
 
