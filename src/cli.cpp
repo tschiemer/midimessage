@@ -135,9 +135,16 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id (u7)> info request\n");
     printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
     printf("\t sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)\n");
+    printf("\t TODO:\n");
+    printf("\t sysex rt <device-id (u7)> dc (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>\n");
+    printf("\t sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]\n");
+    printf("\t sysex nonrt <device-id (u7)> controller-destination (channel-pressure|key-pressure) <channel (u4)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
+    printf("\t sysex nonrt <device-id (u7)> controller-destination cc <channel (u4)> <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
+    printf("\t sysex nonrt <device-id (u7)> keys <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]\n");
+    printf("\t sysex ");
     printf("* <device-id> := 127 is all devices\n");
 
-    printf("\n MIDI Time Code + Cueing\n");
+    printf("\nMIDI Time Code + Cueing\n");
     printf("\t sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");
     printf("\t sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>\n");
     printf("\t sysex nonrt <device-id (u7)> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<(u14)>)\n");
@@ -173,13 +180,19 @@ void printHelp( void ) {
     printf("\t\t step <step (s7)>\n");
     printf("\t\t locate (field <field>|mtc <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)\n");
     printf("\t\t assign-system-master <master (u7)>\n");
-    printf("TODO:\n");
+    printf("\t TODO:\n");
+    printf("\t\t generator-command (stop|run|copy-jam)\n");
+    printf("\t\t mtc-command (off|follow)\n");
     printf("\t\t write ..\n");
     printf("\t\t move ..\n");
     printf("\t\t etc\n");
 
-
-
+    printf("\nMobile Phone Control (TODO)\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <reset|on|off>\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <manufacturer-cmd (x1, x3)> <data (xN)>\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> follow-midi-channels [<channel1 (u7)> <low-note1 (u7)> <high-note1  (u7)> [ .. [<channelN (u7)> <low-noteN (u7)> <high-noteN (u7)>] .. ]\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-color <red (u7)> <green (u7)> <blue (u7)>\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-level\n");
 
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");

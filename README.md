@@ -46,24 +46,28 @@ tt = to test
 | | Stop | | tt |
 | | Active Sensing | | tt |
 | | Reset | | tt |
-| MIDI Time Code | Quarter Frames | System Common | tt |
+| MIDI Time Code (MTC) | Quarter Frames | System Common | tt |
 | | Full Message + User Bits| SysEx Real Time | tt |
 | | Real Time MTC Cueing | SysEx Real Time | tt |
 | | Non Real Time MTC Cueing | SysEx Non-Real Time | tt |
-| MIDI Machine Control | Basics | | tt |
-| MIDI Show Control | | SysEx Real Time | tt |
-| MIDI Visual Control | | SysEx Non-Real Time | TODO |
+| MIDI Machine Control (MMC) | Basics | | tt |
+| MIDI Show Control (MSC) | | SysEx Real Time | tt |
+| MIDI Visual Control (MVC)| | SysEx Non-Real Time | TODO |
 | MIDI Tuning Standard | | | TODO |
-| General Handshaking | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
+| General Handshaking  | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
 | Experimental messages |  | SysEx Experimental | tt |
 | Manufacturer messages (+ manufacturer ids)|  | SysEx Manufacturer | tt |
 | Device Control (Master volume, balance, coarse/fine tuning, global parameters)| | SysEx Real Time | tt |
-| General Information | | SysEx Non-Real Time | tt |
-| General MIDI System Messages | | SysEx Non-Real Time | tt |
+| General Information (GM) | | SysEx Non-Real Time | tt |
 | Sample Dump | | SysEx Non-Real Time | TODO |
 | File Dump | | Non-Real Time | TODO |
 | Downloadable Sounds | | Non-Real Time | TODO |
 | Notation Information | | Real Time | TODO |
+| Capability Inquiry (MIDI-CI) | | SysEx Non-Real Time | TODO |
+| Controller Destination Settings | | SysEx Real Time | TODO |
+| Key-based Instrument Control | | SysEx Real Time | TODO |
+| Scalable Polyphony MIDI MIP (SP-MIDI MIP)| | SysEx Real Time | TODO |
+| Mobile Phone Control | | SysEx Real Time | TODO |
 
 ## Requirements
 
@@ -142,7 +146,7 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 ## Command Line Utility
 
 ```
-Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])
+Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d] [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])
 
 Options:
 	 -h|-? 				 show this help
@@ -152,6 +156,7 @@ Options:
 	 --generate|-g [<cmd> ...] 	 Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.
 	 --prefix=<prefix> 		 Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).
 	 --suffix=<suffix> 		 Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).
+	 -d 				 In parsing mode, instead of silent discarding output any discarded data to STDERR.
 
 Fancy pants note: the parsing output format is identical to the generation command format ;)
 
@@ -194,9 +199,15 @@ System Commands:
 	 sysex nonrt <device-id (u7)> info request
 	 sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>
 	 sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)
-* <device-id> := 127 is all devices
+	 TODO:
+	 sysex rt <device-id (u7)> dc (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>
+	 sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]
+	 sysex nonrt <device-id (u7)> controller-destination (channel-pressure|key-pressure) <channel (u4)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
+	 sysex nonrt <device-id (u7)> controller-destination cc <channel (u4)> <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
+	 sysex nonrt <device-id (u7)> keys <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]
+	 sysex * <device-id> := 127 is all devices
 
- MIDI Time Code + Cueing
+MIDI Time Code + Cueing
 	 sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
 	 sysex rt <device-id (u7)> mtc user-bits <5bytes (x5)>
 	 sysex nonrt <device-id (u7)> cueing special (time-code-offset|enable-event-list|disable-event-list|clear-event-list|system-stop|event-list-request|<(u14)>)
@@ -233,10 +244,19 @@ For MMC the MIDI format acts as container for a command stream of its own, where
 		 step <step (s7)>
 		 locate (field <field>|mtc <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>)
 		 assign-system-master <master (u7)>
-TODO:
+	 TODO:
+		 generator-command (stop|run|copy-jam)
+		 mtc-command (off|follow)
 		 write ..
 		 move ..
 		 etc
+
+Mobile Phone Control (TODO)
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <reset|on|off>
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <manufacturer-cmd (x1, x3)> <data (xN)>
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> follow-midi-channels [<channel1 (u7)> <low-note1 (u7)> <high-note1  (u7)> [ .. [<channelN (u7)> <low-noteN (u7)> <high-noteN (u7)>] .. ]
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-color <red (u7)> <green (u7)> <blue (u7)>
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-level
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
