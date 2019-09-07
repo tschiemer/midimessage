@@ -24,10 +24,11 @@ namespace MidiMessage {
         Message_t * Message;
 
         void (*MessageHandler)(Message_t * message);
+        void (*DiscardingDataHandler)(uint8_t * bytes, uint8_t length);
 
         uint8_t Length;
 
-        Parser(bool runningStatusEnabled, uint8_t * buffer, uint8_t maxLen, Message_t * msg, void (*messageHandler)(Message_t * message)) {
+        Parser(bool runningStatusEnabled, uint8_t * buffer, uint8_t maxLen, Message_t * msg, void (*messageHandler)(Message_t * message), void (*discardingDataHandler)(uint8_t * bytes, uint8_t length)) {
             this->RunningStatusEnabled = runningStatusEnabled;
 
             this->Buffer = buffer;
@@ -36,6 +37,7 @@ namespace MidiMessage {
             this->Message = msg;
 
             this->MessageHandler = messageHandler;
+            this->DiscardingDataHandler = discardingDataHandler;
 
             this->Length = 0;
         }

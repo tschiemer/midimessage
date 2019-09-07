@@ -45,6 +45,7 @@ typedef enum {
 // Run mode
 Mode_t mode = ModeUndefined;
 
+// Running status option
 bool runningStatusEnabled = false;
 
 // Timed option
@@ -58,11 +59,15 @@ struct {
 };
 
 
-
 // Options prefix/suffix
 char prefix[32] = "";
 char suffix[32] = "";
 
+
+bool printDiscardedData = false;
+
+
+///////// Signatures
 
 void printHelp( void );
 unsigned long getNow();
@@ -72,11 +77,12 @@ void writeMidiPacket( Message_t * msg );
 
 void parser(void);
 void parsedMessage( Message_t * msg );
+void discardingData( uint8_t * data, uint8_t length );
 
 
 
 void printHelp( void ) {
-    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
+    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d] [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
 
     printf("\nOptions:\n");
     printf("\t -h|-? \t\t\t\t show this help\n");
@@ -86,6 +92,7 @@ void printHelp( void ) {
     printf("\t --generate|-g [<cmd> ...] \t Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.\n");
     printf("\t --prefix=<prefix> \t\t Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %%d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).\n");
     printf("\t --suffix=<suffix> \t\t Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
+    printf("\t -d \t\t\t\t In parsing mode, instead of silent discarding output any discarded data to STDERR.\n");
 
     printf("\nFancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
@@ -163,7 +170,7 @@ void printHelp( void ) {
     printf("For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.\n");
     printf("\n\t sysex rt <device-id (u7) mmc cmd <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]\n");
     printf("\t\t <commandN ..> :\n");
-    printf("\t\t (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|cmd-error-reset|mmc-reset|wait|resume)\n");
+    printf("\t\t (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|command-error-reset|mmc-reset|wait|resume)\n");
     printf("\t\t (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>\n");
     printf("\t\t step <step (s7)>\n");
     printf("\t\t write ..\n");
@@ -282,7 +289,7 @@ void parser(void){
     msg.Data.SysEx.ByteData = sysexBuffer;
 
     uint8_t dataBuffer[128];
-    Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage );
+    Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage, discardingData );
 
     // start timer
     if (timedOpt.enabled){
@@ -325,6 +332,18 @@ void parsedMessage( Message_t * msg ){
     }
 }
 
+void discardingData( uint8_t * data, uint8_t length ){
+
+    if (printDiscardedData == false){
+        return;
+    }
+
+    fwrite( data, 1, length, stderr );
+
+    fflush(stderr);
+
+}
+
 
 int main(int argc, char * argv[], char * env[]){
 
@@ -352,7 +371,7 @@ int main(int argc, char * argv[], char * env[]){
                 {0,         0,              0,  0 }
         };
 
-        c = getopt_long(argc, argv, "pgt::rh?",
+        c = getopt_long(argc, argv, "pgt::rhd?",
                         long_options, &option_index);
         if (c == -1)
             break;
@@ -413,6 +432,10 @@ int main(int argc, char * argv[], char * env[]){
 
             case 'r':
                 runningStatusEnabled = true;
+                break;
+
+            case 'd':
+                printDiscardedData = true;
                 break;
 
             default:

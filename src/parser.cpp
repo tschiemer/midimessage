@@ -27,6 +27,11 @@ namespace MidiMessage {
                 if (this->RunningStatusEnabled && isRunningStatus(this->Buffer[0])){
                     this->Length++;
                 } else {
+
+                    if (this->DiscardingDataHandler != NULL){
+                        this->DiscardingDataHandler( this->Buffer, 1 );
+                    }
+
                     // wait for control byte
                     continue;
                 }
@@ -53,6 +58,10 @@ namespace MidiMessage {
                         this->Length = 0;
                         continue;
                     }
+                }
+
+                if (this->DiscardingDataHandler != NULL){
+                    this->DiscardingDataHandler( this->Buffer, this->Length );
                 }
 
                 // discard previous data
