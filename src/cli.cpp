@@ -66,6 +66,9 @@ char suffix[32] = "";
 
 bool printDiscardedData = false;
 
+bool exitOnError = true;
+
+int verbosity = 0;
 
 ///////// Signatures
 
@@ -73,6 +76,7 @@ void printHelp( void );
 unsigned long getNow();
 
 void generator(void);
+void generatorError(int code, uint8_t argc, uint8_t ** argv);
 void writeMidiPacket( Message_t * msg );
 
 void parser(void);
@@ -82,17 +86,19 @@ void discardingData( uint8_t * data, uint8_t length );
 
 
 void printHelp( void ) {
-    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d] [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
+    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d] [<binary-data>]] | --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
 
     printf("\nOptions:\n");
     printf("\t -h|-? \t\t\t\t show this help\n");
     printf("\t --running-status|-r \t\t Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)\n");
     printf("\t --timed|-t[milli|micro] \t Enables the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)\n");
     printf("\t --parse|-p [<binary-data>] \t Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.\n");
+    printf("\t -d \t\t\t\t In parsing mode, instead of silent discarding output any discarded data to STDERR.\n");
     printf("\t --generate|-g [<cmd> ...] \t Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.\n");
     printf("\t --prefix=<prefix> \t\t Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %%d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).\n");
     printf("\t --suffix=<suffix> \t\t Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
-    printf("\t -d \t\t\t\t In parsing mode, instead of silent discarding output any discarded data to STDERR.\n");
+    printf("\t -x0, -x1 \t\t\t In generation mode, exit on input error (-x1) or continue processing (-x0). Default := continue (-x0).\n");
+    printf("\t -v0, -v1 \t\t\t In generation mode, print command parsing result (on error only) to STDERR. Default := do NOT print (-v0).\n");
 
     printf("\nFancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
@@ -264,10 +270,42 @@ void generator(void){
             firstArg = &firstArg[1];
         }
 
-        if (StringifierResultOk == stringifier.fromArgs( &msg,  argsCount, firstArg )){
+        int result = stringifier.fromArgs( &msg,  argsCount, firstArg );
+
+        if (StringifierResultOk == result){
 
             writeMidiPacket( &msg );
+        } else {
+            generatorError(result, argsCount, firstArg);
         }
+    }
+}
+
+void generatorError(int code, uint8_t argc, uint8_t ** argv){
+
+    if (verbosity > 0) {
+        switch (code) {
+            case StringifierResultGenericError:
+                fprintf(stderr, "Generic error: ");
+                break;
+            case StringifierResultInvalidValue:
+                fprintf(stderr, "Invalid value: ");
+                break;
+            case StringifierResultWrongArgCount:
+                fprintf(stderr, "Wrong arg count: ");
+                break;
+            case StringifierResultNoInput:
+                fprintf(stderr, "No input ");
+                break;
+        }
+
+        for (uint8_t i = 0; i < argc; i++) {
+            fprintf(stderr, "%s ", argv[i]);
+        }
+        fprintf(stderr, "\n");
+    }
+    if (exitOnError){
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -380,11 +418,13 @@ int main(int argc, char * argv[], char * env[]){
                 {"running-status", optional_argument, 0, 'r'},
                 {"prefix", required_argument, 0, 0},
                 {"suffix", required_argument, 0, 0},
+                {"verbose", optional_argument, 0, 'v'},
+                {"exit-on-error", required_argument, 0, 'x'},
                 {"help",    no_argument,    0,  'h' },
                 {0,         0,              0,  0 }
         };
 
-        c = getopt_long(argc, argv, "pgt::rhd?",
+        c = getopt_long(argc, argv, "pgt::rhdv::x:?",
                         long_options, &option_index);
         if (c == -1)
             break;
@@ -451,6 +491,21 @@ int main(int argc, char * argv[], char * env[]){
                 printDiscardedData = true;
                 break;
 
+            case 'v':
+
+                if (optarg != NULL && strlen(optarg) > 0){
+                    verbosity = atoi(optarg);
+                } else {
+                    verbosity++;
+                }
+                break;
+
+            case 'x':
+                if (optarg != NULL && strlen(optarg) > 0){
+                    exitOnError = (bool)atoi(optarg);
+                }
+                break;
+
             default:
                 printf("?? getopt returned character code 0%o ??\n", c);
         }
@@ -473,10 +528,16 @@ int main(int argc, char * argv[], char * env[]){
             Message_t msg;
             msg.Data.SysEx.ByteData = sysexBuffer;
 
-            if (stringifier.fromArgs(&msg, (uint8_t) (argc - optind), (uint8_t **) &argv[optind]) == StringifierResultOk) {
+            uint8_t argsCount = (uint8_t) (argc - optind);
+            uint8_t ** firstArg = (uint8_t **) &argv[optind];
+
+            int result = stringifier.fromArgs(&msg, argsCount, firstArg);
+
+            if (result == StringifierResultOk) {
                 writeMidiPacket(&msg);
                 exit(EXIT_SUCCESS);
             } else {
+                generatorError(result, argsCount, firstArg);
                 exit(EXIT_FAILURE);
             }
         }

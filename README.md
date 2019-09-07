@@ -146,17 +146,19 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 ## Command Line Utility
 
 ```
-Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d] [<binary-data>]] | --generate|-g [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])
+Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d] [<binary-data>]] | --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])
 
 Options:
 	 -h|-? 				 show this help
 	 --running-status|-r 		 Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)
 	 --timed|-t[milli|micro] 	 Enables the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)
 	 --parse|-p [<binary-data>] 	 Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.
+	 -d 				 In parsing mode, instead of silent discarding output any discarded data to STDERR.
 	 --generate|-g [<cmd> ...] 	 Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.
 	 --prefix=<prefix> 		 Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).
 	 --suffix=<suffix> 		 Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).
-	 -d 				 In parsing mode, instead of silent discarding output any discarded data to STDERR.
+	 -x0, -x1 			 In generation mode, exit on input error (-x1) or continue processing (-x0). Default := continue (-x0).
+	 -v0, -v1 			 In generation mode, print command parsing result (on error only) to STDERR. Default := do NOT print (-v0).
 
 Fancy pants note: the parsing output format is identical to the generation command format ;)
 
