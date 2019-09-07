@@ -64,11 +64,6 @@ tt = to test
 | Downloadable Sounds | | Non-Real Time | TODO |
 | Notation Information | | Real Time | TODO |
 
-## Docs
-
-https://tschiemer.github.com/tschiemer/midimessage
-
-
 ## Requirements
 
 - `midimessage-cli` requires getopt and [c-utils](https://github.com/tschiemer/c-utils)
@@ -251,6 +246,9 @@ Examples:
 	 bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording
 	 cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p
 ```
+## Docs
+
+TODO github page
 
 ## References
 
