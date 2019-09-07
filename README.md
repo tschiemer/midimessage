@@ -57,12 +57,12 @@ tt = to test
 | Experimental messages |  | SysEx Experimental | tt |
 | Manufacturer messages (+ manufacturer ids)|  | SysEx Manufacturer | tt |
 | Device Control (Master volume, balance, coarse/fine tuning, global parameters)| | SysEx Real Time | tt |
-| General Information | SysEx Non-Real Time | tt |
-| General MIDI System Messages | SysEx Non-Real Time | tt |
+| General Information | | SysEx Non-Real Time | tt |
+| General MIDI System Messages | | SysEx Non-Real Time | tt |
 | Sample Dump | | SysEx Non-Real Time | TODO |
-| File Dump | Non-Real Time | TODO |
-| Downloadable Sounds | Non-Real Time | TODO |
-| Notation Information | Real Time | TODO |
+| File Dump | | Non-Real Time | TODO |
+| Downloadable Sounds | | Non-Real Time | TODO |
+| Notation Information | | Real Time | TODO |
 
 ## Docs
 
