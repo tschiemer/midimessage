@@ -301,6 +301,8 @@ namespace MidiMessage {
 
     const uint8_t MsgLenSysExRtMmcCommandMax                = 48; // see spec
     const uint8_t MsgLenSysExRtMmcCommandWithoutData        = 5;
+    const uint8_t MsgLenSysExRtMmcResponseMax               = 48;
+    const uint8_t MsgLenSysExRtMmcResponseWithoutData       = 5;
 
     const uint8_t MsgLenSysExNonRtSdsHeader                 = 21;
     const uint8_t MsgLenSysExNonRtSdsDataPacketMin          = 7;
@@ -1405,8 +1407,63 @@ namespace MidiMessage {
         SysExRtMmcResponseResume                            = 0x7F  // -234
     } SysExRtMmcResponse_t;
 
-    inline bool isSysExRtMidiMachineControlResponse( uint8_t value ) {
-        return false; //TODO
+    inline bool isSysExRtMmcResponse( uint8_t value ) {
+        return (value == SysExRtMmcResponseSelectedTimeCode ||
+                value == SysExRtMmcResponseSelectedMasterCode ||
+                value == SysExRtMmcResponseRequestedOffset ||
+                value == SysExRtMmcResponseActualOffset ||
+                value == SysExRtMmcResponseLockDeviation ||
+                value == SysExRtMmcResponseGeneratorTimeCode ||
+                value == SysExRtMmcResponseMidiTimeCodeInput ||
+                value == SysExRtMmcResponseGP0 ||
+                value == SysExRtMmcResponseLocatePoint ||
+                value == SysExRtMmcResponseGP1 ||
+                value == SysExRtMmcResponseGP2 ||
+                value == SysExRtMmcResponseGP3 ||
+                value == SysExRtMmcResponseGP4 ||
+                value == SysExRtMmcResponseGP5 ||
+                value == SysExRtMmcResponseGP6 ||
+                value == SysExRtMmcResponseGP7 ||
+                value == SysExRtMmcResponseSignature ||
+                value == SysExRtMmcResponseUpdateRate ||
+                value == SysExRtMmcResponseResponseError ||
+                value == SysExRtMmcResponseCommandError ||
+                value == SysExRtMmcResponseCommandErrorLevel ||
+                value == SysExRtMmcResponseTimeStandard ||
+                value == SysExRtMmcResponseSelectedTimeCodeSource ||
+                value == SysExRtMmcResponseSelectedTimeCodeUserbits ||
+                value == SysExRtMmcResponseMotionControlTally ||
+                value == SysExRtMmcResponseVelocityTally ||
+                value == SysExRtMmcResponseStopMode ||
+                value == SysExRtMmcResponseFastMode ||
+                value == SysExRtMmcResponseRecordMode ||
+                value == SysExRtMmcResponseRecordStatus ||
+                value == SysExRtMmcResponseTrackRecordStatus ||
+                value == SysExRtMmcResponseTrackRecordReady ||
+                value == SysExRtMmcResponseGlobalMonitor ||
+                value == SysExRtMmcResponseRecordMonitor ||
+                value == SysExRtMmcResponseTrackSyncMonitor ||
+                value == SysExRtMmcResponseTrackInputMonitor ||
+                value == SysExRtMmcResponseStepLength ||
+                value == SysExRtMmcResponsePlaySpeedReference ||
+                value == SysExRtMmcResponseFixedSpeed ||
+                value == SysExRtMmcResponseLifterDefeat ||
+                value == SysExRtMmcResponseControlDisable ||
+                value == SysExRtMmcResponseResolvedPlayMode ||
+                value == SysExRtMmcResponseChaseMode ||
+                value == SysExRtMmcResponseGeneratorCommandTally ||
+                value == SysExRtMmcResponseGeneratorSetup ||
+                value == SysExRtMmcResponseGeneratorUserbits ||
+                value == SysExRtMmcResponseMidiTimeCodeCommandTally ||
+                value == SysExRtMmcResponseMidiTimeCodeSetup ||
+                value == SysExRtMmcResponseProcedureResponse ||
+                value == SysExRtMmcResponseEventResponse ||
+                value == SysExRtMmcResponseTrackMute ||
+                value == SysExRtMmcResponseVitcInsertEnable ||
+                value == SysExRtMmcResponseResponseSegment ||
+                value == SysExRtMmcResponseFailure ||
+                value == SysExRtMmcResponseWait ||
+                value == SysExRtMmcResponseResume);
     }
 
 
