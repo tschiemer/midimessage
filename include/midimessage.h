@@ -2019,7 +2019,7 @@ namespace MidiMessage {
         union {
             SysExRtMmcStandardSpeed_t StandardSpeed;
             uint8_t U7;
-            int8_t I7;
+            int8_t S7;
             struct {
                 uint8_t SubCommand;
                 uint8_t InformationField;

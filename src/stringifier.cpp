@@ -384,11 +384,11 @@ namespace MidiMessage {
                         return StringifierResultWrongArgCount;
                     }
 
-                    cmd.Data.I7 = atoi((char*)argv[1]);
+                    cmd.Data.S7 = atoi((char*)argv[1]);
 
-                    assertI7( cmd.Data.I7 );
+                    assertI7( cmd.Data.S7 );
 
-//                    printf("%d", cmd.Data.I7);
+//                    printf("%d", cmd.Data.S7);
 //                    exit(0);
 
                     consumedArgs ++;
@@ -565,7 +565,7 @@ namespace MidiMessage {
                     break;
 
                 case SysExRtMmcCommandStep:
-                    strLength += sprintf( (char*)&bytes[strLength], "%d", cmd.Data.I7 );
+                    strLength += sprintf( (char*)&bytes[strLength], "%d", cmd.Data.S7 );
                     break;
 
                 case SysExRtMmcCommandLocate:

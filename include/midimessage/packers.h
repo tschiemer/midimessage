@@ -2130,7 +2130,7 @@ namespace MidiMessage {
 
             case SysExRtMmcCommandStep:
                 bytes[len++] = 0x01;
-                bytes[len++] = cmd->Data.I7 & DataMask;
+                bytes[len++] = cmd->Data.S7 & DataMask;
                 return len;
 
 
@@ -2231,10 +2231,10 @@ namespace MidiMessage {
                 if (length < 3 || bytes[1] != 0x01){
                     return false;
                 }
-                cmd->Data.I7 = bytes[2];
+                cmd->Data.S7 = bytes[2];
 
                 if (bytes[2] & 0x40){
-                    cmd->Data.I7 |= 0x80; // set sign byte
+                    cmd->Data.S7 |= 0x80; // set sign byte
                 }
                 return true;
 
