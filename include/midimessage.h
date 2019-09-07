@@ -73,6 +73,9 @@ namespace MidiMessage {
     const uint32_t MaxU28 = 0x0FFFFFFF;
     const uint64_t MaxU35 = 0x7FFFFFFFF;
 
+    const int8_t MaxI7      = 63;
+    const int8_t MinI7      = -64;
+
     /**
      * Is it a data byte?
      */
@@ -1579,7 +1582,7 @@ namespace MidiMessage {
 
 
     typedef enum {
-        SysExRtMmcStandardSpeedDirectionForward     = 0,
+        SysExRtMmcStandardSpeedDirectionForward     = 1,
         SysExRtMmcStandardSpeedDirectionBackward    = -1
     } SysExRtMmcStandardSpeedDirection_t;
 
@@ -1595,9 +1598,9 @@ namespace MidiMessage {
         uint16_t FractionalPart;
     } SysExRtMmcStandardSpeed_t;
 
-    inline void SysExRtMmcStandardSpeedFromFloat( int8_t * direction, uint8_t * shiftCount, uint16_t * integerPart, uint16_t *fractionalPart, float speed ){
+    inline bool SysExRtMmcStandardSpeedFromFloat( int8_t * direction, uint8_t * shiftCount, uint16_t * integerPart, uint16_t *fractionalPart, float speed ){
 
-        int8_t direction_ = speed > 0.0 ? 1 : -1;
+        int8_t direction_ = speed > 0.0 ? SysExRtMmcStandardSpeedDirectionForward : SysExRtMmcStandardSpeedDirectionBackward;
 
         // abs value
         if (direction_ == -1){
@@ -1612,34 +1615,34 @@ namespace MidiMessage {
         ASSERT( integerPart_ <= SysExRtMmcStandardSpeedMaxIntegerPart );
 
         uint8_t shiftCount_ = SysExRtMmcStandardSpeedResolution1_16384th;
-        while(shiftCount_){
-
-            if (integerPart_ <= SysExRtMmcStandardSpeedMaxIntegerPartByResolution[shiftCount_]){
-                break;
-            }
+        while(integerPart_ > SysExRtMmcStandardSpeedMaxIntegerPartByResolution[shiftCount_] && shiftCount_ <= SysExRtMmcStandardSpeedResolution1_128th){
 
             shiftCount_++;
 
-            ASSERT( shiftCount_ <= SysExRtMmcStandardSpeedResolution1_128th ); // shouldnt happen, but in principle we're risking an endless loop (if asserts are off)..
+            if( shiftCount_ <= SysExRtMmcStandardSpeedResolution1_128th ){
+              return false; // out of range.......
+            }
         }
 
-        uint16_t fractionalPart_ = (uint16_t)(speed * ((float)(1 << shiftCount_)));
+        uint16_t fractionalPart_ = (uint16_t)(speed * ((float)(1 << (14 - shiftCount_))));
 
         *direction = direction_;
         *shiftCount = shiftCount_;
         *integerPart = integerPart_;
         *fractionalPart = fractionalPart_;
+
+        return true;
     }
 
-    inline void SysExRtMmcStandardSpeedFromFloat( SysExRtMmcStandardSpeed_t * ss, float speed ){
-        SysExRtMmcStandardSpeedFromFloat( &ss->Direction, &ss->Resolution, &ss->IntegerPart, &ss->FractionalPart, speed );
+    inline bool SysExRtMmcStandardSpeedFromFloat( SysExRtMmcStandardSpeed_t * ss, float speed ){
+        return SysExRtMmcStandardSpeedFromFloat( &ss->Direction, &ss->Resolution, &ss->IntegerPart, &ss->FractionalPart, speed );
     }
 
     inline float SysExRtMmcStandardSpeedToFloat( int8_t direction, uint8_t shiftCount, uint16_t integerPart, uint16_t fractionalPart ) {
         ASSERT( isSysExRtMmcStandardSpeedDirection(direction) );
         ASSERT( isSysExRtMmcStandardSpeedResolution(shiftCount) );
 
-        return direction * (((float)integerPart) + ((float)fractionalPart) / ((float)(0x4000 >> shiftCount)) );
+        return direction * (((float)integerPart) + ((float)fractionalPart) / ((float)(1 << (14 - shiftCount))) );
     }
 
     inline float SysExRtMmcStandardSpeedToFloat( SysExRtMmcStandardSpeed_t * ss ){
@@ -1999,6 +2002,7 @@ namespace MidiMessage {
         union {
             SysExRtMmcStandardSpeed_t StandardSpeed;
             uint8_t U7;
+            int8_t I7;
         } Data;
     } SysExRtMmcCommandData_t;
 

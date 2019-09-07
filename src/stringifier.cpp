@@ -1,5 +1,6 @@
 
 #include <midimessage/stringifier.h>
+#include <midimessage/packers.h>
 #include <util-hex.h>
 
 #include <cstdlib>
@@ -16,6 +17,7 @@
 #define assertU21(x)        if (x > MaxU21) { return StringifierResultInvalidValue; }
 #define assertU28(x)        if (x > MaxU28) { return StringifierResultInvalidValue; }
 #define assertU35(x)        if (x > MaxU35) { return StringifierResultInvalidValue; }
+#define assertI7(x)         if (x < MinI7 || MaxI7 < x) { return StringifierResultInvalidValue; }
 #define assertData(bytes, len)   \
                             for(uint8_t i = 0; i < len; i++){ \
                                 assertU7(bytes[i]); \
@@ -199,6 +201,359 @@ namespace MidiMessage {
         len += sprintf( (char*)&dst[len], " %s", cueNumber->Path );
 
         return len;
+    }
+
+
+    inline int ArgsToMccData( uint8_t * bytes, uint8_t * length, uint8_t argc, uint8_t ** argv){
+
+
+        if (argc == 0){
+            return StringifierResultWrongArgCount;
+        }
+
+        do {
+
+            SysExRtMmcCommandData_t cmd;
+
+            if (str_eq(argv[0], "stop")) {
+                cmd.Command = SysExRtMmcCommandStop;
+            }
+            else if (str_eq(argv[0], "play")) {
+                cmd.Command = SysExRtMmcCommandPlay;
+            }
+            else if (str_eq(argv[0], "deferred-play")) {
+                cmd.Command = SysExRtMmcCommandDeferredPlay;
+            }
+            else if (str_eq(argv[0], "fast-forward")) {
+                cmd.Command = SysExRtMmcCommandFastForward;
+            }
+            else if (str_eq(argv[0], "rewind")) {
+                cmd.Command = SysExRtMmcCommandRewind;
+            }
+            else if (str_eq(argv[0], "record-strobe")) {
+                cmd.Command = SysExRtMmcCommandRecordStrobe;
+            }
+            else if (str_eq(argv[0], "record-exit")) {
+                cmd.Command = SysExRtMmcCommandRecordExit;
+            }
+            else if (str_eq(argv[0], "record-pause")) {
+                cmd.Command = SysExRtMmcCommandRecordPause;
+            }
+            else if (str_eq(argv[0], "pause")) {
+                cmd.Command = SysExRtMmcCommandPause;
+            }
+            else if (str_eq(argv[0], "eject")) {
+                cmd.Command = SysExRtMmcCommandEject;
+            }
+            else if (str_eq(argv[0], "chase")) {
+                cmd.Command = SysExRtMmcCommandChase;
+            }
+            else if (str_eq(argv[0], "command-error-reset")) {
+                cmd.Command = SysExRtMmcCommandCommandErrorReset;
+            }
+            else if (str_eq(argv[0], "mmc-reset")) {
+                cmd.Command = SysExRtMmcCommandMmcReset;
+            }
+            else if (str_eq(argv[0], "wait")) {
+                cmd.Command = SysExRtMmcCommandWait;
+            }
+            else if (str_eq(argv[0], "resume")) {
+                cmd.Command = SysExRtMmcCommandResume;
+            }
+            else if (str_eq(argv[0], "variable-play")) {
+                cmd.Command = SysExRtMmcCommandVariablePlay;
+            }
+            else if (str_eq(argv[0], "search")) {
+                cmd.Command = SysExRtMmcCommandSearch;
+            }
+            else if (str_eq(argv[0], "shuttle")) {
+                cmd.Command = SysExRtMmcCommandShuttle;
+            }
+            else if (str_eq(argv[0], "deferred-variable-play")) {
+                cmd.Command = SysExRtMmcCommandDeferredVariablePlay;
+            }
+            else if (str_eq(argv[0], "record-strobe-variable")) {
+                cmd.Command = SysExRtMmcCommandRecordStrobeVariable;
+            }
+            else if (str_eq(argv[0], "step")) {
+                cmd.Command = SysExRtMmcCommandStep;
+            }
+            else if (str_eq(argv[0], "write")) {
+                cmd.Command = SysExRtMmcCommandWrite;
+            }
+            else if (str_eq(argv[0], "masked-write")) {
+                cmd.Command = SysExRtMmcCommandMaskedWrite;
+            }
+            else if (str_eq(argv[0], "read")) {
+                cmd.Command = SysExRtMmcCommandRead;
+            }
+            else if (str_eq(argv[0], "update")) {
+                cmd.Command = SysExRtMmcCommandUpdate;
+            }
+            else if (str_eq(argv[0], "locate")) {
+                cmd.Command = SysExRtMmcCommandLocate;
+            }
+            else if (str_eq(argv[0], "assign-system-master")) {
+                cmd.Command = SysExRtMmcCommandAssignSystemMaster;
+            }
+            else if (str_eq(argv[0], "generator-command")) {
+                cmd.Command = SysExRtMmcCommandGeneratorCommand;
+            }
+            else if (str_eq(argv[0], "mtc-command")) {
+                cmd.Command = SysExRtMmcCommandMtcCommand;
+            }
+            else if (str_eq(argv[0], "move")) {
+                cmd.Command = SysExRtMmcCommandMove;
+            }
+            else if (str_eq(argv[0], "add")) {
+                cmd.Command = SysExRtMmcCommandAdd;
+            }
+            else if (str_eq(argv[0], "substract")) {
+                cmd.Command = SysExRtMmcCommandSubstract;
+            }
+            else if (str_eq(argv[0], "drop-frame-adjust")) {
+                cmd.Command = SysExRtMmcCommandDropFrameAdjust;
+            }
+            else if (str_eq(argv[0], "procedure")) {
+                cmd.Command = SysExRtMmcCommandProcedure;
+            }
+            else if (str_eq(argv[0], "event")) {
+                cmd.Command = SysExRtMmcCommandEvent;
+            }
+            else if (str_eq(argv[0], "group")) {
+                cmd.Command = SysExRtMmcCommandGroup;
+            }
+            else if (str_eq(argv[0], "command-segment")) {
+                cmd.Command = SysExRtMmcCommandCommandSegment;
+            }
+            else {
+                return StringifierResultInvalidValue;
+            }
+
+
+            uint8_t consumedArgs = 1; // command arg = 1
+            float speed = 0.0;
+
+            switch (cmd.Command) {
+
+                case SysExRtMmcCommandStop:
+                case SysExRtMmcCommandPlay:
+                case SysExRtMmcCommandDeferredPlay:
+                case SysExRtMmcCommandFastForward:
+                case SysExRtMmcCommandRewind:
+                case SysExRtMmcCommandRecordStrobe:
+                case SysExRtMmcCommandRecordExit:
+                case SysExRtMmcCommandRecordPause:
+                case SysExRtMmcCommandPause:
+                case SysExRtMmcCommandEject:
+                case SysExRtMmcCommandChase:
+                case SysExRtMmcCommandCommandErrorReset:
+                case SysExRtMmcCommandMmcReset:
+                case SysExRtMmcCommandWait:
+                case SysExRtMmcCommandResume:
+                    break;
+
+                case SysExRtMmcCommandVariablePlay:
+                case SysExRtMmcCommandSearch:
+                case SysExRtMmcCommandShuttle:
+                case SysExRtMmcCommandDeferredVariablePlay:
+                case SysExRtMmcCommandRecordStrobeVariable:
+
+                    speed = atof((char*)argv[1]);
+
+                    if (! SysExRtMmcStandardSpeedFromFloat( &cmd.Data.StandardSpeed, speed )){
+                        return StringifierResultInvalidValue;
+                    }
+
+//                    printf("%d %d %d %04X\n", cmd.Data.StandardSpeed.Direction, cmd.Data.StandardSpeed.Resolution, cmd.Data.StandardSpeed.IntegerPart, cmd.Data.StandardSpeed.FractionalPart );
+//                    exit(0);
+
+                    consumedArgs ++;
+                    break;
+
+                case SysExRtMmcCommandStep:
+                    cmd.Data.I7 = atoi((char*)argv[1]);
+
+                    assertI7( cmd.Data.I7 );
+
+//                    printf("%d", cmd.Data.I7);
+//                    exit(0);
+
+                    consumedArgs ++;
+                    break;
+
+                case SysExRtMmcCommandWrite: ////////
+
+                case SysExRtMmcCommandMaskedWrite:
+                case SysExRtMmcCommandRead:
+                case SysExRtMmcCommandUpdate:
+                case SysExRtMmcCommandLocate:
+                case SysExRtMmcCommandAssignSystemMaster:
+                case SysExRtMmcCommandGeneratorCommand:
+                case SysExRtMmcCommandMtcCommand:
+                case SysExRtMmcCommandMove:
+                case SysExRtMmcCommandAdd:
+                case SysExRtMmcCommandSubstract:
+                case SysExRtMmcCommandDropFrameAdjust:
+                case SysExRtMmcCommandProcedure:
+                case SysExRtMmcCommandEvent:
+                case SysExRtMmcCommandGroup:
+                case SysExRtMmcCommandCommandSegment:
+                    //TODO
+
+                default:
+                    return StringifierResultGenericError;
+
+            }
+
+//            printf("cmd = %d [%s]\n", cmd.Command, argv[0]);
+//
+//            printf("argc = %d -> %d\n", argc, consumedArgs);
+//
+            argc -= consumedArgs;
+            argv = &argv[consumedArgs];
+
+            *length += packSysExRtMmcCommand( &bytes[*length], &cmd);
+
+        } while( argc > 0 );
+
+        return StringifierResultOk;
+    }
+
+    inline int MccDataToString( uint8_t * bytes, uint8_t * data, uint8_t length){
+
+        int strLength = 0;
+
+        for (;data != NULL && length > 0;
+              data = getSysExRtMmcCommandNext(data, &length)) {
+
+            SysExRtMmcCommandData_t cmd;
+
+            if ( ! unpackSysExRtMmcCommand(data, length, &cmd) ){
+                return 0;
+            }
+
+            // prepend next command with space
+            if (strLength > 0){
+                bytes[strLength++] = ' ';
+                bytes[strLength] = '\0'; // safety
+            }
+
+            switch (cmd.Command) {
+
+                case SysExRtMmcCommandStop:                     strLength += sprintf( (char*)&bytes[strLength], "stop"); break;
+                case SysExRtMmcCommandPlay:                     strLength += sprintf( (char*)&bytes[strLength], "play"); break;
+                case SysExRtMmcCommandDeferredPlay:             strLength += sprintf( (char*)&bytes[strLength], "deferred-play"); break;
+                case SysExRtMmcCommandFastForward:              strLength += sprintf( (char*)&bytes[strLength], "fast-forward"); break;
+                case SysExRtMmcCommandRewind:                   strLength += sprintf( (char*)&bytes[strLength], "rewind"); break;
+                case SysExRtMmcCommandRecordStrobe:             strLength += sprintf( (char*)&bytes[strLength], "record-strobe"); break;
+                case SysExRtMmcCommandRecordExit:               strLength += sprintf( (char*)&bytes[strLength], "record-exit"); break;
+                case SysExRtMmcCommandRecordPause:              strLength += sprintf( (char*)&bytes[strLength], "record-pause"); break;
+                case SysExRtMmcCommandPause:                    strLength += sprintf( (char*)&bytes[strLength], "pause"); break;
+                case SysExRtMmcCommandEject:                    strLength += sprintf( (char*)&bytes[strLength], "eject"); break;
+                case SysExRtMmcCommandChase:                    strLength += sprintf( (char*)&bytes[strLength], "chase"); break;
+                case SysExRtMmcCommandCommandErrorReset:        strLength += sprintf( (char*)&bytes[strLength], "command-error-reset"); break;
+                case SysExRtMmcCommandMmcReset:                 strLength += sprintf( (char*)&bytes[strLength], "mmc-reset"); break;
+                case SysExRtMmcCommandWait:                     strLength += sprintf( (char*)&bytes[strLength], "wait"); break;
+                case SysExRtMmcCommandResume:                   strLength += sprintf( (char*)&bytes[strLength], "resume"); break;
+
+                case SysExRtMmcCommandVariablePlay:             strLength += sprintf( (char*)&bytes[strLength], "variable-play "); break;
+                case SysExRtMmcCommandSearch:                   strLength += sprintf( (char*)&bytes[strLength], "search "); break;
+                case SysExRtMmcCommandShuttle:                  strLength += sprintf( (char*)&bytes[strLength], "shuttle "); break;
+                case SysExRtMmcCommandDeferredVariablePlay:     strLength += sprintf( (char*)&bytes[strLength], "deferred-variable-play "); break;
+                case SysExRtMmcCommandRecordStrobeVariable:     strLength += sprintf( (char*)&bytes[strLength], "record-strobe-variable "); break;
+
+                case SysExRtMmcCommandStep:                     strLength += sprintf( (char*)&bytes[strLength], "step "); break;
+
+                case SysExRtMmcCommandWrite:                    strLength += sprintf( (char*)&bytes[strLength], "write "); break;
+
+                case SysExRtMmcCommandMaskedWrite:              strLength += sprintf( (char*)&bytes[strLength], "masked-write "); break;
+                case SysExRtMmcCommandRead:                     strLength += sprintf( (char*)&bytes[strLength], "read "); break;
+                case SysExRtMmcCommandUpdate:                   strLength += sprintf( (char*)&bytes[strLength], "update "); break;
+                case SysExRtMmcCommandLocate:                   strLength += sprintf( (char*)&bytes[strLength], "locate "); break;
+                case SysExRtMmcCommandAssignSystemMaster:       strLength += sprintf( (char*)&bytes[strLength], "assign-system-master "); break;
+                case SysExRtMmcCommandGeneratorCommand:         strLength += sprintf( (char*)&bytes[strLength], "generator-command "); break;
+                case SysExRtMmcCommandMtcCommand:               strLength += sprintf( (char*)&bytes[strLength], "mtc-command "); break;
+                case SysExRtMmcCommandMove:                     strLength += sprintf( (char*)&bytes[strLength], "move "); break;
+                case SysExRtMmcCommandAdd:                      strLength += sprintf( (char*)&bytes[strLength], "add "); break;
+                case SysExRtMmcCommandSubstract:                strLength += sprintf( (char*)&bytes[strLength], "substract "); break;
+                case SysExRtMmcCommandDropFrameAdjust:          strLength += sprintf( (char*)&bytes[strLength], "drop-frame-adjust "); break;
+                case SysExRtMmcCommandProcedure:                strLength += sprintf( (char*)&bytes[strLength], "procedure "); break;
+                case SysExRtMmcCommandEvent:                    strLength += sprintf( (char*)&bytes[strLength], "event "); break;
+                case SysExRtMmcCommandGroup:                    strLength += sprintf( (char*)&bytes[strLength], "group "); break;
+                case SysExRtMmcCommandCommandSegment:           strLength += sprintf( (char*)&bytes[strLength], "command-segment "); break;
+
+                default:
+                    return 0;
+            }
+
+            float speed = 0.0;
+
+            switch (cmd.Command) {
+
+                case SysExRtMmcCommandStop:
+                case SysExRtMmcCommandPlay:
+                case SysExRtMmcCommandDeferredPlay:
+                case SysExRtMmcCommandFastForward:
+                case SysExRtMmcCommandRewind:
+                case SysExRtMmcCommandRecordStrobe:
+                case SysExRtMmcCommandRecordExit:
+                case SysExRtMmcCommandRecordPause:
+                case SysExRtMmcCommandPause:
+                case SysExRtMmcCommandEject:
+                case SysExRtMmcCommandChase:
+                case SysExRtMmcCommandCommandErrorReset:
+                case SysExRtMmcCommandMmcReset:
+                case SysExRtMmcCommandWait:
+                case SysExRtMmcCommandResume:
+                        // no data
+                    break;
+
+                case SysExRtMmcCommandVariablePlay:
+                case SysExRtMmcCommandSearch:
+                case SysExRtMmcCommandShuttle:
+                case SysExRtMmcCommandDeferredVariablePlay:
+                case SysExRtMmcCommandRecordStrobeVariable:
+
+//                    printf("%d %d %d %04X\n", cmd.Data.StandardSpeed.Direction, cmd.Data.StandardSpeed.Resolution, cmd.Data.StandardSpeed.IntegerPart, cmd.Data.StandardSpeed.FractionalPart );
+
+                    speed = SysExRtMmcStandardSpeedToFloat( &cmd.Data.StandardSpeed );
+
+                    strLength += sprintf( (char*)&bytes[strLength], "%f", speed );
+
+                    break;
+
+                case SysExRtMmcCommandStep:
+                    strLength += sprintf( (char*)&bytes[strLength], "%d", cmd.Data.I7 );
+                    break;
+
+                case SysExRtMmcCommandWrite: ////////
+
+                case SysExRtMmcCommandMaskedWrite:
+                case SysExRtMmcCommandRead:
+                case SysExRtMmcCommandUpdate:
+                case SysExRtMmcCommandLocate:
+                case SysExRtMmcCommandAssignSystemMaster:
+                case SysExRtMmcCommandGeneratorCommand:
+                case SysExRtMmcCommandMtcCommand:
+                case SysExRtMmcCommandMove:
+                case SysExRtMmcCommandAdd:
+                case SysExRtMmcCommandSubstract:
+                case SysExRtMmcCommandDropFrameAdjust:
+                case SysExRtMmcCommandProcedure:
+                case SysExRtMmcCommandEvent:
+                case SysExRtMmcCommandGroup:
+                case SysExRtMmcCommandCommandSegment:
+                    //TODO
+
+                default:
+                    return 0;
+
+            }
+
+        }
+
+        return strLength;
     }
 
 
@@ -1107,6 +1462,19 @@ namespace MidiMessage {
                     }
 
                 }
+                else if (str_eq(argv[3],"mcc")) {
+                    if (argc < 5) {
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExRtMidiMachineControlCommand;
+
+                    // reset data
+                    msg->Data.SysEx.Length = 0;
+
+                    return ArgsToMccData( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argc - 4, &argv[4] );
+
+                }
                 else {
                     return StringifierResultInvalidValue;
                 }
@@ -1370,7 +1738,6 @@ namespace MidiMessage {
 
         return StringifierResultGenericError;
     }
-
 
 
     int Stringifier::toString(uint8_t * bytes, Message_t * msg) {
@@ -1703,10 +2070,18 @@ namespace MidiMessage {
                         }
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiMachineControlCommand){
-                        length += sprintf( (char*)&bytes[length], "mcc-cmd ");
+                        length += sprintf( (char*)&bytes[length], "mcc ");
+
+                        int l = MccDataToString( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+
+                        if (l <= 0){
+                            return 0;
+                        } else {
+                            length += l;
+                        }
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiMachineControlResponse){
-                        length += sprintf( (char*)&bytes[length], "mcc-resp ");
+                        length += sprintf( (char*)&bytes[length], "mcr ");
                     }
 
                 }

@@ -2010,7 +2010,7 @@ namespace MidiMessage {
         ASSERT(dataLen <= MaxU7);
         ASSERT(isSysExRtMmcCommand(data[0]));
 
-        uint32_t len = 5;
+        uint32_t len = 4;
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdRealTimeByte;
@@ -2081,7 +2081,7 @@ namespace MidiMessage {
         if ( unpackSysExRtMmcCommandMessage( bytes, length, &msg->Channel, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdRealTimeByte;
+            msg->Data.SysEx.Id = SysExIdRealTime;
             msg->Data.SysEx.SubId1 = SysExRtMidiMachineControlCommand;
             msg->Data.SysEx.SubId2 = 0; // see data (mmc commands can be a stream of commands and need not only be one)
             return true;
@@ -2128,7 +2128,7 @@ namespace MidiMessage {
 
             case SysExRtMmcCommandStep:
                 bytes[1] = 0x01;
-                bytes[2] = cmd->Data.U7;
+                bytes[2] = cmd->Data.I7 & DataMask;
                 return 3;
 
             case SysExRtMmcCommandWrite: ////////
@@ -2201,10 +2201,14 @@ namespace MidiMessage {
                 return true;
 
             case SysExRtMmcCommandStep:
-                if (length < 5 || bytes[1] != 0x01){
+                if (length < 3 || bytes[1] != 0x01){
                     return false;
                 }
-                cmd->Data.U7 = bytes[2];
+                cmd->Data.I7 = bytes[2];
+
+                if (bytes[2] & 0x40){
+                    cmd->Data.I7 |= 0x80; // set sign byte
+                }
                 return true;
 
             case SysExRtMmcCommandWrite: ////////
