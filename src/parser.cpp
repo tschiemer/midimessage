@@ -14,7 +14,7 @@ namespace MidiMessage {
                 // this will definitly success
                 if (unpackSystemMessage(&data[i], 1, this->Message)){
                     // emit real time message
-                    this->MessageHandler( this->Message );
+                    this->MessageHandler( this->Message, this->Context );
                 }
 
                 // skip further processing
@@ -29,7 +29,7 @@ namespace MidiMessage {
                 } else {
 
                     if (this->DiscardingDataHandler != NULL){
-                        this->DiscardingDataHandler( this->Buffer, 1 );
+                        this->DiscardingDataHandler( this->Buffer, 1, this->Context );
                     }
 
                     // wait for control byte
@@ -50,7 +50,7 @@ namespace MidiMessage {
 
                     if (consumed > 0){
                         // emit sysex
-                        this->MessageHandler( this->Message );
+                        this->MessageHandler( this->Message, this->Context );
                     }
 
                     // if was in fact an EOX, skip this byte
@@ -61,7 +61,7 @@ namespace MidiMessage {
                 }
 
                 if (this->DiscardingDataHandler != NULL){
-                    this->DiscardingDataHandler( this->Buffer, this->Length );
+                    this->DiscardingDataHandler( this->Buffer, this->Length, this->Context );
                 }
 
                 // discard previous data
@@ -76,7 +76,7 @@ namespace MidiMessage {
 
             if (consumed > 0){
                 // emit event
-                this->MessageHandler( this->Message );
+                this->MessageHandler( this->Message, this->Context );
 
                 // reset data
                 this->Length = 0;
@@ -86,7 +86,7 @@ namespace MidiMessage {
             if ( this->Length >= this->MaxLength ){
 
                 if (this->DiscardingDataHandler != NULL){
-                    this->DiscardingDataHandler( this->Buffer, this->Length );
+                    this->DiscardingDataHandler( this->Buffer, this->Length, this->Context );
                 }
 
                 this->Length = 0;

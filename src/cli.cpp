@@ -80,8 +80,8 @@ void generatorError(int code, uint8_t argc, uint8_t ** argv);
 void writeMidiPacket( Message_t * msg );
 
 void parser(void);
-void parsedMessage( Message_t * msg );
-void discardingData( uint8_t * data, uint8_t length );
+void parsedMessage( Message_t * msg, void * context );
+void discardingData( uint8_t * data, uint8_t length, void * context );
 
 
 
@@ -340,7 +340,7 @@ void parser(void){
     msg.Data.SysEx.ByteData = sysexBuffer;
 
     uint8_t dataBuffer[128];
-    Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage, discardingData );
+    Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage, discardingData, NULL );
 
     // start timer
     if (timedOpt.enabled){
@@ -357,7 +357,7 @@ void parser(void){
     }
 }
 
-void parsedMessage( Message_t * msg ){
+void parsedMessage( Message_t * msg, void * context ){
 
     Stringifier stringifier;
 
@@ -383,7 +383,7 @@ void parsedMessage( Message_t * msg ){
     }
 }
 
-void discardingData( uint8_t * data, uint8_t length ){
+void discardingData( uint8_t * data, uint8_t length, void * context ){
 
     if (printDiscardedData == false){
         return;
