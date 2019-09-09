@@ -29,7 +29,7 @@ namespace MidiMessage {
                 } else {
 
                     if (this->DiscardingDataHandler != NULL){
-                        this->DiscardingDataHandler( this->Buffer, 1 );
+                        this->DiscardingDataHandler( &data[i], 1 );
                     }
 
                     // wait for control byte
