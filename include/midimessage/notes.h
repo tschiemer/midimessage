@@ -11,7 +11,7 @@
 #ifndef MIDIMESSAGE_NOTES_H
 #define MIDIMESSAGE_NOTES_H
 
-#include <cstdint>
+#include <stdint.h>
 
 #ifdef __cplusplus
 namespace MidiMessage {

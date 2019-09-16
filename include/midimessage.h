@@ -5,7 +5,7 @@
 #ifndef MIDIMESSAGE_H
 #define MIDIMESSAGE_H
 
-#include <cstdint>
+#include <stdint.h>
 
 /**
  * \def USE_ASSERTS
@@ -20,7 +20,7 @@
 
 #ifdef USE_ASSERTS
 #ifndef ASSERT
-#include <cassert>
+#include <assert.h>
 #define ASSERT(x) assert(x)
 #endif // ASSERT
 #else
