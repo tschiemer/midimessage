@@ -2,12 +2,12 @@
  *
  */
 
-#include <cstdio>
+#include <stdio.h>
 //#include <cstdarg>
-#include <cstdlib>
+#include <stdlib.h>
 //#include <stdlib.h>
 //#include <string.h>
-#include <cstring>
+#include <string.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
@@ -235,7 +235,7 @@ void generator(void){
     uint8_t sysexBuffer[128];
     Message_t msg;
     msg.Data.SysEx.ByteData = sysexBuffer;
-
+s
 
     // start timer
     if (timedOpt.enabled){
