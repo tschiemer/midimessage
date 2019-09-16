@@ -79,7 +79,7 @@ add_custom_target(manufacturerids
         COMMAND rm manufacturer-id-numbers)
 
 add_custom_target(docs
-        COMMAND doxygen doxygen.config)
+        COMMAND doxygen)
 
 # EXAMPLES
 
