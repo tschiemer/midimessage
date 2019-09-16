@@ -50,22 +50,23 @@ tt = to test
 | | Full Message + User Bits| SysEx Real Time | tt |
 | | Real Time MTC Cueing | SysEx Real Time | tt |
 | | Non Real Time MTC Cueing | SysEx Non-Real Time | tt |
-| MIDI Machine Control (MMC) | Basics | | tt |
-| MIDI Show Control (MSC) | | SysEx Real Time | tt |
+| General SysEx NonRT Handshaking  | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
+| MIDI Machine Control (MMC) |  | | work in progress |
+| MIDI Show Control (MSC) | All | SysEx Real Time | tt |
 | MIDI Visual Control (MVC)| | SysEx Non-Real Time | TODO |
 | MIDI Tuning Standard | | | TODO |
-| General Handshaking  | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
 | Experimental messages |  | SysEx Experimental | tt |
 | Manufacturer messages (+ manufacturer ids)|  | SysEx Manufacturer | tt |
-| Device Control (Master volume, balance, coarse/fine tuning, global parameters)| | SysEx Real Time | tt |
-| General Information (GM) | | SysEx Non-Real Time | tt |
-| Sample Dump | | SysEx Non-Real Time | TODO |
+| General MIDI (GM) | System on/off | SysEx Non-Real Time | tt |
+| General Information | Identify request/reply | SysEx Non-Real Time | tt |
+| Device Control | Master volume, balance, coarse/fine tuning, global parameters | SysEx Real Time | tt |
+| Controller Destination Settings | | SysEx Real Time | tt |
+| Key-based Instrument Control | | SysEx Real Time | tt |
+| Sample Dump | | SysEx Non-Real Time | tt / work in progress |
 | File Dump | | Non-Real Time | TODO |
 | Downloadable Sounds | | Non-Real Time | TODO |
 | Notation Information | | Real Time | TODO |
 | Capability Inquiry (MIDI-CI) | | SysEx Non-Real Time | TODO |
-| Controller Destination Settings | | SysEx Real Time | tt |
-| Key-based Instrument Control | | SysEx Real Time | tt |
 | Scalable Polyphony MIDI MIP (SP-MIDI MIP)| | SysEx Real Time | TODO |
 | Mobile Phone Control | | SysEx Real Time | TODO |
 
