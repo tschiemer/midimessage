@@ -9,8 +9,10 @@
 #include <midimessage/packers.h>
 
 
-
+#ifdef __cplusplus
 namespace MidiMessage {
+    extern "C" {
+#endif
 
     inline void * memcpy( void * dst, void * src, uint8_t count ){
         for(uint8_t i = 0; i < count; i++){
@@ -30,25 +32,25 @@ namespace MidiMessage {
             switch (msg->StatusClass) {
 
                 case StatusClassNoteOff:
-                    return packNoteOff(bytes, msg);
+                    return packNoteOffObj(bytes, msg);
 
                 case StatusClassNoteOn:
-                    return packNoteOn(bytes, msg);
+                    return packNoteOnObj(bytes, msg);
 
                 case StatusClassPolyphonicKeyPressure:
-                    return packPolyphonicKeyPressure(bytes, msg);
+                    return packPolyphonicKeyPressureObj(bytes, msg);
 
                 case StatusClassControlChange:
-                    return packControlChange(bytes, msg);
+                    return packControlChangeObj(bytes, msg);
 
                 case StatusClassProgramChange:
-                    return packProgramChange(bytes, msg);
+                    return packProgramChangeObj(bytes, msg);
 
                 case StatusClassChannelPressure:
-                    return packChannelPressure(bytes, msg);
+                    return packChannelPressureObj(bytes, msg);
 
                 case StatusClassPitchBendChange:
-                    return packPitchBendChange(bytes, msg);
+                    return packPitchBendChangeObj(bytes, msg);
 
                 case StatusClassSystemMessage:
                     // processed below
@@ -66,13 +68,13 @@ namespace MidiMessage {
             switch (msg->SystemMessage)
             {
                 case SystemMessageMtcQuarterFrame:
-                    return packMtcQuarterFrame( bytes, msg );
+                    return packMtcQuarterFrameObj( bytes, msg );
 
                 case SystemMessageSongPositionPointer:
-                    return packSongPositionPointer( bytes, msg );
+                    return packSongPositionPointerObj( bytes, msg );
 
                 case SystemMessageSongSelect:
-                    return packSongSelect( bytes, msg );
+                    return packSongSelectObj( bytes, msg );
 
                 case SystemMessageTuneRequest:
                 case SystemMessageEndOfExclusive:
@@ -82,7 +84,7 @@ namespace MidiMessage {
                 case SystemMessageStop:
                 case SystemMessageActiveSensing:
                 case SystemMessageReset:
-                    return packSystemMessage( bytes, msg );
+                    return packSystemMessageObj( bytes, msg );
 
                 case SystemMessageSystemExclusive:
                     // processed below
@@ -99,11 +101,11 @@ namespace MidiMessage {
             bytes[0] = msg->SystemMessage;
 
             if (msg->Data.SysEx.Id == SysExIdExperimental){
-                return packSysExExperimentalMessage( bytes, msg );
+                return packSysExExperimentalMessageObj( bytes, msg );
             } // (msg->Data.SysEx.Id == SysExIdExperimental)
 
             if (isSysExManufacturerId( msg->Data.SysEx.Id )){
-                return packSysExManufacturerMessage( bytes, msg );
+                return packSysExManufacturerMessageObj( bytes, msg );
             } // (isSysExManufacturerId( msg->Data.SysEx.Id ))
 
             if (msg->Data.SysEx.Id == SysExIdRealTime){
@@ -111,32 +113,32 @@ namespace MidiMessage {
                 switch (msg->Data.SysEx.SubId1) {
 
                     case SysExRtMidiTimeCode:
-                        return packSysExRtMidiTimeCode(bytes, msg);
+                        return packSysExRtMidiTimeCodeObj(bytes, msg);
 
                     case SysExRtMidiShowControl:
-                        return packSysExRtMidiShowControl( bytes, msg );
+                        return packSysExRtMidiShowControlObj( bytes, msg );
 
                     case SysExRtDeviceControl:
-                        return packSysExRtDeviceControl( bytes, msg );
+                        return packSysExRtDeviceControlObj( bytes, msg );
 
                     case SysExRtMidiTimeCodeCueing:
-                        return packSysExRtMtcCueingSetupMessage( bytes, msg );
+                        return packSysExRtMtcCueingSetupMessageObj( bytes, msg );
 
                     case SysExRtMidiMachineControlCommand:
-                        return packSysExRtMmcCommandMessage( bytes, msg );
+                        return packSysExRtMmcCommandMessageObj( bytes, msg );
 
                     case SysExRtMidiMachineControlResponse:
-                        return packSysExRtMmcResponseMessage( bytes, msg );
+                        return packSysExRtMmcResponseMessageObj( bytes, msg );
 
                     case SysExRtMidiTuningStandard:
                         //TODO
                         return false;
 
                     case SysExRtControllerDestinationSetting:
-                        return packSysExRtControllerDestinationSetting( bytes, msg );
+                        return packSysExRtControllerDestinationSettingObj( bytes, msg );
 
                     case SysExRtKeybasedInstrumentControl:
-                        return packSysExRtKeybasedInstrumentControl( bytes, msg );
+                        return packSysExRtKeybasedInstrumentControlObj( bytes, msg );
 
                     case SysExRtScalablePolyphonyMidiMip:
                         //TODO
@@ -154,22 +156,22 @@ namespace MidiMessage {
 
                 switch (msg->Data.SysEx.SubId1) {
                     case SysExNonRtSampleDumpHeader:
-                        return packSysExNonRtSdsHeader( bytes, msg );
+                        return packSysExNonRtSdsHeaderObj( bytes, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        return packSysExNonRtSdsDataPacket( bytes, msg );
+                        return packSysExNonRtSdsDataPacketObj( bytes, msg );
 
                     case SysExNonRtSampleDumpRequest:
-                        return packSysExNonRtSdsRequest( bytes, msg );
+                        return packSysExNonRtSdsRequestObj( bytes, msg );
 
                     case SysExNonRtMidiTimeCode:
-                        return packSysExNonRtMtcCueingSetupMessage( bytes, msg );
+                        return packSysExNonRtMtcCueingSetupMessageObj( bytes, msg );
 
                     case SysExNonRtSampleDumpExtension:
-                        return packSysExNonRtSdsExt( bytes, msg );
+                        return packSysExNonRtSdsExtObj( bytes, msg );
 
                     case SysExNonRtGeneralInformation:
-                        return packSysExNonRtGeneralInformation( bytes, msg );
+                        return packSysExNonRtGeneralInformationObj( bytes, msg );
 
                     case SysExNonRtFileDump:
                         //TODO
@@ -203,7 +205,7 @@ namespace MidiMessage {
                     case SysExNonRtCancel:
                     case SysExNonRtNAK:
                     case SysExNonRtACK:
-                        return packSysExNonRtHandshake( bytes, msg );
+                        return packSysExNonRtHandshakeObj( bytes, msg );
 
                 }
 
@@ -241,25 +243,25 @@ namespace MidiMessage {
             switch (statusClass) {
 
                 case StatusClassNoteOff:
-                    return unpackNoteOff(bytes, length, msg);
+                    return unpackNoteOffObj(bytes, length, msg);
 
                 case StatusClassNoteOn:
-                    return unpackNoteOn(bytes, length, msg);
+                    return unpackNoteOnObj(bytes, length, msg);
 
                 case StatusClassPolyphonicKeyPressure:
-                    return unpackPolyphonicKeyPressure(bytes, length, msg);
+                    return unpackPolyphonicKeyPressureObj(bytes, length, msg);
 
                 case StatusClassControlChange:
-                    return unpackControlChange(bytes, length, msg);
+                    return unpackControlChangeObj(bytes, length, msg);
 
                 case StatusClassProgramChange:
-                    return unpackProgramChange(bytes, length, msg);
+                    return unpackProgramChangeObj(bytes, length, msg);
 
                 case StatusClassChannelPressure:
-                    return unpackChannelPressure(bytes, length, msg);
+                    return unpackChannelPressureObj(bytes, length, msg);
 
                 case StatusClassPitchBendChange:
-                    return unpackPitchBendChange(bytes, length, msg);
+                    return unpackPitchBendChangeObj(bytes, length, msg);
 
                 case StatusClassSystemMessage:
                     // processed below
@@ -277,13 +279,13 @@ namespace MidiMessage {
             switch(systemMessage){
 
                 case SystemMessageMtcQuarterFrame:
-                    return unpackMtcQuarterFrame( bytes, length, msg );
+                    return unpackMtcQuarterFrameObj( bytes, length, msg );
 
                 case SystemMessageSongPositionPointer:
-                    return unpackSongPositionPointer( bytes, length, msg );
+                    return unpackSongPositionPointerObj( bytes, length, msg );
 
                 case SystemMessageSongSelect:
-                    return unpackSongSelect( bytes, length, msg );
+                    return unpackSongSelectObj( bytes, length, msg );
 
                 case SystemMessageTuneRequest:
                 case SystemMessageEndOfExclusive:
@@ -293,7 +295,7 @@ namespace MidiMessage {
                 case SystemMessageStop:
                 case SystemMessageActiveSensing:
                 case SystemMessageReset:
-                    return unpackSystemMessage( bytes, length, msg );
+                    return unpackSystemMessageObj( bytes, length, msg );
 
                 case SystemMessageSystemExclusive:
                     // processed below
@@ -315,11 +317,11 @@ namespace MidiMessage {
             }
 
             if (bytes[1] == SysExIdExperimentalByte) {
-                return unpackSysExExperimentalMessage( bytes, length, msg );
+                return unpackSysExExperimentalMessageObj( bytes, length, msg );
             } // (bytes[1] == SysExIdExperimental)
 
             if (isSysExManufacturerIdByte(bytes[1])){
-                return unpackSysExManufacturerMessage( bytes, length, msg );
+                return unpackSysExManufacturerMessageObj( bytes, length, msg );
             } // isSysExManufacturerId(bytes[1])
 
             if (bytes[1] == SysExIdRealTimeByte) {
@@ -329,32 +331,32 @@ namespace MidiMessage {
 
                 switch (bytes[3]) {
                     case SysExRtMidiTimeCode:
-                        return unpackSysExRtMidiTimeCode(bytes, length, msg);
+                        return unpackSysExRtMidiTimeCodeObj(bytes, length, msg);
 
                     case SysExRtMidiShowControl:
-                        return unpackSysExRtMidiShowControl(bytes, length, msg);
+                        return unpackSysExRtMidiShowControlObj(bytes, length, msg);
 
                     case SysExRtDeviceControl:
-                        return unpackSysExRtDeviceControl( bytes, length, msg );
+                        return unpackSysExRtDeviceControlObj( bytes, length, msg );
 
                     case SysExRtMidiTimeCodeCueing:
-                        return unpackSysExRtMtcCueingSetupMessage( bytes, length, msg );
+                        return unpackSysExRtMtcCueingSetupMessageObj( bytes, length, msg );
 
                     case SysExRtMidiMachineControlCommand:
-                        return unpackSysExRtMmcCommandMessage( bytes, length, msg);
+                        return unpackSysExRtMmcCommandMessageObj( bytes, length, msg);
 
                     case SysExRtMidiMachineControlResponse:
-                        return unpackSysExRtMmcResponseMessage( bytes, length, msg);
+                        return unpackSysExRtMmcResponseMessageObj( bytes, length, msg);
 
                     case SysExRtMidiTuningStandard:
                         //TODO
                         return false;
 
                     case SysExRtControllerDestinationSetting:
-                        return unpackSysExRtControllerDestinationSetting(bytes, length, msg);
+                        return unpackSysExRtControllerDestinationSettingObj(bytes, length, msg);
 
                     case SysExRtKeybasedInstrumentControl:
-                        return unpackSysExRtKeybasedInstrumentControl( bytes, length, msg );
+                        return unpackSysExRtKeybasedInstrumentControlObj( bytes, length, msg );
 
                     case SysExRtScalablePolyphonyMidiMip:
                         //TODO
@@ -382,22 +384,22 @@ namespace MidiMessage {
 
                 switch (bytes[3]) {
                     case SysExNonRtSampleDumpHeader:
-                        return unpackSysExNonRtSdsHeader( bytes, length, msg );
+                        return unpackSysExNonRtSdsHeaderObj( bytes, length, msg );
 
                     case SysExNonRtSampleDataPacket:
-                        return unpackSysExNonRtSdsDataPacket( bytes, length, msg );
+                        return unpackSysExNonRtSdsDataPacketObj( bytes, length, msg );
 
                     case SysExNonRtSampleDumpRequest:
-                        return unpackSysExNonRtSdsRequest( bytes, length, msg );
+                        return unpackSysExNonRtSdsRequestObj( bytes, length, msg );
 
                     case SysExNonRtMidiTimeCode:
-                        return unpackSysExNonRtMtcCueingSetupMessage( bytes, length, msg );
+                        return unpackSysExNonRtMtcCueingSetupMessageObj( bytes, length, msg );
 
                     case SysExNonRtSampleDumpExtension:
-                        return unpackSysExNonRtSdsExt( bytes, length, msg);
+                        return unpackSysExNonRtSdsExtObj( bytes, length, msg);
 
                     case SysExNonRtGeneralInformation:
-                        return unpackSysExNonRtGeneralInformation( bytes, length, msg );
+                        return unpackSysExNonRtGeneralInformationObj( bytes, length, msg );
 
 
                     case SysExNonRtFileDump:
@@ -409,7 +411,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtGeneralMidi:
-                        return unpackSysExNonRtGeneralMidi( bytes, length, msg );
+                        return unpackSysExNonRtGeneralMidiObj( bytes, length, msg );
 
                     case SysExNonRtDownloadableSounds:
                         //TODO
@@ -432,7 +434,7 @@ namespace MidiMessage {
                     case SysExNonRtCancel:
                     case SysExNonRtNAK:
                     case SysExNonRtACK:
-                        return unpackSysExNonRtHandshake(bytes, length, msg);
+                        return unpackSysExNonRtHandshakeObj(bytes, length, msg);
 
                 }
 
@@ -445,4 +447,7 @@ namespace MidiMessage {
         return false;
     }
 
-}
+#ifdef __cplusplus
+} // extern "C"
+} // namespace MidiMessage
+#endif

@@ -3,9 +3,10 @@
 #include <midimessage/packers.h>
 #include <util-hex.h>
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 
 #define str_eq(x,y)     (strcmp((char*)x,(char*)y) == 0)
@@ -27,8 +28,11 @@
                                 assertBool(isMscCueNumberChar(bytes[i])); \
                             }
 
-
+#ifdef __cplusplus
 namespace MidiMessage {
+    extern "C" {
+#endif
+
 
     bool readHex( uint8_t * bytes, uint8_t * length, uint8_t *argv, uint8_t expectedLength ){
         int l = strlen((char*)argv);
@@ -370,7 +374,7 @@ namespace MidiMessage {
 
                     speed = atof((char*)argv[1]);
 
-                    if (! SysExRtMmcStandardSpeedFromFloat( &cmd.Data.StandardSpeed, speed )){
+                    if (! SysExRtMmcStandardSpeedFromFloatObj( &cmd.Data.StandardSpeed, speed )){
                         return StringifierResultInvalidValue;
                     }
 
@@ -571,7 +575,7 @@ namespace MidiMessage {
 
 //                    printf("%d %d %d %04X\n", cmd.Data.StandardSpeed.Direction, cmd.Data.StandardSpeed.Resolution, cmd.Data.StandardSpeed.IntegerPart, cmd.Data.StandardSpeed.FractionalPart );
 
-                    speed = SysExRtMmcStandardSpeedToFloat( &cmd.Data.StandardSpeed );
+                    speed = SysExRtMmcStandardSpeedToFloatObj( &cmd.Data.StandardSpeed );
 
                     strLength += sprintf( (char*)&bytes[strLength], "%f", speed );
 
@@ -680,17 +684,17 @@ namespace MidiMessage {
         return argc;
     }
 
-    int Stringifier::fromString(Message_t * msg, uint8_t length, uint8_t * bytes){
+    int MessagefromString(Message_t * msg, uint8_t length, uint8_t * bytes){
 
         uint8_t argc = 0;
         uint8_t *argv[32];
 
         argc = stringToArgs(argv, 32, bytes, length);
 
-        return this->fromArgs(msg, argc, argv);
+        return MessagefromArgs(msg, argc, argv);
     }
 
-    int Stringifier::fromArgs(Message_t * msg, uint8_t argc, uint8_t *argv[]) {
+    int MessagefromArgs(Message_t * msg, uint8_t argc, uint8_t *argv[]) {
 
 //        printf("argc = %d : ", argc);
 //        for(uint8_t i = 0; i < argc; i++){
@@ -1959,7 +1963,7 @@ namespace MidiMessage {
     }
 
 
-    int Stringifier::toString(uint8_t * bytes, Message_t * msg) {
+    int MessagetoString(uint8_t * bytes, Message_t * msg) {
 
         int length = 0;
 
@@ -2510,4 +2514,7 @@ namespace MidiMessage {
         return length;
     }
 
-}
+#ifdef __cplusplus
+    } // extern "C"
+} // namespace MidiMessage
+#endif

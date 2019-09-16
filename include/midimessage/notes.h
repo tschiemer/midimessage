@@ -13,7 +13,9 @@
 
 #include <cstdint>
 
+#ifdef __cplusplus
 namespace MidiMessage {
+#endif
 
     const uint8_t IntervalMinorSecond   = 1;
     const uint8_t IntervalMajorSecond   = 2;
@@ -123,6 +125,8 @@ namespace MidiMessage {
     }
 
 
+#ifdef __cplusplus
 }
+#endif
 
 #endif //MIDIMESSAGE_NOTES_H

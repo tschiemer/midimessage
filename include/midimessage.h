@@ -27,8 +27,10 @@
 #define ASSERT(x)
 #endif
 
-
+#ifdef __cplusplus
 namespace MidiMessage {
+    extern "C" {
+#endif
 
     // Constants & Enumerations
     /////////////////////////////////////////////////////////
@@ -1639,7 +1641,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool SysExRtMmcStandardSpeedFromFloat( SysExRtMmcStandardSpeed_t * ss, float speed ){
+    inline bool SysExRtMmcStandardSpeedFromFloatObj( SysExRtMmcStandardSpeed_t * ss, float speed ){
         return SysExRtMmcStandardSpeedFromFloat( &ss->Direction, &ss->Resolution, &ss->IntegerPart, &ss->FractionalPart, speed );
     }
 
@@ -1650,7 +1652,7 @@ namespace MidiMessage {
         return direction * (((float)integerPart) + ((float)fractionalPart) / ((float)(1 << (14 - shiftCount))) );
     }
 
-    inline float SysExRtMmcStandardSpeedToFloat( SysExRtMmcStandardSpeed_t * ss ){
+    inline float SysExRtMmcStandardSpeedToFloatObj( SysExRtMmcStandardSpeed_t * ss ){
         return SysExRtMmcStandardSpeedToFloat( ss->Direction, ss->Resolution, ss->IntegerPart, ss->FractionalPart );
     }
 
@@ -1684,13 +1686,13 @@ namespace MidiMessage {
         return 3;
     }
 
-    inline uint8_t packSysExRtMmcStandardSpeed( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
+    inline uint8_t packSysExRtMmcStandardSpeedObj( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
         ASSERT( ss != NULL );
 
         return packSysExRtMmcStandardSpeed( bytes, ss->Direction, ss->Resolution, ss->IntegerPart, ss->FractionalPart );
     }
 
-    inline uint8_t packSysExRtMmcStandardSpeed( uint8_t * bytes, float speed ){
+    inline uint8_t packSysExRtMmcStandardSpeedFloat( uint8_t * bytes, float speed ){
 
         int8_t direction = 0;
         uint8_t resolution = 0;
@@ -1717,13 +1719,13 @@ namespace MidiMessage {
         *fractionalPart = ((bytes[1] & (0x7F >> *shiftCount)) << 7) | bytes[2];
     }
 
-    inline void unpackSysExRtMmcStandardSpeed( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
+    inline void unpackSysExRtMmcStandardSpeedObj( uint8_t * bytes, SysExRtMmcStandardSpeed_t * ss){
         ASSERT( ss != NULL );
 
         unpackSysExRtMmcStandardSpeed( bytes, &ss->Direction, &ss->Resolution, &ss->IntegerPart, &ss->FractionalPart );
     }
 
-    inline float unpackSysExRtMmcStandardSpeed( uint8_t * bytes ){
+    inline float unpackSysExRtMmcStandardSpeedFloat( uint8_t * bytes ){
 
         int8_t direction = 0;
         uint8_t resolution = 0;
@@ -2129,14 +2131,14 @@ namespace MidiMessage {
     /**
      * Test wether message is a system common message.
      */
-    inline bool isSystemCommonMessage( Message_t * msg ){
+    inline bool isSystemCommonMessageObj( Message_t * msg ){
         return isSystemCommonMessage( msg->StatusClass );
     }
 
     /**
      * Test wether message is a real time system message.
      */
-    inline bool isSystemRealTimeMessage( Message_t * msg ){
+    inline bool isSystemRealTimeMessageObj( Message_t * msg ){
         return isSystemRealTimeMessage( msg->StatusClass );
     }
 
@@ -2150,7 +2152,7 @@ namespace MidiMessage {
     /**
      * Test wether message is a channel mode message (ie specific cc message)
      */
-    inline bool isChannelModeMessage( Message_t * msg ){
+    inline bool isChannelModeMessageObj( Message_t * msg ){
         return isChannelModeMessage( msg->StatusClass, msg->Data.ControlChange.Controller );
     }
 
@@ -2167,7 +2169,7 @@ namespace MidiMessage {
     /**
      * Test wether message is a channel voice message (ie specific cc message)
      */
-    inline bool isChannelVoiceMessage( Message_t * msg ){
+    inline bool isChannelVoiceMessageObj( Message_t * msg ){
         return isChannelVoiceMessage( msg->StatusClass, msg->Data.ControlChange.Controller );
     }
 
@@ -2509,6 +2511,9 @@ namespace MidiMessage {
      */
     bool unpack( uint8_t * bytes,uint8_t len, Message_t * msg );
 
-}
+#ifdef __cplusplus
+    } // extern "C"
+} // namespace MidiMessage
+#endif
 
 #endif //MIDIMESSAGE_H

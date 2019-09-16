@@ -7,7 +7,9 @@
 #ifndef MIDIMESSAGE_DLSPROPRIETARYCHUNKIDS_H
 #define MIDIMESSAGE_DLSPROPRIETARYCHUNKIDS_H
 
+#ifdef __cplusplus
 namespace MidiMessage {
+#endif
 
     const char DlsProprietaryChunkIdMidiManufacturersAssociation[]  = "MMA_";
     const char DlsProprietaryChunkIdEssTechnology[]                 = "ESS_";
@@ -15,6 +17,8 @@ namespace MidiMessage {
     const char DlsProprietaryChunkIdYamahaCorporation[]             = "YMH_";
     const char DlsProprietaryChunkIdSoniEricsson[]                  = "SEM_";
 
+#ifdef __cplusplus
 }
+#endif
 
 #endif //MIDIMESSAGE_DLSPROPRIETARYCHUNKIDS_H

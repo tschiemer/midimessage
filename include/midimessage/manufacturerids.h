@@ -18,7 +18,9 @@
 #ifndef MIDIMESSAGE_MANUFACTURERIDS_H
 #define MIDIMESSAGE_MANUFACTURERIDS_H
 
+#ifdef __cplusplus
 namespace MidiMessage {
+#endif
 
     typedef enum {
 
@@ -446,6 +448,9 @@ namespace MidiMessage {
 
     } ManufacturerId_t;
 
+
+#ifdef __cplusplus
 }
+#endif
 
 #endif //MIDIMESSAGE_MANUFACTURERIDS_H

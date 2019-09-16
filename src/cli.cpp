@@ -232,8 +232,6 @@ unsigned long getNow(){
 void generator(void){
     uint8_t line[256];
 
-    Stringifier stringifier;
-
     uint8_t sysexBuffer[128];
     Message_t msg;
     msg.Data.SysEx.ByteData = sysexBuffer;
@@ -272,7 +270,7 @@ void generator(void){
             firstArg = &firstArg[1];
         }
 
-        int result = stringifier.fromArgs( &msg,  argsCount, firstArg );
+        int result = MessagefromArgs( &msg,  argsCount, firstArg );
 
         if (StringifierResultOk == result){
 
@@ -363,7 +361,8 @@ void parser(void){
     msg.Data.SysEx.ByteData = sysexBuffer;
 
     uint8_t dataBuffer[128];
-    Parser parser(runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage, discardingData, NULL );
+    Parser_t parser;
+    parser_init(&parser, runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage, discardingData, NULL );
 
     // start timer
     if (timedOpt.enabled){
@@ -376,17 +375,16 @@ void parser(void){
     while( (ch = fgetc(stdin)) != EOF ){
         uint8_t byte = (uint8_t)ch;
 
-        parser.receivedData( &byte, 1 );
+        parser_receivedData(&parser, &byte, 1 );
     }
 }
 
 void parsedMessage( Message_t * msg, void * context ){
 
-    Stringifier stringifier;
 
     uint8_t stringBuffer[256];
 
-    int length = stringifier.toString(  stringBuffer, msg );
+    int length = MessagetoString(  stringBuffer, msg );
 
     if ( length > 0 ) {
 
@@ -545,8 +543,6 @@ int main(int argc, char * argv[], char * env[]){
         // if there are additional arguments just try to generate a message from
         if (optind < argc){
 
-            Stringifier stringifier;
-
             uint8_t sysexBuffer[128];
             Message_t msg;
             msg.Data.SysEx.ByteData = sysexBuffer;
@@ -554,7 +550,7 @@ int main(int argc, char * argv[], char * env[]){
             uint8_t argsCount = (uint8_t) (argc - optind);
             uint8_t ** firstArg = (uint8_t **) &argv[optind];
 
-            int result = stringifier.fromArgs(&msg, argsCount, firstArg);
+            int result = MessagefromArgs(&msg, argsCount, firstArg);
 
             if (result == StringifierResultOk) {
                 writeMidiPacket(&msg);

@@ -6,7 +6,9 @@
 #define MIDIMESSAGE_COMMONCCS_H
 
 
+#ifdef __cplusplus
 namespace MidiMessage {
+#endif
 
     typedef enum {
         CcBankSelect                                = 0x00, // 0  LSB
@@ -96,5 +98,8 @@ namespace MidiMessage {
         CcPolyMode                                  = 0x7F, // 127
     } Cc_t;
 
+#ifdef __cplusplus
 }
+#endif
+
 #endif //MIDIMESSAGE_COMMONCCS_H
