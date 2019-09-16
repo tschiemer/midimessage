@@ -6,6 +6,7 @@
 #define MIDIMESSAGE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * \def USE_ASSERTS
@@ -798,7 +799,7 @@ namespace MidiMessage {
     } SysExNonRtMvc_t;
 
     inline bool isSysExNonRtMvc( uint8_t value ){
-        return false; //TODO
+        return (value == SysExNonRtMvcTODO); //TODO
     }
 
     typedef enum {
@@ -806,7 +807,7 @@ namespace MidiMessage {
     } SysExNonRtMidiCapInq_t;
 
     inline bool isSysExNonRtMidiCapInq( uint8_t value ){
-        return false; //TODO
+        return (value == SysExNonRtMidiCapInqTODO); //TODO
     }
 
     typedef enum {
@@ -2212,14 +2213,14 @@ namespace MidiMessage {
         ASSERT( isMtcQuarterMessageType(type) );
 
         switch(type){
-            MtcQuarterFrameMessageTypeFrameLS: return mtc->Frame & 0x0F;
-            MtcQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
-            MtcQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
-            MtcQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
-            MtcQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
-            MtcQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
-            MtcQuarterFrameMessageTypeHourLS:      return mtc->Hour & 0x0F;
-            MtcQuarterFrameMessageTypeHourMS:      return ((mtc->Fps << 1)| (mtc->Hour >> 4)) & 0b0111;
+            case MtcQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
+            case MtcQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
+            case MtcQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
+            case MtcQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
+            case MtcQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
+            case MtcQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
+            case MtcQuarterFrameMessageTypeHourLS:      return mtc->Hour & 0x0F;
+            case MtcQuarterFrameMessageTypeHourMS:      return ((mtc->Fps << 1)| (mtc->Hour >> 4)) & 0b0111;
             default:
                 break;
         }
