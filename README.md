@@ -64,8 +64,8 @@ tt = to test
 | Downloadable Sounds | | Non-Real Time | TODO |
 | Notation Information | | Real Time | TODO |
 | Capability Inquiry (MIDI-CI) | | SysEx Non-Real Time | TODO |
-| Controller Destination Settings | | SysEx Real Time | TODO |
-| Key-based Instrument Control | | SysEx Real Time | TODO |
+| Controller Destination Settings | | SysEx Real Time | tt |
+| Key-based Instrument Control | | SysEx Real Time | tt |
 | Scalable Polyphony MIDI MIP (SP-MIDI MIP)| | SysEx Real Time | TODO |
 | Mobile Phone Control | | SysEx Real Time | TODO |
 
@@ -194,20 +194,22 @@ System Commands:
 	 song-position <position (u14)>
 	 song-select <songNumber (u7)>
 
-(General) System Exclusives*:
+(General) System Exclusives:
 	 sysex experimental <data (xN)>
 	 sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>
-	 sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>
+	 sysex nonrt <device-id* (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>
 	 sysex nonrt <device-id (u7)> info request
 	 sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>
 	 sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)
-	 TODO:
-	 sysex rt <device-id (u7)> dc (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>
+	 sysex rt <device-id (u7)> dc** (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>
 	 sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]
-	 sysex nonrt <device-id (u7)> controller-destination (channel-pressure|key-pressure) <channel (u4)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
-	 sysex nonrt <device-id (u7)> controller-destination cc <channel (u4)> <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
-	 sysex nonrt <device-id (u7)> keys <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]
-	 sysex * <device-id> := 127 is all devices
+	 sysex nonrt <device-id (u7)> cds*** <channel (u4)> (channel-pressure|key-pressure)  <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
+	 sysex nonrt <device-id (u7)> cds <channel (u4)> cc <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
+	 sysex nonrt <device-id (u7)> keys**** <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]
+* <device-id> := 127 is all devices
+** dc := device control
+*** cds := controller destination setting
+**** keys := keybased instrument control
 
 MIDI Time Code + Cueing
 	 sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
