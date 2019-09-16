@@ -58,18 +58,22 @@ namespace MidiMessage {
      */
     const uint8_t NibbleMask = 0b00001111;
 
+    typedef uint8_t U4;
     typedef uint8_t U7;
     typedef uint16_t U14;
     typedef uint32_t U21;
     typedef uint32_t U28;
     typedef uint64_t U35;
 
+    typedef int8_t I7;
+
     /**
      * Integer max values
      */
-    const uint8_t MaxU7          = 127;
-    const uint16_t MaxU14   = 0x3FFF;
-    const uint32_t MaxU21  = 0x001FFFFF;
+    const uint8_t MaxU4   = 15;
+    const uint8_t MaxU7   = 127;
+    const uint16_t MaxU14 = 0x3FFF;
+    const uint32_t MaxU21 = 0x001FFFFF;
     const uint32_t MaxU28 = 0x0FFFFFFF;
     const uint64_t MaxU35 = 0x7FFFFFFFF;
 
@@ -1752,7 +1756,7 @@ namespace MidiMessage {
         SysExRtCdsController              = 0x03
     } SysExRtCds_t;
 
-    inline bool isSysExRtControllerDestinationSetting( uint8_t value ) {
+    inline bool isSysExRtCds( uint8_t value ) {
         return (value == SysExRtCdsChannelPressure ||
                 value == SysExRtCdsPolyphonicKeyPressure ||
                 value == SysExRtCdsController);
@@ -2078,6 +2082,11 @@ namespace MidiMessage {
                     SysExNonRtGeneralInformationData_t GeneralInfo;
 
                     SysExRtDeviceControlData_t DeviceControl;
+
+                    struct {
+                        uint8_t Channel;
+                        uint8_t Controller;
+                    } ControllerDestinationSetting;
 
                     MidiShowControlData_t MidiShowControl;
 

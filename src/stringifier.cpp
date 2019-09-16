@@ -11,7 +11,7 @@
 #define str_eq(x,y)     (strcmp((char*)x,(char*)y) == 0)
 
 #define assertBool(expr)    if (!(expr)) { return StringifierResultInvalidValue; }
-#define assertNibble(x)     if (((x) & NibbleMask) != (x)) { return StringifierResultInvalidU4; }
+#define assertU4(x)     if (((x) & NibbleMask) != (x)) { return StringifierResultInvalidU4; }
 #define assertU7(x)         if (x > MaxU7) { return StringifierResultInvalidU7; }
 #define assertU14(x)        if (x > MaxU14) { return StringifierResultInvalidU14; }
 #define assertU21(x)        if (x > MaxU21) { return StringifierResultInvalidU21; }
@@ -846,7 +846,7 @@ namespace MidiMessage {
             msg->Data.MtcQuarterFrame.Nibble = atoi((char*)argv[2]);
 
             assertBool(isMtcQuarterMessageType(msg->Data.MtcQuarterFrame.MessageType));
-            assertNibble(msg->Data.MtcQuarterFrame.Nibble);
+            assertU4(msg->Data.MtcQuarterFrame.Nibble);
 
             return StringifierResultOk;
         }
@@ -1610,6 +1610,48 @@ namespace MidiMessage {
                     return StringifierResultOk;
 
                 }
+                else if (str_eq(argv[3],"cds")) {
+                    if (argc < 7){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExRtControllerDestinationSetting;
+
+                    msg->Data.SysEx.Data.ControllerDestinationSetting.Channel = atoi((char*)argv[4]);
+
+                    assertU4(msg->Data.SysEx.Data.ControllerDestinationSetting.Channel);
+
+                    uint8_t ai;
+                    if (str_eq(argv[5], "cc")){
+                        msg->Data.SysEx.SubId2 = SysExRtCdsController;
+                        msg->Data.SysEx.Data.ControllerDestinationSetting.Controller = atoi((char*)argv[6]);
+                        ai = 7;
+                    } else if (str_eq(argv[5], "channel-pressure")){
+                        msg->Data.SysEx.SubId2 = SysExRtCdsChannelPressure;
+                        ai = 6;
+                    } else if (str_eq(argv[5], "channel-pressure")){
+                       msg->Data.SysEx.SubId2 = SysExRtCdsChannelPressure;
+                        ai = 6;
+                    } else {
+                        return StringifierResultInvalidValue;
+                    }
+
+                    if ((argc - ai) % 2 != 0 ){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    uint8_t l = 0;
+                    while( ai < argc){
+                        msg->Data.SysEx.ByteData[l] = atoi((char*)argv[ai++]);
+
+                        assertU7(msg->Data.SysEx.ByteData[l]);
+
+                        l++;
+                    }
+                    msg->Data.SysEx.Length = l;
+
+                    return StringifierResultOk;
+                }
                 else if (str_eq(argv[3],"mcc")) {
                     if (argc < 5) {
                         return StringifierResultWrongArgCount;
@@ -2266,7 +2308,26 @@ namespace MidiMessage {
                             }
                         }
                     }
+                    else if (msg->Data.SysEx.SubId1 == SysExRtControllerDestinationSetting){
+
+                        length += sprintf( (char*)&bytes[length], "cds %d ", msg->Data.SysEx.Data.ControllerDestinationSetting.Channel);
+
+                        if (msg->Data.SysEx.SubId2 == SysExRtCdsController){
+                            length += sprintf( (char*)&bytes[length], "cc %d", msg->Data.SysEx.Data.ControllerDestinationSetting.Controller);
+                        } else if (msg->Data.SysEx.SubId2 == SysExRtCdsChannelPressure) {
+                            length += sprintf( (char*)&bytes[length], "channel-pressure" );
+                        } else if (msg->Data.SysEx.SubId2 == SysExRtCdsPolyphonicKeyPressure) {
+                            length += sprintf( (char*)&bytes[length], "key-pressure" );
+                        } else {
+                            return 0;
+                        }
+
+                        for(uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
+                            length += sprintf( (char*)&bytes[length], " %d", msg->Data.SysEx.ByteData[i]);
+                        }
+                    }
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiMachineControlCommand){
+
                         length += sprintf( (char*)&bytes[length], "mcc ");
 
                         int l = MccDataToString( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );

@@ -1938,6 +1938,105 @@ namespace MidiMessage {
         return false;
     }
 
+///////////// SysEx: Controller Destination          ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    inline uint8_t packSysExRtControllerDestinationSetting( uint8_t * bytes, uint8_t deviceId, uint8_t subId2, uint8_t channel, uint8_t controller, uint8_t * data, uint8_t dataLen){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId <= MaxU7 );
+        ASSERT( isSysExRtCds(subId2) );
+        ASSERT(channel <= MaxU4 );
+        ASSERT(controller <= MaxU7);
+        ASSERT( data != NULL);
+//        ASSERT(dataLen > 0); // require some data?
+        ASSERT(dataLen % 2 == 0);
+
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExRtControllerDestinationSetting;
+        bytes[4] = subId2;
+        bytes[5] = channel;
+
+        uint8_t length = 0;
+
+        if (subId2 == SysExRtCdsController){
+            bytes[6] = controller;
+            length = 7;
+        } else {
+            length = 6;
+        }
+
+        for(uint8_t i = 0; i < dataLen; i++){
+            bytes[length++] = data[i];
+        }
+
+        bytes[length++] = SystemMessageEndOfExclusive;
+
+        return length;
+    }
+
+    inline uint8_t packSysExRtControllerDestinationSetting( uint8_t * bytes, Message_t * msg){
+        return packSysExRtControllerDestinationSetting(bytes, msg->Channel, msg->Data.SysEx.SubId2, msg->Data.SysEx.Data.ControllerDestinationSetting.Channel, msg->Data.SysEx.Data.ControllerDestinationSetting.Controller, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
+    }
+
+    inline bool unpackSysExRtControllerDestinationSetting( uint8_t * bytes, uint8_t length, uint8_t * deviceId, uint8_t *subId2, uint8_t * channel, uint8_t * controller, uint8_t * data, uint8_t * dataLen){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( controller != NULL );
+        ASSERT( data != NULL );
+        ASSERT( dataLen != NULL );
+
+        if (length < 7 || ! isControlByte(bytes[length-1])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtControllerDestinationSetting || !isSysExRtCds(bytes[4])){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *subId2 = bytes[4];
+        *channel = bytes[5];
+        *controller = bytes[6];
+
+        uint8_t p;
+
+        if (bytes[4] == SysExRtCdsController){
+            p = 7;
+        } else {
+            p = 6;
+        }
+
+        length--; // skip trailing control byte
+        uint8_t l = 0;
+
+        while(p < length){
+            data[l++] = bytes[p++];
+        }
+
+        *dataLen = l;
+
+        return true;
+    }
+
+    inline bool unpackSysExRtControllerDestinationSetting( uint8_t * bytes, uint8_t length, Message_t * msg){
+        ASSERT(msg != NULL);
+
+        if (unpackSysExRtControllerDestinationSetting(bytes, length, &msg->Channel, &msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.ControllerDestinationSetting.Channel, &msg->Data.SysEx.Data.ControllerDestinationSetting.Controller, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdRealTime;
+            msg->Data.SysEx.SubId1 = SysExRtControllerDestinationSetting;
+            return true;
+        }
+
+        return false;
+    }
+
 ///////////// SysEx: General MIDI                    ////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////

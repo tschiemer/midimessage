@@ -133,8 +133,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExRtControllerDestinationSetting:
-                        //TODO
-                        return false;
+                        return packSysExRtControllerDestinationSetting( bytes, msg );
 
                     case SysExRtKeybasedInstrumentControl:
                         //TODO
@@ -353,8 +352,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExRtControllerDestinationSetting:
-                        //TODO
-                        return false;
+                        return unpackSysExRtControllerDestinationSetting(bytes, length, msg);
 
                     case SysExRtKeybasedInstrumentControl:
                         //TODO
