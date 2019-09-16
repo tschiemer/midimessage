@@ -136,8 +136,7 @@ namespace MidiMessage {
                         return packSysExRtControllerDestinationSetting( bytes, msg );
 
                     case SysExRtKeybasedInstrumentControl:
-                        //TODO
-                        return false;
+                        return packSysExRtKeybasedInstrumentControl( bytes, msg );
 
                     case SysExRtScalablePolyphonyMidiMip:
                         //TODO
@@ -355,8 +354,7 @@ namespace MidiMessage {
                         return unpackSysExRtControllerDestinationSetting(bytes, length, msg);
 
                     case SysExRtKeybasedInstrumentControl:
-                        //TODO
-                        return false;
+                        return unpackSysExRtKeybasedInstrumentControl( bytes, length, msg );
 
                     case SysExRtScalablePolyphonyMidiMip:
                         //TODO

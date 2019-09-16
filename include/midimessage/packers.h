@@ -2037,6 +2037,91 @@ namespace MidiMessage {
         return false;
     }
 
+///////////// SysEx: Keybased Instrument Control     ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    inline uint8_t packSysExRtKeybasedInstrumentControl( uint8_t * bytes, uint8_t deviceId, uint8_t channel, uint8_t key, uint8_t * data, uint8_t dataLen){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId <= MaxU7 );
+        ASSERT(channel <= MaxU4 );
+        ASSERT(key <= MaxU7 );
+        ASSERT( data != NULL);
+//        ASSERT(dataLen > 0); // require some data?
+        ASSERT(dataLen % 2 == 0);
+
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdRealTimeByte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExRtKeybasedInstrumentControl;
+        bytes[4] = SysExRtKeysBasicMessage;
+        bytes[5] = channel;
+        bytes[6] = key;
+
+        uint8_t length = 7;
+
+        for(uint8_t i = 0; i < dataLen; i++){
+            bytes[length++] = data[i];
+        }
+
+        bytes[length++] = SystemMessageEndOfExclusive;
+
+        return length;
+    }
+
+    inline uint8_t packSysExRtKeybasedInstrumentControl( uint8_t * bytes, Message_t * msg){
+        return packSysExRtKeybasedInstrumentControl(bytes, msg->Channel, msg->Data.SysEx.Data.ControllerDestinationSetting.Channel, msg->Data.SysEx.Data.ControllerDestinationSetting.Controller, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
+    }
+
+    inline bool unpackSysExRtKeybasedInstrumentControl( uint8_t * bytes, uint8_t length, uint8_t * deviceId, uint8_t *channel, uint8_t * key, uint8_t * data, uint8_t * dataLen){
+        ASSERT( bytes != NULL );
+        ASSERT( deviceId != NULL );
+        ASSERT( channel != NULL );
+        ASSERT( key != NULL );
+        ASSERT( data != NULL );
+        ASSERT( dataLen != NULL );
+
+        if (length < 7 || ! isControlByte(bytes[length-1])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtKeybasedInstrumentControl || !isSysExRtCds(bytes[4])){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *channel = bytes[5];
+        *key = bytes[6];
+
+        uint8_t p = 7;
+
+        length--; // skip trailing control byte
+        uint8_t l = 0;
+
+        while(p < length){
+            data[l++] = bytes[p++];
+        }
+
+        *dataLen = l;
+
+        return true;
+    }
+
+    inline bool unpackSysExRtKeybasedInstrumentControl( uint8_t * bytes, uint8_t length, Message_t * msg){
+        ASSERT(msg != NULL);
+
+        if (unpackSysExRtKeybasedInstrumentControl(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.KeybasedInstrumentControl.Channel, &msg->Data.SysEx.Data.KeybasedInstrumentControl.Key, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdRealTime;
+            msg->Data.SysEx.SubId1 = SysExRtKeybasedInstrumentControl;
+            return true;
+        }
+
+        return false;
+    }
+
 ///////////// SysEx: General MIDI                    ////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////

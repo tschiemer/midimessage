@@ -1652,6 +1652,35 @@ namespace MidiMessage {
 
                     return StringifierResultOk;
                 }
+
+                else if (str_eq(argv[3],"keys")) {
+                    if (argc < 6){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExRtKeybasedInstrumentControl;
+                    msg->Data.SysEx.SubId2 = SysExRtKeysBasicMessage;
+
+                    msg->Data.SysEx.Data.KeybasedInstrumentControl.Channel = atoi((char*)argv[4]);
+                    msg->Data.SysEx.Data.KeybasedInstrumentControl.Key = atoi((char*)argv[5]);
+
+                    assertU4(msg->Data.SysEx.Data.KeybasedInstrumentControl.Channel);
+                    assertU7(msg->Data.SysEx.Data.KeybasedInstrumentControl.Key);
+
+                    assertBool( (argc - 6) % 2 == 0);
+
+                    uint8_t l = 0;
+                    for(uint8_t ai = 6; ai < argc; ai++){
+                        msg->Data.SysEx.ByteData[l] = atoi( (char*)argv[ai]);
+
+                        assertU7(msg->Data.SysEx.ByteData[l]);
+
+                        l++;
+                    }
+                    msg->Data.SysEx.Length = l;
+
+                    return StringifierResultOk;
+                }
                 else if (str_eq(argv[3],"mcc")) {
                     if (argc < 5) {
                         return StringifierResultWrongArgCount;
@@ -2325,6 +2354,15 @@ namespace MidiMessage {
                         for(uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
                             length += sprintf( (char*)&bytes[length], " %d", msg->Data.SysEx.ByteData[i]);
                         }
+                    }
+                    else if (msg->Data.SysEx.SubId1 == SysExRtKeybasedInstrumentControl){
+
+                        length += sprintf( (char*)&bytes[length], "keys %d %d", msg->Data.SysEx.Data.KeybasedInstrumentControl.Channel, msg->Data.SysEx.Data.KeybasedInstrumentControl.Key);
+
+                        for(uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
+                            length += sprintf( (char*)&bytes[length], " %d", msg->Data.SysEx.ByteData[i]);
+                        }
+
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiMachineControlCommand){
 

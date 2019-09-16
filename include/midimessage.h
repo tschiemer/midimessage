@@ -816,7 +816,7 @@ namespace MidiMessage {
         SysExRtMidiMachineControlResponse    = 0x07, // SubId2 enum SysExRtMmcResponse..
         SysExRtMidiTuningStandard            = 0x08, // SubId2 enum SysExRtMts..
         SysExRtControllerDestinationSetting  = 0x09, // SubId2 enum SysExRtCds..
-        SysExRtKeybasedInstrumentControl     = 0x0A, // SubId2 enum SysExRtKeysControl..
+        SysExRtKeybasedInstrumentControl     = 0x0A, // SubId2 enum SysExRtKeys..
         SysExRtScalablePolyphonyMidiMip      = 0x0B, // SubId2 enum SysExRtMip..
         SysExRtMobilePhoneControlMessage     = 0x0C  // SubId2 enum SysExRtMobile..
     } SysExRt_t;
@@ -1763,6 +1763,14 @@ namespace MidiMessage {
     }
 
     typedef enum {
+        SysExRtKeysBasicMessage = 0x01
+    } SysExRtKeys_t;
+
+    inline bool isSysExRtKeys( uint8_t value ){
+        return (value == SysExRtKeysBasicMessage);
+    }
+
+    typedef enum {
         MtcQuarterFrameMessageTypeFrameLS      = 0b000,
         MtcQuarterFrameMessageTypeFrameMS      = 0b001,
         MtcQuarterFrameMessageTypeSecondLS     = 0b010,
@@ -2087,6 +2095,11 @@ namespace MidiMessage {
                         uint8_t Channel;
                         uint8_t Controller;
                     } ControllerDestinationSetting;
+
+                    struct {
+                        uint8_t Channel;
+                        uint8_t Key;
+                    } KeybasedInstrumentControl;
 
                     MidiShowControlData_t MidiShowControl;
 
