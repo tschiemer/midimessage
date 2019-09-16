@@ -141,9 +141,9 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id (u7)> info request\n");
     printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
     printf("\t sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)\n");
-    printf("\t TODO:\n");
     printf("\t sysex rt <device-id (u7)> dc (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>\n");
     printf("\t sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]\n");
+    printf("\t TODO:\n");
     printf("\t sysex nonrt <device-id (u7)> controller-destination (channel-pressure|key-pressure) <channel (u4)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
     printf("\t sysex nonrt <device-id (u7)> controller-destination cc <channel (u4)> <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
     printf("\t sysex nonrt <device-id (u7)> keys <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]\n");
@@ -296,6 +296,27 @@ void generatorError(int code, uint8_t argc, uint8_t ** argv){
                 break;
             case StringifierResultNoInput:
                 fprintf(stderr, "No input ");
+                break;
+            case StringifierResultInvalidU4:
+                fprintf(stderr, "Invalid U4/Nibble Value ");
+                break;
+            case StringifierResultInvalidU7:
+                fprintf(stderr, "Invalid U7 Value ");
+                break;
+            case StringifierResultInvalidU14:
+                fprintf(stderr, "Invalid U14 Value ");
+                break;
+            case StringifierResultInvalidU21:
+                fprintf(stderr, "Invalid U21 Value ");
+                break;
+            case StringifierResultInvalidU28:
+                fprintf(stderr, "Invalid U28 Value ");
+                break;
+            case StringifierResultInvalidU35:
+                fprintf(stderr, "Invalid U35 Value ");
+                break;
+            case StringifierResultInvalidHex:
+                fprintf(stderr, "Invalid Hex Value ");
                 break;
         }
 

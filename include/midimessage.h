@@ -2258,38 +2258,43 @@ namespace MidiMessage {
         return 5;
     }
 
-    inline uint8_t getIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i ){
+    inline uint16_t getIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i ){
         ASSERT( gpc != NULL );
         ASSERT( gpc->Data != NULL );
         ASSERT( i < gpc->SlotPathLength );
+        ASSERT( 2*i < gpc->DataLength );
 
-        return gpc->Data[i];
+        // msb - lsb
+        return (((uint16_t)gpc->Data[2*i]) << 7) | ((uint16_t)gpc->Data[2*i + 1]);
     }
 
-    inline void setIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i, uint8_t value ){
+    inline void setIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i, uint16_t value ){
         ASSERT( gpc != NULL );
         ASSERT( gpc->Data != NULL );
         ASSERT( i < gpc->SlotPathLength );
-        ASSERT( value <= MaxU7 );
+        ASSERT( value <= MaxU14 );
+        ASSERT( 2*i < gpc->DataLength );
 
-        gpc->Data[i] = value & DataMask;
+        // msb - lsb
+        gpc->Data[2*i] = (value >> 7) & DataMask;
+        gpc->Data[2*i + 1] = value & DataMask;
     }
 
     inline uint8_t * getIthGpcParameterIdAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
         ASSERT( gpc != NULL );
         ASSERT( gpc->Data != NULL );
-        ASSERT( gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) < gpc->DataLength );
+        ASSERT( 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) <= gpc->DataLength );
 
-        return &gpc->Data[ gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) ];
+        return &gpc->Data[ 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) ];
     }
 
 
     inline uint8_t * getIthGpcParameterValueAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
         ASSERT( gpc != NULL );
         ASSERT( gpc->Data != NULL );
-        ASSERT( gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth < gpc->DataLength );
+        ASSERT( 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth <= gpc->DataLength );
 
-        return &gpc->Data[ gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth ];
+        return &gpc->Data[ 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth ];
     }
 
     inline bool isValidMscCueNumberPart( uint8_t * str ){

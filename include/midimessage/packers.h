@@ -1782,12 +1782,12 @@ namespace MidiMessage {
         bytes[6] = gpc->ParameterIdWidth;
         bytes[7] = gpc->ValueWidth;
 
-        for (int i = 0; i < gpc->SlotPathLength; i++) {
-            bytes[len++] = getMsNibble(gpc->Data[i]);
-            bytes[len++] = getLsNibble(gpc->Data[i]);
-        }
+//        for (int i = 0; i < gpc->SlotPathLength; i++) {
+//            bytes[len++] = getMsNibble(gpc->Data[i]);
+//            bytes[len++] = getLsNibble(gpc->Data[i]);
+//        }
 
-        for (int i = gpc->SlotPathLength; i < gpc->DataLength; i++) {
+        for (int i = 0; i < gpc->DataLength; i++) {
             bytes[len++] = gpc->Data[i];
         }
 
@@ -1856,7 +1856,7 @@ namespace MidiMessage {
         ASSERT(deviceId != NULL);
         ASSERT(gpc != NULL);
 
-        if (len < 8) {
+        if (len < 9 || ! isControlByte(bytes[len -1])) {
             return false;
         }
 
@@ -1884,12 +1884,12 @@ namespace MidiMessage {
         uint32_t l = 0;
 
         // s acts merely as counter (identical to l..)
-        for (int s = 0, i = 8; s < gpc->SlotPathLength; s++, l++) {
-            gpc->Data[l] = (bytes[i++] & NibbleMask) << 4;
-            gpc->Data[l] |= bytes[i++] & NibbleMask;
-        }
+//        for (int s = 0, i = 8; s < gpc->SlotPathLength; s++, l++) {
+//            gpc->Data[l] = (bytes[i++] & NibbleMask) << 4;
+//            gpc->Data[l] |= bytes[i++] & NibbleMask;
+//        }
 
-        for (int i = 8 + 2 * gpc->SlotPathLength; i < len && bytes[i] != SystemMessageEndOfExclusive; i++, l++) {
+        for (int i = 8 ; i < len && bytes[i] != SystemMessageEndOfExclusive; i++, l++) {
             gpc->Data[l] = bytes[i];
         }
 
@@ -1910,20 +1910,29 @@ namespace MidiMessage {
             case SysExRtDcMasterBalance:
             case SysExRtDcMasterCoarseTuning:
             case SysExRtDcMasterFineTuning:
-                return unpackSysExRtDcBasic( bytes, length, &msg->Channel, &msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.DeviceControl.Value );
+                if (unpackSysExRtDcBasic( bytes, length, &msg->Channel, &msg->Data.SysEx.SubId2, &msg->Data.SysEx.Data.DeviceControl.Value )){
+                    msg->StatusClass = StatusClassSystemMessage;
+                    msg->SystemMessage = SystemMessageSystemExclusive;
+                    msg->Data.SysEx.Id = SysExIdRealTime;
+                    msg->Data.SysEx.SubId1 = SysExRtDeviceControl;
+                    msg->Data.SysEx.SubId2 = bytes[4];
+                    return true;
+                }
 
             case SysExRtDcGlobalParameterControl:
 
                 // use sysex raw byte data container for gpc
                 msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.Data = msg->Data.SysEx.ByteData;
 
-                if ( ! unpackSysExRtDcGlobalParameterControl( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl )){
-                    return false;
+                if ( unpackSysExRtDcGlobalParameterControl( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl )){
+                    msg->StatusClass = StatusClassSystemMessage;
+                    msg->SystemMessage = SystemMessageSystemExclusive;
+                    msg->Data.SysEx.Id = SysExIdRealTime;
+                    msg->Data.SysEx.SubId1 = SysExRtDeviceControl;
+                    msg->Data.SysEx.SubId2 = SysExRtDcGlobalParameterControl;
+                    return true;
                 }
 
-                msg->Data.SysEx.Length = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.DataLength;
-
-                return true;
         }
 
         return false;

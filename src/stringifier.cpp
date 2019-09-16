@@ -11,12 +11,12 @@
 #define str_eq(x,y)     (strcmp((char*)x,(char*)y) == 0)
 
 #define assertBool(expr)    if (!(expr)) { return StringifierResultInvalidValue; }
-#define assertNibble(x)     if (((x) & NibbleMask) != (x)) { return StringifierResultInvalidValue; }
-#define assertU7(x)         if (x > MaxU7) { return StringifierResultInvalidValue; }
-#define assertU14(x)        if (x > MaxU14) { return StringifierResultInvalidValue; }
-#define assertU21(x)        if (x > MaxU21) { return StringifierResultInvalidValue; }
-#define assertU28(x)        if (x > MaxU28) { return StringifierResultInvalidValue; }
-#define assertU35(x)        if (x > MaxU35) { return StringifierResultInvalidValue; }
+#define assertNibble(x)     if (((x) & NibbleMask) != (x)) { return StringifierResultInvalidU4; }
+#define assertU7(x)         if (x > MaxU7) { return StringifierResultInvalidU7; }
+#define assertU14(x)        if (x > MaxU14) { return StringifierResultInvalidU14; }
+#define assertU21(x)        if (x > MaxU21) { return StringifierResultInvalidU21; }
+#define assertU28(x)        if (x > MaxU28) { return StringifierResultInvalidU28; }
+#define assertU35(x)        if (x > MaxU35) { return StringifierResultInvalidU35; }
 #define assertI7(x)         if (x < MinI7 || MaxI7 < x) { return StringifierResultInvalidValue; }
 #define assertData(bytes, len)   \
                             for(uint8_t i = 0; i < len; i++){ \
@@ -55,6 +55,7 @@ namespace MidiMessage {
 
     inline int sprintfHex( uint8_t * dst, uint8_t * src, uint8_t length){
         byte_to_hex( dst, src, length );
+        dst[2*length] = '\0';
         return 2 * length;
     }
 
@@ -894,7 +895,7 @@ namespace MidiMessage {
                 } else {
 
                     if (!readHex(msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argv[2], 0)) {
-                        return StringifierResultInvalidValue;
+                        return StringifierResultInvalidHex;
                     }
 
                     assertData(msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
@@ -913,7 +914,7 @@ namespace MidiMessage {
                 } else {
 
                     if (!readHex(msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argv[3], 0)) {
-                        return StringifierResultInvalidValue;
+                        return StringifierResultInvalidHex;
                     }
 
                     assertData(msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
@@ -1448,7 +1449,7 @@ namespace MidiMessage {
                             assertU14(msg->Data.SysEx.Data.MidiShowControl.SequenceNumber);
 
                             if ( ! readHex(msg->Data.SysEx.Data.MidiShowControl.Data, NULL, argv[8], 4)){
-                                return StringifierResultInvalidValue;
+                                return StringifierResultInvalidHex;
                             }
 
                             if ( ! readCueNumber( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Data.MidiShowControl.CueNumber, argc - 9, &argv[9]) ){
@@ -1525,6 +1526,88 @@ namespace MidiMessage {
 //                            printf("cmdFmt=%02X  cmd=%02X\n", msg->Data.SysEx.Data.MidiShowControl.CommandFormat.Bytes[0], msg->Data.SysEx.Data.MidiShowControl.Command.Bytes[0]);
                             return StringifierResultOk;
                     }
+
+                }
+                else if (str_eq(argv[3], "dc")){
+                    msg->Data.SysEx.SubId1 = SysExRtDeviceControl;
+
+                    if (argc == 6){
+                        if (str_eq(argv[4], "master-volume")){
+                            msg->Data.SysEx.SubId2 = SysExRtDcMasterVolume;
+                        } else if (str_eq(argv[4], "master-balance")){
+                            msg->Data.SysEx.SubId2 = SysExRtDcMasterBalance;
+                        } else if (str_eq(argv[4], "coarse-tuning")){
+                            msg->Data.SysEx.SubId2 = SysExRtDcMasterCoarseTuning;
+                        } else if (str_eq(argv[4], "fine-tuning")){
+                            msg->Data.SysEx.SubId2 = SysExRtDcMasterFineTuning;
+                        } else {
+                            return StringifierResultInvalidValue;
+                        }
+
+                        msg->Data.SysEx.Data.DeviceControl.Value = atoi((char*)argv[5]);
+
+                        assertU14(msg->Data.SysEx.Data.DeviceControl.Value);
+
+                        return StringifierResultOk;
+                    }
+                    if (argc < 8){
+                        return StringifierResultWrongArgCount;
+                    }
+                    if ( ! str_eq(argv[4], "global-parameter")){
+                        return StringifierResultInvalidValue;
+                    }
+                    msg->Data.SysEx.SubId2 = SysExRtDcGlobalParameterControl;
+
+                    uint8_t sw = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.SlotPathLength = atoi((char*)argv[5]);
+                    uint8_t pw = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.ParameterIdWidth = atoi((char*)argv[6]);
+                    uint8_t vw = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.ValueWidth = atoi((char*)argv[7]);
+
+                    assertU7(msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.SlotPathLength);
+                    assertU7(msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.ParameterIdWidth);
+                    assertU7(msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.ValueWidth);
+                    assertBool( (pw == 0 && vw == 0) || (pw > 0 && vw > 0) );
+
+                    // are there as many arguments as specified?
+                    if  ( argc - 8 < sw || ((argc - 8 - sw) % 2) != 0 ){
+                        return StringifierResultWrongArgCount;
+                    }
+                    // parameter count
+                    uint8_t pc = (argc - 8 - sw) / 2;
+
+                    // so we know the final total data length (2bytes per slot path + (pw+vw)bytes per parameter)
+                    msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.DataLength = 2*sw + pc * (pw + vw);
+
+                    // prepare data container;
+                    msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.Data = msg->Data.SysEx.ByteData;
+
+
+                    uint8_t ai = 8;
+
+                    for (uint8_t i = 0; i < sw; i++){
+                        uint16_t v = atoi((char*)argv[ai++]);
+
+                        assertU14(v);
+
+                        setIthGpcSlot(&msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl, i, v);
+                    }
+
+                    for (uint8_t i = 0; i < pc; i++){
+
+                        uint8_t * id = getIthGpcParameterIdAddr( &msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl, i );
+                        uint8_t * value = getIthGpcParameterValueAddr( &msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl, i );
+
+                        uint8_t tmp;
+
+                        if (!readHex(id, &tmp, argv[ai++], pw)) {
+                            return StringifierResultInvalidHex;
+                        }
+
+                        if (!readHex(value, &tmp, argv[ai++], vw)) {
+                            return StringifierResultInvalidHex;
+                        }
+                    }
+
+                    return StringifierResultOk;
 
                 }
                 else if (str_eq(argv[3],"mcc")) {
@@ -1615,7 +1698,7 @@ namespace MidiMessage {
                         msg->Data.SysEx.Data.GeneralInfo.DeviceFamilyMember = atoi((char*)argv[7]);
 
                         if (!readHex(msg->Data.SysEx.Data.GeneralInfo.SoftwareRevision, NULL, argv[8], 4)) {
-                            return StringifierResultInvalidValue;
+                            return StringifierResultInvalidHex;
                         }
 
                         assertU14(msg->Data.SysEx.Data.GeneralInfo.DeviceFamily);
@@ -1866,9 +1949,11 @@ namespace MidiMessage {
             if (msg->SystemMessage == SystemMessageSystemExclusive){
                 length += sprintf( (char*)&bytes[length], "sysex ");
 
+//                printf("sysex ");
+
                 if (msg->Data.SysEx.Id == SysExIdExperimental){
                     length += sprintf( (char*)&bytes[length], "experimental ");
-//printf("fooof\n");
+
                     length += sprintfHex( &bytes[length],  msg->Data.SysEx.ByteData,  msg->Data.SysEx.Length);
                 }
 
@@ -1880,6 +1965,8 @@ namespace MidiMessage {
 
                 if (msg->Data.SysEx.Id == SysExIdRealTime){
                     length += sprintf( (char*)&bytes[length], "rt %d ", msg->Channel);
+
+//                    printf("rt %d ", msg->Channel);
 
                     if (msg->Data.SysEx.SubId1 == SysExRtMidiTimeCode){
                         length += sprintf( (char*)&bytes[length], "mtc ");
@@ -2132,6 +2219,51 @@ namespace MidiMessage {
                             case SysExRtMscCmdReset:
                                 break;
 
+                        }
+                    }
+                    else if (msg->Data.SysEx.SubId1 == SysExRtDeviceControl){
+                        if (msg->Data.SysEx.SubId2 == SysExRtDcMasterVolume){
+                            length += sprintf( (char*)&bytes[length], "master-volume %d", msg->Data.SysEx.Data.DeviceControl.Value);
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExRtDcMasterBalance){
+                            length += sprintf( (char*)&bytes[length], "master-balance %d", msg->Data.SysEx.Data.DeviceControl.Value);
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExRtDcMasterCoarseTuning){
+                            length += sprintf( (char*)&bytes[length], "coarse-tuning %d", msg->Data.SysEx.Data.DeviceControl.Value);
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExRtDcMasterFineTuning){
+                            length += sprintf( (char*)&bytes[length], "fine-tuning %d", msg->Data.SysEx.Data.DeviceControl.Value);
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExRtDcGlobalParameterControl){
+
+
+                            uint8_t sw = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.SlotPathLength;
+                            uint8_t pw = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.ParameterIdWidth;
+                            uint8_t vw = msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.ValueWidth;
+
+                            length += sprintf( (char*)&bytes[length], "global-parameter-control %d %d %d", sw, pw, vw);
+
+//                            printf("%s :: datalength = %d",
+//                                   bytes,
+//                                   msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.DataLength
+//                            );
+//                            fflush(stdout);
+
+                            for(uint8_t i = 0; i < sw; i++){
+                                length += sprintf( (char*)&bytes[length], " %d", getIthGpcSlot(&msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl, i) );
+                            }
+
+                            uint8_t pc = (pw + vw) == 0 ? 0 : ((msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl.DataLength - 2*sw) / (pw + vw));
+
+                            for (uint8_t i = 0; i < pc; i++){
+                                uint8_t * id = getIthGpcParameterIdAddr(&msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl, i);
+                                uint8_t * value = getIthGpcParameterValueAddr(&msg->Data.SysEx.Data.DeviceControl.GlobalParameterControl, i);
+
+                                bytes[length++] = ' ';
+                                length += sprintfHex( &bytes[length], id, pw );
+                                bytes[length++] = ' ';
+                                length += sprintfHex( &bytes[length], value, vw );
+                            }
                         }
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiMachineControlCommand){

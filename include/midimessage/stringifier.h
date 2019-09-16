@@ -16,7 +16,14 @@ namespace MidiMessage {
         StringifierResultWrongArgCount  = 3,
         StringifierResultPackError      = 4,
         StringifierResultParserFail     = 5,
-        StringifierResultNoInput        = 6
+        StringifierResultNoInput        = 6,
+        StringifierResultInvalidU4      = 10,
+        StringifierResultInvalidU7      = 11,
+        StringifierResultInvalidU14     = 12,
+        StringifierResultInvalidU21     = 13,
+        StringifierResultInvalidU28     = 14,
+        StringifierResultInvalidU35     = 15,
+        StringifierResultInvalidHex     = 20
     } StringifierResult_t;
 
 
