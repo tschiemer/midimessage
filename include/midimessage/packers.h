@@ -1824,8 +1824,7 @@ namespace MidiMessage {
         ASSERT(type != NULL);
         ASSERT(value != NULL);
 
-        if ((len != MsgLenSysExNonRtDeviceControl - 1) &&
-            (len != MsgLenSysExNonRtDeviceControl || bytes[len - 1] == SystemMessageEndOfExclusive)) {
+        if (len != MsgLenSysExNonRtDeviceControl || ! isControlByte(bytes[len-1])) {
             return false;
         }
         if (bytes[0] != SystemMessageSystemExclusive) {
@@ -1834,9 +1833,9 @@ namespace MidiMessage {
         if (bytes[1] != SysExIdRealTimeByte) {
             return false;
         }
-        if ((bytes[2] & DataMask) != bytes[2]) {
-            return false;
-        }
+//        if ((bytes[2] & DataMask) != bytes[2]) {
+//            return false;
+//        }
         if (bytes[3] != SysExRtDeviceControl) {
             return false;
         }
@@ -1918,7 +1917,7 @@ namespace MidiMessage {
                     msg->SystemMessage = SystemMessageSystemExclusive;
                     msg->Data.SysEx.Id = SysExIdRealTime;
                     msg->Data.SysEx.SubId1 = SysExRtDeviceControl;
-                    msg->Data.SysEx.SubId2 = bytes[4];
+//                    msg->Data.SysEx.SubId2 = bytes[4];
                     return true;
                 }
 
