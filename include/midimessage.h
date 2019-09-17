@@ -211,6 +211,48 @@ namespace MidiMessage {
         return value & ChannelMask;
     }
 
+    typedef union {
+        uint32_t Value;
+        uint8_t Bytes[3];
+    } ExtensibleValue_t;
+
+    const uint8_t ExtensibleValueExtender = 0x00;
+
+    inline uint32_t getExtensibleValue( ExtensibleValue_t * ext ){
+        return ( ((uint32_t)ext->Bytes[0]) << 16 ) | ( ((uint32_t)ext->Bytes[1]) << 8 ) | ((uint32_t)ext->Bytes[0]);
+    }
+
+    inline void setExtensibleValue( ExtensibleValue_t * ext, uint32_t value){
+        ext->Bytes[0] = (value >> 16) & DataMask;
+        ext->Bytes[1] = (value >> 8) & DataMask;
+        ext->Bytes[2] = value & DataMask;
+    }
+
+    inline uint8_t extensibleValueLength( uint8_t * bytes ){
+        if (bytes[0] != ExtensibleValueExtender) return 1;
+        if (bytes[1] != ExtensibleValueExtender) return 2;
+        return 3;
+    }
+
+
+    inline uint8_t copyExtensibleValueBytes( uint8_t * dst, uint8_t * src, bool allowTwoByte ) {
+        ASSERT(dst != NULL);
+        ASSERT(src != NULL);
+
+        dst[0] = src[0];
+        if (src[0] != ExtensibleValueExtender) {
+            return 1;
+        }
+
+        dst[1] = src[1];
+        if (allowTwoByte && src[1] != ExtensibleValueExtender) {
+            return 2;
+        }
+
+        dst[2] = src[2];
+
+        return 3;
+    }
 
     const uint8_t SysExDeviceIdBroadcast = 0x7F; // for  SysEx (Non-)Realtime Messages
 
@@ -399,7 +441,7 @@ namespace MidiMessage {
                 status == SystemMessageReset);
     }
 
-    #define MidiMessage_RunningStatusNotSet 0
+    const uint8_t MidiMessage_RunningStatusNotSet = 0;
 
     inline uint8_t isRunningStatus( uint8_t state ){
         return isStatusClass( state & StatusClassMask ) && (state & StatusClassMask) != StatusClassSystemMessage;
@@ -820,7 +862,7 @@ namespace MidiMessage {
         SysExRtMidiTuningStandard            = 0x08, // SubId2 enum SysExRtMts..
         SysExRtControllerDestinationSetting  = 0x09, // SubId2 enum SysExRtCds..
         SysExRtKeybasedInstrumentControl     = 0x0A, // SubId2 enum SysExRtKeys..
-        SysExRtScalablePolyphonyMidiMip      = 0x0B, // SubId2 enum SysExRtMip..
+        SysExRtScalablePolyphonyMidiMip      = 0x0B, // SubId2 enum SysExRtSpMidiMip..
         SysExRtMobilePhoneControlMessage     = 0x0C  // SubId2 enum SysExRtMobile..
     } SysExRt_t;
 
@@ -1774,6 +1816,67 @@ namespace MidiMessage {
     }
 
     typedef enum {
+        SysExRtMobileDeviceClassReserved            = 0x00,
+        SysExRtMobileDeviceClassManufacturer        = 0x01,
+        SysExRtMobileDeviceClassVibrator            = 0x02,
+        SysExRtMobileDeviceClassLed                 = 0x03,
+        SysExRtMobileDeviceClassDisplay             = 0x04,
+        SysExRtMobileDeviceClassKeypad              = 0x05,
+        SysExRtMobileDeviceClassAll                 = 0x7F,
+    } SysExRtMobileDeviceClass_t;
+
+    inline bool isSysExRtMobileDeviceClass( uint8_t value ){
+        // NOTE reserved not included (because there is no application)
+        return (value == SysExRtMobileDeviceClassManufacturer ||
+                value == SysExRtMobileDeviceClassVibrator ||
+                value == SysExRtMobileDeviceClassLed ||
+                value == SysExRtMobileDeviceClassDisplay ||
+                value == SysExRtMobileDeviceClassKeypad ||
+                value == SysExRtMobileDeviceClassAll);
+    }
+
+
+    const uint8_t SysExRtMobileDeviceIndexAll = 0x7F;
+
+    typedef enum {
+        SysExRtMobileCmdIdReserved                  = 0x00,
+        SysExRtMobileCmdIdManufacturer              = 0x01,
+        SysExRtMobileCmdIdReset                     = 0x02,
+        SysExRtMobileCmdIdOn                        = 0x03,
+        SysExRtMobileCmdIdOff                       = 0x04,
+        SysExRtMobileCmdIdFollowMidiChannels        = 0x05,
+        SysExRtMobileCmdIdSetColorRgb               = 0x06,
+        SysExRtMobileCmdIdSetLevel                  = 0x07
+    } SysExRtMobileCmdId_t;
+
+    inline bool isSysExRtMobileCmdId( uint8_t value ){
+        // NOTE reserved not included (because there is no application)
+        return (value == SysExRtMobileCmdIdManufacturer ||
+                value == SysExRtMobileCmdIdReset ||
+                value == SysExRtMobileCmdIdOn ||
+                value == SysExRtMobileCmdIdOff ||
+                value == SysExRtMobileCmdIdFollowMidiChannels ||
+                value == SysExRtMobileCmdIdSetColorRgb ||
+                value == SysExRtMobileCmdIdSetLevel);
+    }
+
+    typedef struct {
+        struct {
+            uint8_t Id;
+            uint32_t ManufacturerId;
+            uint8_t SubId;
+        } DeviceClass;
+        uint8_t DeviceIndex;
+        struct {
+            uint8_t Id;
+            uint32_t ManufacturerId;
+        } Command;
+//        uint8_t ChannelCount;
+        uint8_t Rgb[3];
+        uint8_t Level;
+    } SysExRtMobileData_t;
+
+    typedef enum {
         MtcQuarterFrameMessageTypeFrameLS      = 0b000,
         MtcQuarterFrameMessageTypeFrameMS      = 0b001,
         MtcQuarterFrameMessageTypeSecondLS     = 0b010,
@@ -1861,13 +1964,6 @@ namespace MidiMessage {
         GlobalParameterControl_t GlobalParameterControl;
     } SysExRtDeviceControlData_t;
 
-
-    typedef union {
-        uint32_t Value;
-        uint8_t Bytes[3];
-    } MscExtensibleCommandField_t;
-
-
     typedef struct {
         uint8_t * Number;
         uint8_t * List;
@@ -1878,10 +1974,9 @@ namespace MidiMessage {
         return ( '0' <= value && value <= '9') || value == '.';
     }
 
-
     typedef struct {
-        MscExtensibleCommandField_t CommandFormat;
-        MscExtensibleCommandField_t Command;
+        ExtensibleValue_t CommandFormat;
+        ExtensibleValue_t Command;
         MscCueNumber_t CueNumber;
         MidiTimeCode_t MidiTimeCode;
         uint16_t Controller;
@@ -2024,13 +2119,13 @@ namespace MidiMessage {
                 value == SysExRtMmcCommandLocateSubCommandTarget );
     }
 
-    typedef union {
-        uint32_t Value;
-        uint8_t Bytes[3];
-    } SysExRtMmcCommandExtensible_t;
+//    typedef union {
+//        uint32_t Value;
+//        uint8_t Bytes[3];
+//    } SysExRtMmcCommandExtensible_t;
 
     typedef struct {
-        SysExRtMmcCommandExtensible_t Command;
+        ExtensibleValue_t Command;
         union {
             SysExRtMmcStandardSpeed_t StandardSpeed;
             uint8_t U7;
@@ -2103,6 +2198,8 @@ namespace MidiMessage {
                         uint8_t Channel;
                         uint8_t Key;
                     } KeybasedInstrumentControl;
+
+                    SysExRtMobileData_t MobilePhoneControl;
 
                     MidiShowControlData_t MidiShowControl;
 
@@ -2450,44 +2547,26 @@ namespace MidiMessage {
     }
 
 
-    inline uint8_t copyMscExtensibleCommandField( uint8_t * dst, uint8_t * src ) {
-        ASSERT(dst != NULL);
-        ASSERT(src != NULL);
-
-        dst[0] = src[0];
-        if (src[0] != SysExRtMscCmdExtension) {
-            return 1;
-        }
-
-        dst[1] = src[1];
-        if (src[1] != SysExRtMscCmdExtension) {
-            return 2;
-        }
-
-        dst[2] = src[2];
-
-        return 3;
-    }
 
 
-    inline uint8_t copyMmcExtensibleCommand( uint8_t * dst, uint8_t * src ) {
-        ASSERT(dst != NULL);
-        ASSERT(src != NULL);
-
-        dst[0] = src[0];
-        if (src[0] != SysExRtMmcCommandExtension) {
-            return 1;
-        }
-
-        dst[1] = src[1];
-        if (src[1] != SysExRtMmcCommandExtension) {
-            return 2;
-        }
-
-        dst[2] = src[2];
-
-        return 3;
-    }
+//    inline uint8_t copyMmcExtensibleCommand( uint8_t * dst, uint8_t * src ) {
+//        ASSERT(dst != NULL);
+//        ASSERT(src != NULL);
+//
+//        dst[0] = src[0];
+//        if (src[0] != SysExRtMmcCommandExtension) {
+//            return 1;
+//        }
+//
+//        dst[1] = src[1];
+//        if (src[1] != SysExRtMmcCommandExtension) {
+//            return 2;
+//        }
+//
+//        dst[2] = src[2];
+//
+//        return 3;
+//    }
 
     /**
      *  Tries to pack a given midi <msg> into the corresponding sequence of raw bytes.

@@ -2293,7 +2293,7 @@ namespace MidiMessage {
 
         uint8_t len = 0;
 
-        len += copyMmcExtensibleCommand( bytes, cmd->Command.Bytes );
+        len += copyExtensibleValueBytes( bytes, cmd->Command.Bytes, true );
 
         switch(cmd->Command.Bytes[0]){
 
@@ -2394,7 +2394,7 @@ namespace MidiMessage {
 
         uint8_t len = 0;
 
-        len += copyMmcExtensibleCommand( cmd->Command.Bytes, bytes );
+        len += copyExtensibleValueBytes( cmd->Command.Bytes, bytes, true );
 
         switch(cmd->Command.Bytes[0]){
 
@@ -2572,9 +2572,182 @@ namespace MidiMessage {
         if ( unpackSysExRtMmcResponseMessage( bytes, length, &msg->Channel, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length) ){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
-            msg->Data.SysEx.Id = SysExIdRealTimeByte;
+            msg->Data.SysEx.Id = SysExIdRealTime;
             msg->Data.SysEx.SubId1 = SysExRtMidiMachineControlResponse;
             msg->Data.SysEx.SubId2 = 0; // see data (mmc responses can be a stream of commands and need not only be one)
+            return true;
+        }
+
+        return false;
+    }
+
+///////////// SysEx: Mobile Phone Control             ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    inline uint8_t packSysExRtMobilePhoneControl(uint8_t *bytes, uint8_t phoneId, SysExRtMobileData_t *mobile, uint8_t * data, uint8_t dataLen){
+        ASSERT( bytes != NULL);
+        ASSERT(phoneId <= MaxU7);
+        ASSERT(mobile !=NULL);
+        ASSERT( isSysExRtMobileDeviceClass(mobile->DeviceClass.Id) );
+        ASSERT( isSysExRtMobileCmdId(mobile->Command.Id) );
+        ASSERT( mobile->Command.Id != SysExRtMobileCmdIdFollowMidiChannels || (dataLen % 3 == 0));
+        ASSERT(dataLen==0 || data !=NULL);
+
+        uint8_t length = 6;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdRealTimeByte;
+        bytes[2] = phoneId;
+        bytes[3] = SysExRtMobilePhoneControlMessage;
+        bytes[4] = 0; // SubId2 always 0
+        bytes[5] = mobile->DeviceClass.Id;
+
+        if (mobile->DeviceClass.Id == SysExRtMobileDeviceClassManufacturer){
+            length += packSysExId( &bytes[length], mobile->DeviceClass.ManufacturerId);
+            bytes[length++] = mobile->DeviceClass.SubId;
+        }
+
+        bytes[length++] = mobile->DeviceIndex;
+
+        bytes[length++] = mobile->Command.Id;
+
+        switch(mobile->Command.Id){
+            case SysExRtMobileCmdIdManufacturer:
+                length += packSysExId( &bytes[length], mobile->Command.ManufacturerId);
+
+                for (uint8_t i = 0; i < dataLen; i++){
+                    bytes[length++] = data[i];
+                }
+                break;
+
+            case SysExRtMobileCmdIdOn:
+            case SysExRtMobileCmdIdOff:
+            case SysExRtMobileCmdIdReset:
+                // no data
+                break;
+
+            case SysExRtMobileCmdIdFollowMidiChannels:
+                for (uint8_t i = 0; i < dataLen; i++){
+                    bytes[length++] = data[i];
+                }
+                break;
+
+            case SysExRtMobileCmdIdSetColorRgb:
+                bytes[length++] = mobile->Rgb[0];
+                bytes[length++] = mobile->Rgb[1];
+                bytes[length++] = mobile->Rgb[2];
+                break;
+
+            case SysExRtMobileCmdIdSetLevel:
+                bytes[length++] = mobile->Level;
+                break;
+        }
+
+
+        bytes[length++] = SystemMessageEndOfExclusive;
+
+        return length;
+    }
+
+    inline uint8_t packSysExRtMobilePhoneControlObj(uint8_t *bytes, Message_t * msg){
+        ASSERT( msg != NULL);
+        ASSERT( msg->StatusClass == StatusClassSystemMessage );
+        ASSERT( msg->SystemMessage == SystemMessageSystemExclusive );
+        ASSERT( msg->Data.SysEx.Id == SysExIdRealTime );
+        ASSERT( msg->Data.SysEx.SubId2 == 0);
+
+        return packSysExRtMobilePhoneControl(bytes, msg->Channel, &msg->Data.SysEx.Data.MobilePhoneControl, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length );
+    }
+
+    inline bool unpackSysExRtMobilePhoneControl(uint8_t *bytes, uint8_t length, uint8_t *phoneId, SysExRtMobileData_t *mobile, uint8_t * data, uint8_t *dataLen){
+        ASSERT( bytes!=NULL);
+        ASSERT(phoneId !=NULL);
+        ASSERT(mobile!=NULL);
+        ASSERT(data!=NULL);
+        ASSERT(dataLen!=NULL);
+
+        if (length < 9 || ! isControlByte(bytes[length-1])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtMobilePhoneControlMessage || bytes[4] != 0 || ! isSysExRtMobileCmdId(bytes[5])){
+            return false;
+        }
+
+        uint8_t l = 6;
+
+        *phoneId = bytes[2];
+        mobile->DeviceClass.Id = bytes[5];
+
+        if (mobile->DeviceClass.Id == SysExRtMobileDeviceClassManufacturer){
+            l += unpackSysExId(&bytes[l], &mobile->DeviceClass.ManufacturerId);
+            mobile->DeviceClass.SubId = bytes[length++];
+        }
+
+        mobile->DeviceIndex = bytes[l++];
+
+        mobile->Command.Id = bytes[l++];
+
+        switch(mobile->Command.Id){
+            case SysExRtMobileCmdIdManufacturer:
+                if (length < 10){
+                    return false;
+                }
+                l += unpackSysExId( &bytes[l], &mobile->Command.ManufacturerId);
+
+                *dataLen = length - l - 1;
+
+                for (uint8_t i = 0, I = *dataLen; i < I; i++){
+                    data[i] = bytes[l++];
+                }
+                break;
+
+            case SysExRtMobileCmdIdOn:
+            case SysExRtMobileCmdIdOff:
+            case SysExRtMobileCmdIdReset:
+                if (length != 9){
+                    return false;
+                }
+                break;
+
+            case SysExRtMobileCmdIdFollowMidiChannels:
+                for (uint8_t i = 0, I = length - 9; i < I; i++){
+                     data[i] = bytes[l++];
+                }
+                *dataLen = length - 9;
+                break;
+
+            case SysExRtMobileCmdIdSetColorRgb:
+                if (length != 12){
+                    return false;
+                }
+                mobile->Rgb[0] = bytes[l++];
+                mobile->Rgb[1] = bytes[l++];
+                mobile->Rgb[2] = bytes[l++];
+                break;
+
+            case SysExRtMobileCmdIdSetLevel:
+                if (length != 10){
+                    return false;
+                }
+                mobile->Level = bytes[l++];
+                break;
+        }
+
+        return true;
+    }
+
+    inline bool unpackSysExRtMobilePhoneControlObj(uint8_t *bytes, uint8_t length, Message_t * msg){
+        ASSERT(msg!=NULL);
+        ASSERT(msg->Data.SysEx.ByteData != NULL);
+
+        if (unpackSysExRtMobilePhoneControl(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.MobilePhoneControl, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdRealTime;
+            msg->Data.SysEx.SubId1 = SysExRtMobilePhoneControlMessage;
+            msg->Data.SysEx.SubId2 = 0;
             return true;
         }
 
@@ -2600,9 +2773,9 @@ namespace MidiMessage {
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtMidiShowControl;
 
-        len += copyMscExtensibleCommandField( &bytes[len], msc->CommandFormat.Bytes );
+        len += copyExtensibleValueBytes( &bytes[len], msc->CommandFormat.Bytes, true );
 
-        len += copyMscExtensibleCommandField( &bytes[len], msc->Command.Bytes );
+        len += copyExtensibleValueBytes( &bytes[len], msc->Command.Bytes, true );
 
         switch( msc->Command.Bytes[0] ){
             case SysExRtMscCmdGo:
@@ -2748,14 +2921,14 @@ namespace MidiMessage {
 
         *deviceId = bytes[2];
 
-        pos += copyMscExtensibleCommandField( msc->CommandFormat.Bytes, &bytes[pos] );
+        pos += copyExtensibleValueBytes( msc->CommandFormat.Bytes, &bytes[pos], true );
 
         if ( ! isSysExRtMscCmd(msc->CommandFormat.Bytes[0]) ){
             return false;
         }
 
 //        ASSERT(false);
-        pos += copyMscExtensibleCommandField( msc->Command.Bytes, &bytes[pos] );
+        pos += copyExtensibleValueBytes( msc->Command.Bytes, &bytes[pos], true );
 
 
         switch( msc->Command.Bytes[0] ){

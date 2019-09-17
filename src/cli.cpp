@@ -181,7 +181,7 @@ void printHelp( void ) {
 
     printf("\nMIDI Machine Commands (MMC)\n");
     printf("For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.\n");
-    printf("\n\t sysex rt <device-id (u7) mcc <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]\n");
+    printf("\n\t sysex rt <device-id (u7)> mcc <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]\n");
     printf("\t\t <commandN ..> :\n");
     printf("\t\t (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|command-error-reset|mmc-reset|wait|resume)\n");
     printf("\t\t (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>\n");
@@ -195,12 +195,12 @@ void printHelp( void ) {
     printf("\t\t move ..\n");
     printf("\t\t etc\n");
 
-    printf("\nMobile Phone Control (TODO)\n");
-    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <reset|on|off>\n");
-    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <manufacturer-cmd (x1, x3)> <data (xN)>\n");
-    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> follow-midi-channels [<channel1 (u7)> <low-note1 (u7)> <high-note1  (u7)> [ .. [<channelN (u7)> <low-noteN (u7)> <high-noteN (u7)>] .. ]\n");
-    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-color <red (u7)> <green (u7)> <blue (u7)>\n");
-    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-level\n");
+    printf("\nMobile Phone Control\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> <reset|on|off>\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> <manufacturer-cmd (x1, x3)> <data (xN)>\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> follow-midi-channels [<channel1 (u7)> <low-note1 (u7)> <high-note1  (u7)> [ .. [<channelN (u7)> <low-noteN (u7)> <high-noteN (u7)>] .. ]\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> set-color <red (u7)> <green (u7)> <blue (u7)>\n");
+    printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> set-level\n");
 
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");
@@ -235,7 +235,6 @@ void generator(void){
     uint8_t sysexBuffer[128];
     Message_t msg;
     msg.Data.SysEx.ByteData = sysexBuffer;
-s
 
     // start timer
     if (timedOpt.enabled){

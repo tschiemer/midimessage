@@ -68,7 +68,7 @@ tt = to test
 | Notation Information | | Real Time | TODO |
 | Capability Inquiry (MIDI-CI) | | SysEx Non-Real Time | TODO |
 | Scalable Polyphony MIDI MIP (SP-MIDI MIP)| | SysEx Real Time | TODO |
-| Mobile Phone Control | | SysEx Real Time | TODO |
+| Mobile Phone Control | | SysEx Real Time | tt |
 
 ## Requirements
 
@@ -256,12 +256,12 @@ For MMC the MIDI format acts as container for a command stream of its own, where
 		 move ..
 		 etc
 
-Mobile Phone Control (TODO)
-	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <reset|on|off>
-	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> <manufacturer-cmd (x1, x3)> <data (xN)>
-	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> follow-midi-channels [<channel1 (u7)> <low-note1 (u7)> <high-note1  (u7)> [ .. [<channelN (u7)> <low-noteN (u7)> <high-noteN (u7)>] .. ]
-	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-color <red (u7)> <green (u7)> <blue (u7)>
-	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|manufacturer-id (x1,x3)> <device-index (u7)> set-level
+Mobile Phone Control
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> <reset|on|off>
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> <manufacturer-cmd (x1, x3)> <data (xN)>
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> follow-midi-channels [<channel1 (u7)> <low-note1 (u7)> <high-note1  (u7)> [ .. [<channelN (u7)> <low-noteN (u7)> <high-noteN (u7)>] .. ]
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> set-color <red (u7)> <green (u7)> <blue (u7)>
+	 sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> set-level
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1

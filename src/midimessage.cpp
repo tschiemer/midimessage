@@ -145,8 +145,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExRtMobilePhoneControlMessage:
-                        //TODO
-                        return false;
+                        return packSysExRtMobilePhoneControlObj( bytes, msg );
                 }
 
             } // (msg->Data.SysEx.Id == SysExIdRealTime)
@@ -363,8 +362,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExRtMobilePhoneControlMessage:
-                        //TODO
-                        return false;
+                        return unpackSysExRtMobilePhoneControlObj( bytes, length, msg);
 
                     default:
                         break;

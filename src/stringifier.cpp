@@ -1685,6 +1685,115 @@ namespace MidiMessage {
 
                     return StringifierResultOk;
                 }
+                else if (str_eq(argv[3], "mpc")){
+                    if (argc < 7){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExRtMobilePhoneControlMessage;
+                    msg->Data.SysEx.SubId2 = 0; // always 0 ...
+
+                    uint8_t ai = 5;
+
+                    if (str_eq(argv[4], "vibrator")){
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id = SysExRtMobileDeviceClassVibrator;
+                    }
+                    else if (str_eq(argv[4], "led")){
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id = SysExRtMobileDeviceClassLed;
+                    }
+                    else if (str_eq(argv[4], "display")){
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id = SysExRtMobileDeviceClassDisplay;
+                    }
+                    else if (str_eq(argv[4], "keypad")){
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id = SysExRtMobileDeviceClassKeypad;
+                    }
+                    else if (str_eq(argv[4], "all")){
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id = SysExRtMobileDeviceClassAll;
+                    }
+                    else {
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id = SysExRtMobileDeviceClassManufacturer;
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.ManufacturerId = strtol((char*)argv[4], NULL, 16);
+                        msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.SubId = atoi((char*)argv[5]);
+
+                        assertU7(msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.SubId);
+
+                        ai++;
+                    }
+
+                    msg->Data.SysEx.Data.MobilePhoneControl.DeviceIndex = atoi((char*)argv[ai++]);
+
+                    assertU7(msg->Data.SysEx.Data.MobilePhoneControl.DeviceIndex);
+
+                    if (str_eq(argv[ai],"reset")){
+                        if (argc != ai+1){
+                            return StringifierResultWrongArgCount;
+                        }
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.Id = SysExRtMobileCmdIdReset;
+                    }
+                    else if (str_eq(argv[ai],"on")){
+                        if (argc != ai+1){
+                            return StringifierResultWrongArgCount;
+                        }
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.Id = SysExRtMobileCmdIdOn;
+                    }
+                    else if (str_eq(argv[ai],"off")){
+                        if (argc != ai+1){
+                            return StringifierResultWrongArgCount;
+                        }
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.Id = SysExRtMobileCmdIdOff;
+                    }
+                    else if (str_eq(argv[ai],"follow-midi-channels")){
+                        if ((argc - ai - 1 )  % 3 != 0){
+                            return StringifierResultWrongArgCount;
+                        }
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.Id = SysExRtMobileCmdIdFollowMidiChannels;
+                        msg->Data.SysEx.Length = 0;
+                        ai++;
+                        for(uint8_t i = 0; ai < argc; i++){
+                            msg->Data.SysEx.ByteData[i] = atoi((char*)argv[ai++]);
+                            msg->Data.SysEx.Length++;
+
+                            assertU7(msg->Data.SysEx.ByteData[i]);
+                        }
+                    }
+                    else if (str_eq(argv[ai],"set-color")){
+                        if (argc != ai+4){
+                            return StringifierResultWrongArgCount;
+                        }
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.Id = SysExRtMobileCmdIdSetColorRgb;
+                        msg->Data.SysEx.Data.MobilePhoneControl.Rgb[0] = atoi((char*)argv[++ai]);
+                        msg->Data.SysEx.Data.MobilePhoneControl.Rgb[1] = atoi((char*)argv[++ai]);
+                        msg->Data.SysEx.Data.MobilePhoneControl.Rgb[2] = atoi((char*)argv[++ai]);
+
+                        assertU7(msg->Data.SysEx.Data.MobilePhoneControl.Rgb[0]);
+                        assertU7(msg->Data.SysEx.Data.MobilePhoneControl.Rgb[1]);
+                        assertU7(msg->Data.SysEx.Data.MobilePhoneControl.Rgb[2]);
+                    }
+                    else if (str_eq(argv[ai],"set-level")){
+                        if (argc != ai+2){
+                            return StringifierResultWrongArgCount;
+                        }
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.Id = SysExRtMobileCmdIdSetLevel;
+                        msg->Data.SysEx.Data.MobilePhoneControl.Level = atoi((char*)argv[++ai]);
+
+                        assertU7(msg->Data.SysEx.Data.MobilePhoneControl.Level);
+                    }
+                    else {
+                        if (argc != ai+2){
+                            return StringifierResultWrongArgCount;
+                        }
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.Id = SysExRtMobileCmdIdManufacturer;
+
+                        msg->Data.SysEx.Data.MobilePhoneControl.Command.ManufacturerId = strtol((char*)argv[ai++], NULL, 16);
+
+                        if (! readHex(msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argv[ai++], 0)){
+                            return StringifierResultInvalidHex;
+                        }
+                    }
+
+                    return StringifierResultOk;
+
+                }
                 else if (str_eq(argv[3],"mcc")) {
                     if (argc < 5) {
                         return StringifierResultWrongArgCount;
@@ -2366,6 +2475,69 @@ namespace MidiMessage {
                         for(uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
                             length += sprintf( (char*)&bytes[length], " %d", msg->Data.SysEx.ByteData[i]);
                         }
+
+                    }
+                    else if (msg->Data.SysEx.SubId1 == SysExRtMobilePhoneControlMessage){
+                        length += sprintf( (char*)&bytes[length], "mpc ");
+
+                        if (msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id == SysExRtMobileDeviceClassVibrator){
+                            length += sprintf( (char*)&bytes[length], "vibrator ");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id == SysExRtMobileDeviceClassDisplay){
+                            length += sprintf( (char*)&bytes[length], "display ");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id == SysExRtMobileDeviceClassKeypad){
+                            length += sprintf( (char*)&bytes[length], "keypad ");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id == SysExRtMobileDeviceClassLed){
+                            length += sprintf( (char*)&bytes[length], "led ");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id == SysExRtMobileDeviceClassAll){
+                            length += sprintf( (char*)&bytes[length], "all ");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.Id == SysExRtMobileDeviceClassManufacturer){
+                            length += sprintf( (char*)&bytes[length], "%06X %d ", msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.ManufacturerId, msg->Data.SysEx.Data.MobilePhoneControl.DeviceClass.SubId);
+                        }
+                        else {
+                            return 0;
+                        }
+
+                        length += sprintf( (char*)&bytes[length], "%d ", msg->Data.SysEx.Data.MobilePhoneControl.DeviceIndex);
+
+                        if (msg->Data.SysEx.Data.MobilePhoneControl.Command.Id == SysExRtMobileCmdIdOn){
+                            length += sprintf( (char*)&bytes[length], "on");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.Command.Id == SysExRtMobileCmdIdOff){
+                            length += sprintf( (char*)&bytes[length], "off");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.Command.Id == SysExRtMobileCmdIdReset){
+                            length += sprintf( (char*)&bytes[length], "reset");
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.Command.Id == SysExRtMobileCmdIdSetLevel){
+                            length += sprintf( (char*)&bytes[length], "set-level %d", msg->Data.SysEx.Data.MobilePhoneControl.Level);
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.Command.Id == SysExRtMobileCmdIdSetColorRgb){
+                            length += sprintf( (char*)&bytes[length], "set-color %d %d %d", msg->Data.SysEx.Data.MobilePhoneControl.Rgb[0], msg->Data.SysEx.Data.MobilePhoneControl.Rgb[1], msg->Data.SysEx.Data.MobilePhoneControl.Rgb[2]);
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.Command.Id == SysExRtMobileCmdIdFollowMidiChannels){
+                            length += sprintf( (char*)&bytes[length], "follow-midi-channels");
+                            for (uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
+                                length += sprintf( (char*)&bytes[length], " %d", msg->Data.SysEx.ByteData[i]);
+                            }
+                        }
+                        else if (msg->Data.SysEx.Data.MobilePhoneControl.Command.Id == SysExRtMobileCmdIdManufacturer){
+                            length += sprintf( (char*)&bytes[length], "%06X", msg->Data.SysEx.Data.MobilePhoneControl.Command.ManufacturerId);
+
+                            if (msg->Data.SysEx.Length > 0){
+                                length += sprintf( (char*)&bytes[length], " ");
+
+                                length += sprintfHex( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
+                            }
+                        }
+                        else {
+                            return 0;
+                        }
+
 
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiMachineControlCommand){
