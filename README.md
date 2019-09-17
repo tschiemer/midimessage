@@ -287,3 +287,11 @@ TODO github page
 ## License MIT
 
 Also see file `LICENSE`
+
+
+## Applications
+
+Here you will find applications that make use of this library. If you're using the library you can also drop me a line (which I appreciate either way).
+
+- [PureData (PD) External](https://github.com/tschiemer/midimessage-pd-external)
+- [Max/MSP External](https://github.com/tschiemer/midimessage-max-external)
