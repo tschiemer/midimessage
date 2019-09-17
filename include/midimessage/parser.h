@@ -42,6 +42,7 @@ namespace MidiMessage {
 
     inline void parser_reset(Parser_t * parser) {
         parser->Length = 0;
+        parser->Buffer[0] = 0;
     }
 
     /**
