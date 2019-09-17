@@ -3158,7 +3158,7 @@ namespace MidiMessage {
 
 
 
-    inline uint8_t packSysExNonRtSdsDataPacket(uint8_t *bytes, uint8_t deviceId, uint8_t runningPacketCount, uint8_t * data, uint8_t dataLen ){
+    inline uint8_t packSysExNonRtSdsDataPacket(uint8_t *bytes, uint8_t deviceId, uint8_t runningPacketCount, uint8_t * data, uint8_t dataLen, uint8_t checksumData ){
 
         ASSERT( bytes!= NULL );
         ASSERT( deviceId <= MaxU7 );
@@ -3179,8 +3179,12 @@ namespace MidiMessage {
             bytes[length] = data[i];
         }
 
-        bytes[length] = xorChecksum( bytes, length );
-        length++;
+        if (checksumData == SysExNonRtSdsDataPacketComputeChecksum){
+            bytes[length] = xorChecksum( bytes, length );
+            length++;
+        } else {
+            bytes[length++] = checksumData;
+        }
 
         bytes[length++] = SystemMessageEndOfExclusive;
 
@@ -3190,7 +3194,7 @@ namespace MidiMessage {
     inline uint8_t packSysExNonRtSdsDataPacketObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsDataPacket_t * data){
         ASSERT( data != NULL );
 
-        return packSysExNonRtSdsDataPacket(bytes, deviceId, data->RunningPacketCount, data->Data, data->Length );
+        return packSysExNonRtSdsDataPacket(bytes, deviceId, data->RunningPacketCount, data->Data, data->Length, data->ChecksumData );
     }
 
     inline uint8_t packSysExNonRtSdsDataPacketObj(uint8_t * bytes, Message_t *msg){

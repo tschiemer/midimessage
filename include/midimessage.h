@@ -618,6 +618,7 @@ namespace MidiMessage {
         return 1;
     }
 
+    const uint8_t SysExNonRtSdsDataPacketComputeChecksum = 0xFF;
 
     typedef enum {
         SysExNonRtSampleDumpHeader       = 0x01,

@@ -137,16 +137,16 @@ void printHelp( void ) {
     printf("\n(General) System Exclusives:\n");
     printf("\t sysex experimental <data (xN)>\n");
     printf("\t sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>\n");
-    printf("\t sysex nonrt <device-id* (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>\n");
-    printf("\t sysex nonrt <device-id (u7)> info request\n");
+    printf("\t sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>\n");
+    printf("\t sysex nonrt <device-id* (u7)> info request\n");
     printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
     printf("\t sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)\n");
-    printf("\t sysex rt <device-id (u7)> dc** (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>\n");
-    printf("\t sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]\n");
     printf("\t sysex nonrt <device-id (u7)> cds*** <channel (u4)> (channel-pressure|key-pressure)  <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
     printf("\t sysex nonrt <device-id (u7)> cds <channel (u4)> cc <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
     printf("\t sysex nonrt <device-id (u7)> keys**** <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]\n");
-    printf("* <device-id> := 127 is all devices\n");
+    printf("\t sysex rt <device-id (u7)> dc** (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>\n");
+    printf("\t sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]\n");
+    printf("* <device-id> := 127 is all devices (broadcast)\n");
     printf("** dc := device control\n");
     printf("*** cds := controller destination setting\n");
     printf("**** keys := keybased instrument control\n");
@@ -201,6 +201,21 @@ void printHelp( void ) {
     printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> follow-midi-channels [<channel1 (u7)> <low-note1 (u7)> <high-note1  (u7)> [ .. [<channelN (u7)> <low-noteN (u7)> <high-noteN (u7)>] .. ]\n");
     printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> set-color <red (u7)> <green (u7)> <blue (u7)>\n");
     printf("\t sysex rt <phone-id (u7)> mpc (vibrator|led|display|keypad|all|<manufacturer-id (x1,x3)> <cmd-id (u7)>> <device-index (u7)> set-level\n");
+
+    printf("\nSample Dump Standard (SDS) TODO\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-header <sample-number (u14)> <sample-fmt (u7)> <sample-period (u21)> <sample-length (u21)> <loop-start (u21)> <loop-end (u21)> (forward|forward-backward|no-loop)\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-request <sample-number (u14)>\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-data <packet-index (u7)> <data (xN)> [<checksum-data (x1)> [<checksum-computed (x1)>]]*\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-ext loop-point-tx <sample-number (u14)> <loop-number (u14)> (forward|forward-backward|no-loop) <loop-start (u21)> <loop-end (u21)>\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-ext loop-point-request <sample-number (u14)> <loop-number (u14)>\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-ext ext-header <sample-number (u14)> <sample-fmt (u7)> <sample-rate-integer (u28)> <sample-rate-fraction (u28)> <sample-length (u35)> <loop-start (u35)> <loop-end (u35)> <loop-type**>\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-ext ext-loop-point-tx <sample-number (u14)> <loop-number (u14)> <loop-type**> <loop-start (u35)> <loop-end (u35)> \n");
+    printf("\t sysex nonrt <device-id (u7)> sds-ext ext-loop-point-request <sample-number (u14)> <loop-number (u14)>\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-ext name-tx <sample-number (u14)> -*** <sample-name (strN) ...>\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-ext name-request <sample-number (u14)>\n");
+    printf("* Both checksums are given when parsing a MIDI stream (to allow verification). During generation, if <checksum-data> (see specification) is not given it is computed (recommended) and the <checksum-computed> is always ignored if given.\n");
+    printf("** <loop-type> := uni-forward|bi-forward|uni-forward-release|bi-forward-release|uni-backward|bi-backward|uni-backward-release|bi-backward-release|backward-once|forward-once\n");
+    printf("*** In principle there is a language tag to support multiple localizations, but apart from the default (English) none are documented and thus likely not used. Thus momentarily only the default is supported which is chosen by specifying '-' as argument.\n");
 
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");

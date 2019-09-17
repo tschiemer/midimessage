@@ -2678,6 +2678,94 @@ namespace MidiMessage {
                             );
                         }
                     }
+                    else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpHeader){
+                        length += sprintf( (char*)&bytes[length], "sds-header %d %d %d %d %d %d ",
+                                           msg->Data.SysEx.Data.SampleDump.Header.SampleNumber,
+                                           msg->Data.SysEx.Data.SampleDump.Header.SampleFormat,
+                                           msg->Data.SysEx.Data.SampleDump.Header.SamplePeriod,
+                                           msg->Data.SysEx.Data.SampleDump.Header.SampleLength,
+                                           msg->Data.SysEx.Data.SampleDump.Header.LoopStartPoint,
+                                           msg->Data.SysEx.Data.SampleDump.Header.LoopEndPoint
+                        );
+                        if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeForwardOnly){
+                            length += sprintf( (char*)&bytes[length], "forward");
+                        }
+                        else if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeBackwardForward){
+                            length += sprintf( (char*)&bytes[length], "forward-backward");
+                        }
+                        else if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeLoopOff){
+                            length += sprintf( (char*)&bytes[length], "no-loop");
+                        }
+                    }
+                    else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpRequest){
+                        length += sprintf( (char*)&bytes[length], "sds-request %d",
+                                           msg->Data.SysEx.Data.SampleDump.Request.RequestedSample
+                        );
+                    }
+                    else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDataPacket){
+                        length += sprintf( (char*)&bytes[length], "sds-data %d ",
+                                           msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount
+                        );
+                        length += sprintfHex( &bytes[length], msg->Data.SysEx.Data.SampleDump.DataPacket.Data, msg->Data.SysEx.Data.SampleDump.DataPacket.Length);
+                        length += sprintf( (char*)&bytes[length], " %02X %02X", msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData, msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumComputed);
+                    }
+                    else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension){
+
+                        length += sprintf( (char*)&bytes[length], "sds-ext ");
+
+                        if (msg->Data.SysEx.SubId2 == SysExNonRtSdsLoopPointsTransmission){
+//                            length += sprintf( (char*)&bytes[length], "loop-point-tx %d %d",
+//                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission
+//                            );
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsLoopPointsRequest){
+//                            length += sprintf( (char*)&bytes[length], "loop-point-request ");
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameTransmission){
+                            length += sprintf( (char*)&bytes[length], "name-tx %d - %s",
+                                               msg->Data.SysEx.Data.SampleDumpExt.NameTransmission.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDumpExt.NameTransmission.Name
+                            );
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameRequest){
+                            length += sprintf( (char*)&bytes[length], "name-request %u", msg->Data.SysEx.Data.SampleDumpExt.NameRequest.SampleNumber);
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedDumpHeader){
+                            length += sprintf( (char*)&bytes[length], "ext-header %u %u %u %u %llu %llu %llu",
+                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleFormat,
+                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleRateIntegerPortion,
+                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleRateFractionalPortion,
+                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleLength,
+                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SustainLoopStart,
+                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SustainLoopEnd
+                            );
+                            //TODO loop-type
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsTransmission){
+                            length += sprintf( (char*)&bytes[length], "ext-loop-point-tx %u %u",
+                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.LoopNumber
+                            );
+                            //TODO loop-type
+                            length += sprintf( (char*)&bytes[length], " %llu %llu",
+                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.LoopStartAddress,
+                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.LoopEndAddress
+                            );
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsRequest){
+                            length += sprintf( (char*)&bytes[length], "ext-loop-point-request %u %u",
+                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.LoopNumber
+                            );
+                        }
+                        else {
+                            return 0;
+                        }
+                    }
+                    else {
+                        return 0;
+                    }
 
                 }
             }
