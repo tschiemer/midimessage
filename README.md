@@ -60,7 +60,7 @@ tt = to test
 | General MIDI (GM) | System on/off | SysEx Non-Real Time | tt |
 | General Information | Identify request/reply | SysEx Non-Real Time | tt |
 | Device Control | Master volume, balance, coarse/fine tuning, global parameters | SysEx Real Time | tt |
-| Controller Destination Settings | | SysEx Real Time | tt |
+| Controller Destination Settings | Channel/Key pressure, control change | SysEx Real Time | tt |
 | Key-based Instrument Control | | SysEx Real Time | tt |
 | Sample Dump | | SysEx Non-Real Time | tt / work in progress |
 | File Dump | | Non-Real Time | TODO |
@@ -68,7 +68,7 @@ tt = to test
 | Notation Information | | Real Time | TODO |
 | Capability Inquiry (MIDI-CI) | | SysEx Non-Real Time | TODO |
 | Scalable Polyphony MIDI MIP (SP-MIDI MIP)| | SysEx Real Time | TODO |
-| Mobile Phone Control | | SysEx Real Time | tt |
+| Mobile Phone Control | on, off, reset, set level, set color, follow MIDI channels, manufacturer specific | SysEx Real Time | tt |
 
 ## Requirements
 
