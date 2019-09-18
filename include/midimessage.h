@@ -1268,8 +1268,8 @@ namespace MidiMessage {
 
     typedef struct {
         uint8_t RunningPacketCount;
-        uint8_t Length;
-        uint8_t * Data;
+//        uint8_t Length;
+//        uint8_t * Data;
         uint8_t ChecksumData; // XOR of complete message to end of payload
         uint8_t ChecksumComputed;
     } SysExNonRtSdsDataPacketData_t;
@@ -1294,9 +1294,9 @@ namespace MidiMessage {
     typedef struct {
         uint16_t SampleNumber;
         uint8_t LanguageTagLength;
-        uint8_t * LanguageTag;
+//        uint8_t * LanguageTag;
         uint8_t NameLength;
-        uint8_t * Name;
+//        uint8_t * Name;
     } SysExNonRtSdsExtNameTransmissionData_t;
 
     // SubId2 04

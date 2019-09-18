@@ -211,7 +211,7 @@ namespace MidiMessage {
         return len;
     }
 
-    static bool readSdsLoopType( uint8_t *loopType, uint8_t * argv, bool extendedSet){
+    static bool readSdsLoopType( uint8_t *loopType, uint8_t * argv){
         if (str_eq(argv, "uni-forward")){
             *loopType = SysExNonRtSdsLoopTypeForward;
             return true;
@@ -219,13 +219,6 @@ namespace MidiMessage {
         if (str_eq(argv, "bi-forward")){
             *loopType = SysExNonRtSdsLoopTypeForwardBackward;
             return true;
-        }
-        if (str_eq(argv, "forward-once")){
-            *loopType = SysExNonRtSdsLoopTypeForwardOneShot;
-            return true;
-        }
-        if (!extendedSet){
-            return false;
         }
         if (str_eq(argv, "uni-forward-release")){
             *loopType = SysExNonRtSdsLoopTypeForwardWithRelease;
@@ -255,6 +248,10 @@ namespace MidiMessage {
 
         if (str_eq(argv, "backward-once")){
             *loopType = SysExNonRtSdsLoopTypeBackwardOneShot;
+            return true;
+        }
+        if (str_eq(argv, "forward-once")){
+            *loopType = SysExNonRtSdsLoopTypeForwardOneShot;
             return true;
         }
 
@@ -2147,14 +2144,262 @@ namespace MidiMessage {
                         return StringifierResultOk;
                     }
                 }
+                else if (str_eq(argv[3], "sds-header")) {
+                    if (argc != 11) {
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpHeader;
+
+                    msg->Data.SysEx.Data.SampleDump.Header.SampleNumber = atoi((char*)argv[4]);
+                    msg->Data.SysEx.Data.SampleDump.Header.SampleFormat = atoi((char*)argv[5]);
+                    msg->Data.SysEx.Data.SampleDump.Header.SamplePeriod = atoi((char*)argv[6]);
+                    msg->Data.SysEx.Data.SampleDump.Header.SampleLength = atoi((char*)argv[7]);
+                    msg->Data.SysEx.Data.SampleDump.Header.LoopStartPoint = atoi((char*)argv[8]);
+                    msg->Data.SysEx.Data.SampleDump.Header.LoopEndPoint = atoi((char*)argv[9]);
+
+                    if (!readSdsLoopType( &msg->Data.SysEx.Data.SampleDump.Header.LoopType, argv[10])){
+                        return StringifierResultInvalidValue;
+                    }
+
+                    assertU14(msg->Data.SysEx.Data.SampleDump.Header.SampleNumber);
+                    assertU7(msg->Data.SysEx.Data.SampleDump.Header.SampleFormat);
+                    assertU21(msg->Data.SysEx.Data.SampleDump.Header.SampleLength);
+                    assertU21(msg->Data.SysEx.Data.SampleDump.Header.SampleLength);
+                    assertU21(msg->Data.SysEx.Data.SampleDump.Header.LoopStartPoint);
+                    assertU21(msg->Data.SysEx.Data.SampleDump.Header.LoopEndPoint);
+                    assertBool(isSysExNonRtSdsLoopType(msg->Data.SysEx.Data.SampleDump.Header.LoopType));
+
+                    return StringifierResultOk;
+                }
+                else if (str_eq(argv[3], "sds-request")) {
+                    if (argc != 5) {
+                        return StringifierResultWrongArgCount;
+                    }
+                    msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpRequest;
+
+                    msg->Data.SysEx.Data.SampleDump.Request.SampleNumber = atoi((char*)argv[4]);
+
+                    assertU14(msg->Data.SysEx.Data.SampleDump.Request.SampleNumber);
+
+                    return StringifierResultOk;
+                }
+                else if (str_eq(argv[3], "sds-data")) {
+                    if (argc < 6 || 8 < argc) {
+                        return StringifierResultWrongArgCount;
+                    }
+                    msg->Data.SysEx.SubId1 = SysExNonRtSampleDataPacket;
+
+                    msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount = atoi((char*)argv[4]);
+
+                    assertU7(msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount);
+
+//                    msg->Data.SysEx.Data.SampleDump.DataPacket.Data = msg->Data.SysEx.ByteData;
+
+                    if ( ! readHex(msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argv[5], 0)){
+                        return StringifierResultInvalidHex;
+                    }
+
+                    if (argc > 6){
+                        if ( ! readHex(&msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData, NULL, argv[6], 1)){
+                            return StringifierResultInvalidHex;
+                        }
+                    } else {
+                        msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData = SysExNonRtSdsDataPacketComputeChecksum;
+                    }
+
+                    return StringifierResultOk;
+                }
+                else if (str_eq(argv[3], "sds-ext")) {
+                    if (argc < 6) {
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpExtension;
+
+                    if (str_eq(argv[4], "loop-point-tx")){
+                        if (argc != 10){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtSdsLoopPointsTransmission;
+
+                        msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.SampleNumber = atoi((char*)argv[5]);
+                        msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopNumber = atoi((char*)argv[6]);
+
+                        if ( ! readSdsLoopType(&msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopType, argv[7])){
+                            return StringifierResultInvalidValue;
+                        }
+
+                        msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopStartAddress = atoll((char*)argv[8]);
+                        msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopEndAddress = atoll((char*)argv[9]);
+
+                        assertU14(msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.SampleNumber);
+                        assertU14(msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopNumber);
+                        assertU21(msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopStartAddress);
+                        assertU21(msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopEndAddress);
+                        assertBool(isSysExNonRtSdsLoopType(msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopType));
+
+                        return StringifierResultOk;
+                    }
+                    else if (str_eq(argv[4], "loop-point-request")){
+                        if (argc != 7){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtSdsLoopPointsRequest;
+
+                        msg->Data.SysEx.Data.SampleDump.LoopPointRequest.SampleNumber = atoi((char*)argv[5]);
+                        msg->Data.SysEx.Data.SampleDump.LoopPointRequest.LoopNumber = atoi((char*)argv[6]);
+
+                        assertU14(msg->Data.SysEx.Data.SampleDump.LoopPointRequest.SampleNumber);
+                        assertU14(msg->Data.SysEx.Data.SampleDump.LoopPointRequest.LoopNumber);
+
+                        return StringifierResultOk;
+                    }
+                    else if (str_eq(argv[4], "ext-header")){
+                        if (argc != 13){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtSdsExtendedDumpHeader;
+
+                        msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleNumber = atoi((char*)argv[5]);
+                        msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleFormat = atoi((char*)argv[6]);
+                        msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateIntegerPortion = atoi((char*)argv[7]);
+                        msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateFractionalPortion = atoi((char*)argv[8]);
+                        msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleLength = atoll((char*)argv[9]);
+                        msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopStart = atoll((char*)argv[10]);
+                        msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopEnd = atoll((char*)argv[11]);
+
+
+                        if (!readSdsLoopType(&msg->Data.SysEx.Data.SampleDump.ExtHeader.LoopType, argv[12])){
+                            return StringifierResultInvalidValue;
+                        }
+                        assertU14(msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleNumber);
+                        assertU7(msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleFormat);
+                        assertU28(msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateIntegerPortion);
+                        assertU28(msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateFractionalPortion);
+                        assertU35(msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleLength);
+                        assertU35(msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopStart);
+                        assertU35(msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopEnd);
+                        assertBool(isSysExNonRtSdsExtendedLoopType(msg->Data.SysEx.Data.SampleDump.ExtHeader.LoopType));
+
+                        return StringifierResultOk;
+                    }
+                    else if (str_eq(argv[4], "ext-loop-point-tx")){
+                        if (argc != 10){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtSdsExtendedLoopPointsTransmission;
+
+                        msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.SampleNumber = atoi((char*)argv[5]);
+                        msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopNumber = atoi((char*)argv[6]);
+
+                        if ( ! readSdsLoopType(&msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopType, argv[7])){
+                            return StringifierResultInvalidValue;
+                        }
+
+                        msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopStartAddress = atoll((char*)argv[8]);
+                        msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopEndAddress = atoll((char*)argv[9]);
+
+                        assertU14(msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.SampleNumber);
+                        assertU14(msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopNumber);
+                        assertU35(msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopStartAddress);
+                        assertU35(msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopEndAddress);
+                        assertBool(isSysExNonRtSdsExtendedLoopType(msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopType));
+
+                        return StringifierResultOk;
+                    }
+                    else if (str_eq(argv[4], "ext-loop-point-request")){
+                        if (argc != 7){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtSdsExtendedLoopPointsRequest;
+
+                        msg->Data.SysEx.Data.SampleDump.ExtLoopPointRequest.SampleNumber = atoi((char*)argv[5]);
+                        msg->Data.SysEx.Data.SampleDump.ExtLoopPointRequest.LoopNumber = atoi((char*)argv[6]);
+
+                        assertU14(msg->Data.SysEx.Data.SampleDump.ExtLoopPointRequest.SampleNumber);
+                        assertU14(msg->Data.SysEx.Data.SampleDump.ExtLoopPointRequest.LoopNumber);
+
+                        return StringifierResultOk;
+                    }
+                    else if (str_eq(argv[4], "name-tx")){
+                        if (argc < 8){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtSdsSampleNameTransmission;
+
+                        msg->Data.SysEx.Data.SampleDump.NameTransmission.SampleNumber = atoi((char*)argv[5]);
+
+                        assertU14(msg->Data.SysEx.Data.SampleDump.NameTransmission.SampleNumber);
+
+                        uint8_t * data = msg->Data.SysEx.ByteData;
+
+                        if (str_eq(argv[6], "-")){
+                            msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength = 0;
+                        } else {
+                            msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength = strlen((char*)argv[6]);
+                            for (uint8_t i = 0; i < msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength; i++){
+                                data[i] = argv[6][i];
+                            }
+                        }
+
+                        data = &data[msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength];
+
+                        uint8_t l = 0;
+                        for(uint8_t ai = 7; ai < argc; ai++){
+                            if (l > 0){
+                                data[l++] = ' ';
+                            }
+                            uint8_t li = strlen((char*)argv[ai]);
+                            for(uint8_t j = 0; j < li; j++){
+                                data[l++] = argv[ai][j];
+                            }
+                        }
+
+                        msg->Data.SysEx.Data.SampleDump.NameTransmission.NameLength = l;
+
+//                        uint8_t s = msg->Data.SysEx.Data.SampleDump.NameTransmission.NameLength + msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength;
+//                        fprintf(stderr, "DataLength = %u\n", s);
+//                        for(uint8_t i = 0; i < s; i++){
+//                            fprintf(stderr, "%02X", msg->Data.SysEx.ByteData[i]);
+//                        }
+//                        fprintf(stderr, "\n");
+
+                        return StringifierResultOk;
+                    }
+                    else if (str_eq(argv[4], "name-request")){
+                        if (argc != 6){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtSdsSampleNameRequest;
+
+                        msg->Data.SysEx.Data.SampleDump.NameRequest.SampleNumber = atoi((char*)argv[5]);
+
+                        assertU14(msg->Data.SysEx.Data.SampleDump.NameRequest.SampleNumber);
+
+                        return StringifierResultOk;
+                    }
+                    else {
+                        return StringifierResultInvalidValue;
+                    }
+                }
                 else {
                     return StringifierResultInvalidValue;
                 }
-            } else {
+            }
+            else {
                 return StringifierResultInvalidValue;
             }
 
-        } else {
+        }
+        else {
             return StringifierResultInvalidValue;
         }
 
@@ -2788,7 +3033,7 @@ namespace MidiMessage {
                         length += sprintf( (char*)&bytes[length], "sds-data %d ",
                                            msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount
                         );
-                        length += sprintfHex( &bytes[length], msg->Data.SysEx.Data.SampleDump.DataPacket.Data, msg->Data.SysEx.Data.SampleDump.DataPacket.Length);
+                        length += sprintfHex( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
                         length += sprintf( (char*)&bytes[length], " %02X %02X", msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData, msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumComputed);
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension){
@@ -2813,16 +3058,32 @@ namespace MidiMessage {
                             );
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameTransmission){
-                            length += sprintf( (char*)&bytes[length], "name-tx %d - %s",
-                                               msg->Data.SysEx.Data.SampleDump.NameTransmission.SampleNumber,
-                                               msg->Data.SysEx.Data.SampleDump.NameTransmission.Name
+                            length += sprintf( (char*)&bytes[length], "name-tx %d ",
+                                               msg->Data.SysEx.Data.SampleDump.NameTransmission.SampleNumber
                             );
+
+                            if (msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength == 0){
+                                length += sprintf( (char*)&bytes[length], "- ");
+                            } else {
+                                for(uint8_t i = 0; i < msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength; i++){
+                                    bytes[length++] = msg->Data.SysEx.ByteData[i];
+                                }
+                                bytes[length++] = ' ';
+                            }
+
+//                            printf("%u %u\n", msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength, msg->Data.SysEx.Data.SampleDump.NameTransmission.NameLength);
+
+                            for(uint8_t i = 0, j = msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength; i < msg->Data.SysEx.Data.SampleDump.NameTransmission.NameLength; i++, j++){
+                                bytes[length++] = msg->Data.SysEx.ByteData[j];
+                            }
+
+                            bytes[length++] = '\0';
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameRequest){
                             length += sprintf( (char*)&bytes[length], "name-request %u", msg->Data.SysEx.Data.SampleDump.NameRequest.SampleNumber);
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedDumpHeader){
-                            length += sprintf( (char*)&bytes[length], "ext-header %u %u %u %u %llu %llu %llu",
+                            length += sprintf( (char*)&bytes[length], "ext-header %u %u %u %u %llu %llu %llu ",
                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleNumber,
                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleFormat,
                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateIntegerPortion,
@@ -2834,7 +3095,7 @@ namespace MidiMessage {
                             length += sprintfSdsLoopType(&bytes[length], msg->Data.SysEx.Data.SampleDump.ExtHeader.LoopType);
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsTransmission){
-                            length += sprintf( (char*)&bytes[length], "ext-loop-point-tx %u %u",
+                            length += sprintf( (char*)&bytes[length], "ext-loop-point-tx %u %u ",
                                                msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.SampleNumber,
                                                msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopNumber
                             );

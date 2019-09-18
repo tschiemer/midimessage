@@ -146,7 +146,7 @@ namespace MidiMessage {
             return packNoteOnObj(bytes, msg);
         }
 
-        ASSERT(false);
+
 
         return 0;
     }
@@ -3090,16 +3090,17 @@ namespace MidiMessage {
         return MsgLenSysExNonRtSdsHeader;
     }
 
-    inline uint8_t packSysExNonRtSdsHeaderObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsHeaderData_t *header ){
-        ASSERT( header != NULL );
-
-        return packSysExNonRtSdsHeader(bytes, deviceId, header->SampleNumber, (uint8_t)header->SampleFormat, header->SampleLength, header->SampleLength, header->LoopStartPoint, header->LoopEndPoint, header->LoopType );
-    }
-
     inline uint8_t packSysExNonRtSdsHeaderObj(uint8_t * bytes, Message_t *msg){
         ASSERT( msg != NULL);
 
-        return packSysExNonRtSdsHeaderObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.Header);
+        return packSysExNonRtSdsHeader(bytes, msg->Channel,
+                                       msg->Data.SysEx.Data.SampleDump.Header.SampleNumber,
+                                       msg->Data.SysEx.Data.SampleDump.Header.SampleFormat,
+                                       msg->Data.SysEx.Data.SampleDump.Header.SamplePeriod,
+                                       msg->Data.SysEx.Data.SampleDump.Header.SampleLength,
+                                       msg->Data.SysEx.Data.SampleDump.Header.LoopStartPoint,
+                                       msg->Data.SysEx.Data.SampleDump.Header.LoopEndPoint,
+                                       msg->Data.SysEx.Data.SampleDump.Header.LoopType);
     }
 
     inline bool unpackSysExNonRtSdsHeader(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint8_t *sampleFormat, uint32_t *samplePeriod, uint32_t *sampleLength, uint32_t *loopStartPoint, uint32_t *loopEndPoint, uint8_t *loopType ){
@@ -3136,16 +3137,19 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtSdsHeaderObjSds(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsHeaderData_t *header ){
-        ASSERT( header != NULL );
-
-        return unpackSysExNonRtSdsHeader(bytes, length, deviceId, &header->SampleNumber, &header->SampleFormat, &header->SampleLength, &header->SampleLength, &header->LoopStartPoint, &header->LoopEndPoint, &header->LoopType );
-    }
 
     inline bool unpackSysExNonRtSdsHeaderObj(uint8_t * bytes, uint8_t length, Message_t *msg){
         ASSERT( msg != NULL);
 
-        if (unpackSysExNonRtSdsHeaderObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Header)){
+        if (unpackSysExNonRtSdsHeader(bytes, length, &msg->Channel,
+                                            &msg->Data.SysEx.Data.SampleDump.Header.SampleNumber,
+                                            &msg->Data.SysEx.Data.SampleDump.Header.SampleFormat,
+                                            &msg->Data.SysEx.Data.SampleDump.Header.SamplePeriod,
+                                            &msg->Data.SysEx.Data.SampleDump.Header.SampleLength,
+                                            &msg->Data.SysEx.Data.SampleDump.Header.LoopStartPoint,
+                                            &msg->Data.SysEx.Data.SampleDump.Header.LoopEndPoint,
+                                            &msg->Data.SysEx.Data.SampleDump.Header.LoopType
+        )){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3166,7 +3170,7 @@ namespace MidiMessage {
         ASSERT( dataLen == 0 || data != NULL );
         ASSERT( dataLen <= MaxU7 );
 
-        uint8_t length = 5;
+        uint8_t length = MsgLenSysExNonRtSdsDataPacketMin - 2; // minus checksum + EOX
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTime_Byte;
@@ -3180,7 +3184,7 @@ namespace MidiMessage {
         }
 
         if (checksumData == SysExNonRtSdsDataPacketComputeChecksum){
-            bytes[length] = xorChecksum( bytes, length );
+            bytes[length] = xorChecksum( &bytes[1], length-1 );
             length++;
         } else {
             bytes[length++] = checksumData;
@@ -3191,16 +3195,11 @@ namespace MidiMessage {
         return length; // MsgLenSysExNonRtSdsPacketMin
     }
 
-    inline uint8_t packSysExNonRtSdsDataPacketObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsDataPacketData_t * data){
-        ASSERT( data != NULL );
-
-        return packSysExNonRtSdsDataPacket(bytes, deviceId, data->RunningPacketCount, data->Data, data->Length, data->ChecksumData );
-    }
 
     inline uint8_t packSysExNonRtSdsDataPacketObj(uint8_t * bytes, Message_t *msg){
         ASSERT( msg != NULL);
 
-        return packSysExNonRtSdsDataPacketObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.DataPacket);
+        return packSysExNonRtSdsDataPacket(bytes, msg->Channel, msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length, msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData );
     }
 
 
@@ -3215,7 +3214,7 @@ namespace MidiMessage {
         ASSERT( checksumComputed != NULL );
 
 
-        if (length != MsgLenSysExNonRtSdsHeader || ! isControlByte(bytes[length-1]) ){
+        if (length < MsgLenSysExNonRtSdsDataPacketMin || ! isControlByte(bytes[length-1]) ){
             return false;
         }
         if ( bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDataPacket){
@@ -3227,6 +3226,7 @@ namespace MidiMessage {
         *runningPacketCount = bytes[4];
 
         *dataLen = 0;
+
         if (length > MsgLenSysExNonRtSdsDataPacketMin){
             *dataLen = length - MsgLenSysExNonRtSdsDataPacketMin;
             for(uint8_t p = 5, i = 0; i < *dataLen; i++, p++){
@@ -3236,21 +3236,22 @@ namespace MidiMessage {
 
         *checksumData = bytes[length-2];
 
-        *checksumComputed =  xorChecksum( bytes, length - 2 );
+        *checksumComputed =  xorChecksum( &bytes[1], length - 3 );
 
         return true;
     }
 
-    inline bool unpackSysExNonRtSampleDataPacket(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsDataPacketData_t * data ){
-        ASSERT( data != NULL );
-
-        return unpackSysExNonRtSdsDataPacket(bytes, length, deviceId, &data->RunningPacketCount, data->Data, &data->Length, &data->ChecksumData, &data->ChecksumComputed );
-    }
+//    inline bool unpackSysExNonRtSampleDataPacket(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsDataPacketData_t * data ){
+//        ASSERT( data != NULL );
+//
+//        return unpackSysExNonRtSdsDataPacket(bytes, length, deviceId, &data->RunningPacketCount, data->Data, &data->Length, &data->ChecksumData, &data->ChecksumComputed );
+//    }
 
     inline bool unpackSysExNonRtSdsDataPacketObj(uint8_t * bytes, uint8_t length, Message_t *msg){
         ASSERT( msg != NULL);
 
-        if (unpackSysExNonRtSampleDataPacket(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.DataPacket)){
+
+        if (unpackSysExNonRtSdsDataPacket(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, &msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData, &msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumComputed )){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3354,24 +3355,28 @@ namespace MidiMessage {
 
         bytes[33] = SystemMessageEndOfExclusive;
 
-        return MsgLenSysExNonRtSdsHeader;
-    }
-
-    inline uint8_t packSysExNonRtSdsExtHeaderObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsExtHeaderData_t *header){
-        ASSERT(header!=NULL);
-
-        return packSysExNonRtSdsExtHeader(bytes, deviceId, header->SampleNumber, header->SampleFormat, header->SampleRateIntegerPortion, header->SampleRateFractionalPortion, header->SampleLength, header->SustainLoopStart, header->SustainLoopEnd, header->LoopType, header->NumberofChannels);
+        return MsgLenSysExNonRtSdsExtHeader;
     }
 
     inline uint8_t packSysExNonRtSdsExtHeaderObj(uint8_t *bytes, Message_t * msg){
         ASSERT( msg != NULL );
         ASSERT(msg->StatusClass == StatusClassSystemMessage);
         ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
-        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime_Byte);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedDumpHeader);
 
-        return packSysExNonRtSdsExtHeaderObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.ExtHeader);
+        return packSysExNonRtSdsExtHeader(bytes, msg->Channel,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleNumber,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleFormat,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateIntegerPortion,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateFractionalPortion,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleLength,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopStart,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopEnd,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.LoopType,
+                                                msg->Data.SysEx.Data.SampleDump.ExtHeader.NumberofChannels
+        );
     }
 
     inline bool unpackSysExNonRtSdsExtHeader(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint8_t *sampleFormat, uint32_t *sampleRateIntegerPortion, uint32_t *sampleRateFractionalPortion, uint64_t *sampleLength, uint64_t *sustainLoopStart, uint64_t *sustainLoopEnd, uint8_t *loopType, uint8_t *numberofChannels){
@@ -3387,9 +3392,10 @@ namespace MidiMessage {
         ASSERT( loopType != NULL);
         ASSERT( numberofChannels != NULL);
 
-        if (length != MsgLenSysExNonRtSdsHeader || ! isControlByte(bytes[length-1])){
+        if (length != MsgLenSysExNonRtSdsExtHeader || ! isControlByte(bytes[length-1])){
             return false;
         }
+
         if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsExtendedDumpHeader){
             return false;
         }
@@ -3411,21 +3417,25 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtSdsExtHeaderObjSds(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsExtHeaderData_t *header){
-        ASSERT(header!=NULL);
-
-        return unpackSysExNonRtSdsExtHeader(bytes, length, deviceId, &header->SampleNumber, &header->SampleFormat, &header->SampleRateIntegerPortion, &header->SampleRateFractionalPortion, &header->SampleLength, &header->SustainLoopStart, &header->SustainLoopEnd, &header->LoopType, &header->NumberofChannels);
-    }
-
     inline bool unpackSysExNonRtSdsExtHeaderObj(uint8_t *bytes, uint8_t length, Message_t * msg){
         ASSERT( msg != NULL );
 
-        if (unpackSysExNonRtSdsExtHeaderObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.ExtHeader)){
+        if (unpackSysExNonRtSdsExtHeader(bytes, length, &msg->Channel,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleNumber,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleFormat,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateIntegerPortion,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateFractionalPortion,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleLength,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopStart,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopEnd,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.LoopType,
+                                               &msg->Data.SysEx.Data.SampleDump.ExtHeader.NumberofChannels
+        )){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
             msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpExtension;
-            msg->Data.SysEx.SubId1 = SysExNonRtSdsExtendedDumpHeader;
+            msg->Data.SysEx.SubId2 = SysExNonRtSdsExtendedDumpHeader;
             return true;
         }
 
@@ -3460,14 +3470,16 @@ namespace MidiMessage {
         return MsgLenSysExNonRtSdsLoopPointTransmission;
     }
 
-    inline uint8_t packSysExNonRtSdsLoopPointTransmissionObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsLoopPointTransmissionData_t * data ){
-        ASSERT(data != NULL);
-        return packSysExNonRtSdsLoopPointTransmission(bytes, deviceId, data->SampleNumber, data->LoopNumber, data->LoopType, data->LoopStartAddress, data->LoopEndAddress);
-    }
 
     inline uint8_t packSysExNonRtSdsLoopPointTransmissionObj(uint8_t *bytes, Message_t * msg){
         ASSERT(msg != NULL);
-        return packSysExNonRtSdsLoopPointTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.LoopPointTransmission);
+        return packSysExNonRtSdsLoopPointTransmission(bytes, msg->Channel,
+                                                      msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.SampleNumber,
+                                                      msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopNumber,
+                                                      msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopType,
+                                                      msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopStartAddress,
+                                                      msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopEndAddress
+        );
     }
 
     inline bool unpackSysExNonRtSdsLoopPointTransmission(uint8_t * bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint16_t *loopNumber, uint8_t *loopType, uint32_t *loopStartAddress, uint32_t *loopEndAddress){
@@ -3499,16 +3511,16 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtSdsLoopPointTransmissionObjSds(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsLoopPointTransmissionData_t * data ){
-        ASSERT(data != NULL);
-
-        return unpackSysExNonRtSdsLoopPointTransmission(bytes, length, deviceId, &data->SampleNumber, &data->LoopNumber, &data->LoopType, &data->LoopStartAddress, &data->LoopEndAddress);
-    }
-
     inline bool unpackSysExNonRtSdsLoopPointTransmissionObj(uint8_t *bytes, uint8_t length, Message_t * msg){
         ASSERT(msg != NULL);
 
-        if (unpackSysExNonRtSdsLoopPointTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.LoopPointTransmission)){
+        if (unpackSysExNonRtSdsLoopPointTransmission(bytes, length, &msg->Channel,
+                                                     &msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.SampleNumber,
+                                                     &msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopNumber,
+                                                     &msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopType,
+                                                     &msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopStartAddress,
+                                                     &msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopEndAddress
+        )){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3616,11 +3628,6 @@ namespace MidiMessage {
         return MsgLenSysExNonRtSdsExtLoopPointTransmission;
     }
 
-    inline uint8_t packSysExNonRtSdsExtLoopPointTransmissionObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsExtLoopPointTransmissionData_t * data){
-        ASSERT(data!=NULL);
-
-        return packSysExNonRtSdsExtLoopPointTransmission(bytes, deviceId, data->SampleNumber, data->LoopNumber, data->LoopType, data->LoopStartAddress, data->LoopEndAddress);
-    }
 
     inline uint8_t packSysExNonRtSdsExtLoopPointTransmissionObj(uint8_t *bytes, Message_t *msg){
         ASSERT( msg != NULL);
@@ -3630,7 +3637,13 @@ namespace MidiMessage {
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsTransmission);
 
-        return packSysExNonRtSdsExtLoopPointTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission);
+        return packSysExNonRtSdsExtLoopPointTransmission(bytes, msg->Channel,
+                                                         msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.SampleNumber,
+                                                         msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopNumber,
+                                                         msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopType,
+                                                         msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopStartAddress,
+                                                         msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopEndAddress
+        );
     }
 
 
@@ -3656,22 +3669,24 @@ namespace MidiMessage {
 
         *loopType = bytes[9];
 
-        *loopStartAddress = unpackU35( &bytes[14]);
-        *loopEndAddress = unpackU35( &bytes[19]);
+        *loopStartAddress = unpackU35( &bytes[10]);
+//        assert(false);
+        *loopEndAddress = unpackU35( &bytes[15]);
 
         return true;
     }
 
-    inline bool unpackSysExNonRtSdsExtLoopPointTransmissionObjSds(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsExtLoopPointTransmissionData_t * data){
-        ASSERT(data!=NULL);
-
-        return unpackSysExNonRtSdsExtLoopPointTransmission(bytes, length, deviceId, &data->SampleNumber, &data->LoopNumber, &data->LoopType, &data->LoopStartAddress, &data->LoopEndAddress);
-    }
 
     inline bool unpackSysExNonRtSdsExtLoopPointTransmissionObj(uint8_t *bytes, uint8_t length,  Message_t *msg){
         ASSERT( msg != NULL);
 
-        if (unpackSysExNonRtSdsExtLoopPointTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission)){
+        if (unpackSysExNonRtSdsExtLoopPointTransmission(bytes, length, &msg->Channel,
+                                                           &msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.SampleNumber,
+                                                           &msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopNumber,
+                                                           &msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopType,
+                                                           &msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopStartAddress,
+                                                           &msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopEndAddress
+        )){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3724,7 +3739,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtSdsExtLoopPointRequest || ! isControlByte(bytes[length-1]) ){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsLoopPointsRequest){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsExtendedLoopPointsRequest){
             return false;
         }
 
@@ -3751,16 +3766,15 @@ namespace MidiMessage {
         return false;
     }
 
-    inline uint8_t packSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t languageTagLength, uint8_t * languageTag, uint8_t nameLength, uint8_t *name){
+    inline uint8_t packSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t languageTagLength, uint8_t nameLength, uint8_t * data){
         ASSERT(bytes!=NULL);
         ASSERT(deviceId<=MaxU7);
         ASSERT(sampleNumber <= MaxU14);
         ASSERT(languageTagLength <= MaxU7);
-        ASSERT( languageTagLength == 0 || languageTag != NULL);
         ASSERT(nameLength <= MaxU7);
-        ASSERT(nameLength == 0 || name != NULL);
+        ASSERT(data !=NULL);
 
-        uint8_t length = 7;
+        uint8_t length = 8;
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTime_Byte;
@@ -3770,16 +3784,16 @@ namespace MidiMessage {
 
         packU14( &bytes[5], sampleNumber );
 
-        bytes[6] = languageTagLength;
+        bytes[7] = languageTagLength;
 
         for(uint8_t i = 0; i < languageTagLength; i++){
-            bytes[length++] = languageTag[i];
+            bytes[length++] = data[i];
         }
 
         bytes[length++] = nameLength;
 
-        for(uint8_t i = 0; i < nameLength; i++){
-            bytes[length++] = name[i];
+        for(uint8_t i = 0, j=languageTagLength; i < nameLength; i++, j++){
+            bytes[length++] = data[j];
         }
 
         bytes[length++] = SystemMessageEndOfExclusive;
@@ -3787,11 +3801,6 @@ namespace MidiMessage {
         return length;
     }
 
-    inline uint8_t packSysExNonRtSdsSampleNameTransmissionObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsExtNameTransmissionData_t * data){
-        ASSERT(data!=NULL);
-
-        return packSysExNonRtSdsSampleNameTransmission(bytes, deviceId, data->SampleNumber, data->LanguageTagLength, data->LanguageTag, data->NameLength, data->Name);
-    }
 
     inline uint8_t packSysExNonRtSdsSampleNameTransmissionObj(uint8_t *bytes, Message_t *msg){
         ASSERT( msg != NULL);
@@ -3801,19 +3810,19 @@ namespace MidiMessage {
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameTransmission);
 
-        return packSysExNonRtSdsSampleNameTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDump.NameTransmission);
+        return packSysExNonRtSdsSampleNameTransmission(bytes, msg->Channel, msg->Data.SysEx.Data.SampleDump.NameTransmission.SampleNumber, msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength, msg->Data.SysEx.Data.SampleDump.NameTransmission.NameLength, msg->Data.SysEx.ByteData);
     }
 
-    inline bool unpackSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint8_t *languageTagLength, uint8_t * languageTag, uint8_t *nameLength, uint8_t *name){
+    inline bool unpackSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint8_t *languageTagLength, uint8_t *nameLength, uint8_t *data){
         ASSERT(bytes!=NULL);
         ASSERT(deviceId!= NULL);
         ASSERT(sampleNumber != NULL);
         ASSERT(languageTagLength != NULL);
-        ASSERT(languageTag != NULL);
+//        ASSERT(languageTag != NULL);
         ASSERT(nameLength != NULL);
-        ASSERT(name != NULL);
+//        ASSERT(name != NULL);
 
-        uint8_t pos = 7;
+        uint8_t pos = 8;
 
         if (length < 8 || ! isControlByte(bytes[length-1])){
             return false;
@@ -3825,31 +3834,30 @@ namespace MidiMessage {
         *deviceId = bytes[2];
         *sampleNumber = unpackU14( &bytes[5]);
 
-        *languageTagLength = bytes[6];
+        *languageTagLength = bytes[7];
+
+        uint8_t d = 0;
 
         for(uint8_t i = 0; i < *languageTagLength; i++){
-            languageTag[i] = bytes[pos++];
+            data[d++] = bytes[pos++];
         }
+//        data[d++] = '\0';
 
         *nameLength = bytes[pos++];
 
         for(uint8_t i = 0; i < *nameLength; i++){
-            name[i] = bytes[pos++];
+            data[d++] = bytes[pos++];
         }
+//        data[d++] = '\0';
 
         return true;
     }
 
-    inline bool unpackSysExNonRtSdsSampleNameTransmissionObjSds(uint8_t *bytes, uint8_t length, uint8_t * deviceId, SysExNonRtSdsExtNameTransmissionData_t * data){
-        ASSERT(data!=NULL);
-
-        return unpackSysExNonRtSdsSampleNameTransmission(bytes, length, deviceId, &data->SampleNumber, &data->LanguageTagLength, data->LanguageTag, &data->NameLength, data->Name);
-    }
 
     inline bool unpackSysExNonRtSdsSampleNameTransmissionObj(uint8_t *bytes,uint8_t length, Message_t *msg){
         ASSERT( msg != NULL);
 
-        if (unpackSysExNonRtSdsSampleNameTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.NameTransmission)){
+        if (unpackSysExNonRtSdsSampleNameTransmission(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.NameTransmission.SampleNumber, &msg->Data.SysEx.Data.SampleDump.NameTransmission.LanguageTagLength, &msg->Data.SysEx.Data.SampleDump.NameTransmission.NameLength, msg->Data.SysEx.ByteData)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3938,19 +3946,19 @@ namespace MidiMessage {
                 return packSysExNonRtSdsLoopPointRequestObj(bytes, msg);
 
             case SysExNonRtSdsExtendedDumpHeader:
-                return packSysExNonRtSdsHeaderObj(bytes, msg);
+                return packSysExNonRtSdsExtHeaderObj(bytes, msg);
 
             case SysExNonRtSdsSampleNameTransmission:
-                return packSysExNonRtSdsExtLoopPointTransmissionObj( bytes, msg);
+                return packSysExNonRtSdsSampleNameTransmissionObj( bytes, msg);
 
             case SysExNonRtSdsSampleNameRequest:
-                return packSysExNonRtSdsExtLoopPointRequestObj(bytes, msg);
+                return packSysExNonRtSdsSampleNameRequestObj(bytes, msg);
 
             case SysExNonRtSdsExtendedLoopPointsTransmission:
-                return packSysExNonRtSdsSampleNameTransmissionObj(bytes, msg);
+                return packSysExNonRtSdsExtLoopPointTransmissionObj(bytes, msg);
 
             case SysExNonRtSdsExtendedLoopPointsRequest:
-                return packSysExNonRtSdsSampleNameRequestObj(bytes, msg);
+                return packSysExNonRtSdsExtLoopPointRequestObj(bytes, msg);
 
         }
 
@@ -3962,7 +3970,7 @@ namespace MidiMessage {
         ASSERT( msg != NULL );
 
 
-        switch(bytes[3]){
+        switch(bytes[4]){
             case SysExNonRtSdsLoopPointsTransmission:
                 return unpackSysExNonRtSdsLoopPointTransmissionObj(bytes, length, msg);
 
@@ -3970,19 +3978,19 @@ namespace MidiMessage {
                 return unpackSysExNonRtSdsLoopPointRequestObj(bytes, length, msg);
 
             case SysExNonRtSdsExtendedDumpHeader:
-                return unpackSysExNonRtSdsHeaderObj(bytes, length, msg);
+                return unpackSysExNonRtSdsExtHeaderObj(bytes, length, msg);
 
             case SysExNonRtSdsSampleNameTransmission:
-                return unpackSysExNonRtSdsExtLoopPointTransmissionObj( bytes, length, msg);
+                return unpackSysExNonRtSdsSampleNameTransmissionObj( bytes, length, msg);
 
             case SysExNonRtSdsSampleNameRequest:
-                return unpackSysExNonRtSdsExtLoopPointRequestObj(bytes, length, msg);
+                return unpackSysExNonRtSdsSampleNameRequestObj(bytes, length, msg);
 
             case SysExNonRtSdsExtendedLoopPointsTransmission:
-                return unpackSysExNonRtSdsSampleNameTransmissionObj(bytes, length, msg);
+                return unpackSysExNonRtSdsExtLoopPointTransmissionObj(bytes, length, msg);
 
             case SysExNonRtSdsExtendedLoopPointsRequest:
-                return unpackSysExNonRtSdsSampleNameRequestObj(bytes, length, msg);
+                return unpackSysExNonRtSdsExtLoopPointRequestObj(bytes, length, msg);
 
         }
 
