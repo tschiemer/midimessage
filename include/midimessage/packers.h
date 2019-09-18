@@ -3997,6 +3997,136 @@ namespace MidiMessage {
         return false;
     }
 
+
+///////////// SysEx: MIDI Tuning Standard                  ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    inline uint8_t packSysExNonRtTuningBulkDumpRequest(uint8_t * bytes, uint8_t deviceId, uint8_t tuningProgram){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId<=MaxU7);
+        ASSERT(tuningProgram<=MaxU7);
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTime_Byte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtMidiTuningStandard;
+        bytes[4] = SysExNonRtMtsBulkDumpRequest;
+        bytes[5] = tuningProgram;
+        bytes[6] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtMtsBulkDumpRequest;
+    }
+
+    inline uint8_t packSysExNonRtTuningBulkDumpRequestObj(uint8_t *bytes, Message_t *msg){
+        ASSERT(msg!=NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtMidiTuningStandard);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtMtsBulkDumpRequest);
+
+        return packSysExNonRtTuningBulkDumpRequestObj(bytes, msg->Channel, msg->Data.SysEx.Data.Tuning.BulkDumpRequest.TuningProgram );
+    }
+
+    inline bool unpackSysExNonRtTuningBulkDumpRequest(uint8_t * bytes, uint8_t length, uint8_t *deviceId, uint8_t *tuningProgram){
+        ASSERT(bytes != NULL);
+        ASSERT(deviceId != NULL);
+        ASSERT(tuningProgram != NULL);
+
+        if (length != MsgLenSysExNonRtMtsBulkDumpRequest || ! isControlByte(bytes[length-1])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtMidiTuningStandard || bytes[4] != SysExNonRtMtsBulkDumpRequest){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *tuningProgram = bytes[5];
+
+        return true;
+    }
+
+    inline bool unpackSysExNonRtTuningBulkDumpRequestObj(uint8_t * bytes, uint8_t length, Message_t * msg){
+        ASSERT(msg != NULL);
+
+        if (packSysExNonRtTuningBulkDumpRequest(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.Tuning.BulkDumpRequest.TuningProgram)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
+            msg->Data.SysEx.SubId1 = SysExNonRtMidiTuningStandard;
+            msg->Data.SysEx.SubId2 = SysExNonRtMtsBulkDumpRequest;
+            return true;
+        }
+
+        return false;
+    }
+
+    inline uint8_t packSysExNonRtTuningObj(uint8_t * bytes, Message_t *msg ){
+        ASSERT(msg!=NULL);
+
+        switch(msg->Data.SysEx.SubId2){
+            case SysExNonRtMtsBulkDumpRequest:
+                return packSysExNonRtTuningBulkDumpRequestObj(bytes, msg);
+
+            case SysExNonRtMtsBulkDumpReply:
+                break;
+
+            case SysExNonRtMtsTuningDumpRequest:
+                break;
+
+            case SysExNonRtMtsKeybasedTuningDump:
+                break;
+
+            case SysExNonRtMtsScaleTuningDump1Byte:
+                break;
+
+            case SysExNonRtMtsSingleNoteTuningChange:
+                break;
+
+            case SysExNonRtMtsScaleTuning1Byte:
+                break;
+
+            case SysExNonRtMtsScaleTuning2Byte:
+                break;
+        }
+
+        return 0;
+    }
+
+
+    inline bool unpackSysExNonRtTuningObj(uint8_t * bytes, uint8_t length, Message_t *msg ){
+
+        switch(bytes[4]){
+            case SysExNonRtMtsBulkDumpRequest:
+                return packSysExNonRtTuningBulkDumpRequestObj(bytes, length, msg);
+
+            case SysExNonRtMtsBulkDumpReply:
+                break;
+
+            case SysExNonRtMtsTuningDumpRequest:
+                break;
+
+            case SysExNonRtMtsKeybasedTuningDump:
+                break;
+
+            case SysExNonRtMtsScaleTuningDump1Byte:
+                break;
+
+            case SysExNonRtMtsSingleNoteTuningChange:
+                break;
+
+            case SysExNonRtMtsScaleTuning1Byte:
+                break;
+
+            case SysExNonRtMtsScaleTuning2Byte:
+                break;
+        }
+
+        return false;
+    }
+
 #ifdef __cplusplus
     } // extern "C"
 } // namespace MidiMessage

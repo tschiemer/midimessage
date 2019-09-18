@@ -177,11 +177,10 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtMidiTuningStandard:
-                        //TODO
-                        return false;
+                        return packSysExNonRtTuningObj( bytes, msg );
 
                     case SysExNonRtGeneralMidi:
-
+                        return packSysExNonRtGeneralMidiObj( bytes, msg );
 
                     case SysExNonRtDownloadableSounds:
                         //TODO
@@ -405,8 +404,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtMidiTuningStandard:
-                        //TODO
-                        return false;
+                        return unpackSysExNonRtTuningObj( bytes, length, msg );
 
                     case SysExNonRtGeneralMidi:
                         return unpackSysExNonRtGeneralMidiObj( bytes, length, msg );

@@ -367,6 +367,7 @@ namespace MidiMessage {
     const uint8_t MsgLenSysExNonRtSdsExtLoopPointRequest        = 10;
     const uint8_t MsgLenSysExNonRtSdsSampleNameRequest          = 8;
 
+    const uint8_t MsgLenSysExNonRtMtsBulkDumpRequest            = 7;
 
     typedef enum {
         StatusClassNoteOff                  = 0x80,
@@ -2619,6 +2620,12 @@ namespace MidiMessage {
                         SysExNonRtSdsExtNameTransmissionData_t NameTransmission;
                         SysExNonRtSdsExtNameRequestData_t NameRequest;
                     } SampleDump;
+
+                    union {
+                        struct {
+                            uint8_t TuningProgram;
+                        } BulkDumpRequest;
+                    } Tuning;
 
                 } Data;
 
