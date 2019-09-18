@@ -441,6 +441,36 @@ namespace MidiMessage {
                 status == SystemMessageReset);
     }
 
+    typedef enum {
+        ChannelModeControllerAllSoundOff            = 120,
+        ChannelModeControllerResetAllControllers    = 121,
+        ChannelModeControllerLocalControl           = 122,
+        ChannelModeControllerAllNotesOff            = 123,
+        ChannelModeControllerOmniModeOff            = 124,
+        ChannelModeControllerOmniModeOn             = 125,
+        ChannelModeControllerMonoModeOn             = 126,
+        ChannelModeControllerPolyModeOn             = 127
+    } ChannelModeController_t;
+
+    inline bool isChannelModeController( uint8_t value ){
+        return (value == ChannelModeControllerAllSoundOff ||
+                value == ChannelModeControllerResetAllControllers ||
+                value == ChannelModeControllerLocalControl ||
+                value == ChannelModeControllerAllNotesOff ||
+                value == ChannelModeControllerOmniModeOff ||
+                value == ChannelModeControllerOmniModeOn ||
+                value == ChannelModeControllerMonoModeOn ||
+                value == ChannelModeControllerPolyModeOn);
+    }
+
+
+///////////// Running Status Helper                  ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+
+
     const uint8_t MidiMessage_RunningStatusNotSet = 0;
 
     inline uint8_t isRunningStatus( uint8_t state ){
@@ -479,28 +509,11 @@ namespace MidiMessage {
         return previous == next && isRunningStatus(next);
     }
 
-    typedef enum {
-        ChannelModeControllerAllSoundOff            = 120,
-        ChannelModeControllerResetAllControllers    = 121,
-        ChannelModeControllerLocalControl           = 122,
-        ChannelModeControllerAllNotesOff            = 123,
-        ChannelModeControllerOmniModeOff            = 124,
-        ChannelModeControllerOmniModeOn             = 125,
-        ChannelModeControllerMonoModeOn             = 126,
-        ChannelModeControllerPolyModeOn             = 127
-    } ChannelModeController_t;
 
-    inline bool isChannelModeController( uint8_t value ){
-        return (value == ChannelModeControllerAllSoundOff ||
-                value == ChannelModeControllerResetAllControllers ||
-                value == ChannelModeControllerLocalControl ||
-                value == ChannelModeControllerAllNotesOff ||
-                value == ChannelModeControllerOmniModeOff ||
-                value == ChannelModeControllerOmniModeOn ||
-                value == ChannelModeControllerMonoModeOn ||
-                value == ChannelModeControllerPolyModeOn);
-    }
-
+///////////// SysEx: Id -> byte[1]                   ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     /**
      * Single byte SysEx Ids (as per MIDI spec)
@@ -566,29 +579,6 @@ namespace MidiMessage {
         return ((uint32_t)byte) << 16;
     }
 
-    /**
-     * Turn a unified id into a single byte id
-     */
-//    inline uint8_t deunifySysExId( uint32_t value ){
-//        return (value >> 16) & 0x7F;
-//    }
-
-
-//    inline bool is1ByteManufacturerId( uint8_t * bytes ){
-//        return bytes[0] == SysExIdManufacturerExtension;
-//    }
-//
-//    inline bool is3ByteManufacturerId( uint8_t * bytes ){
-//        return !is1ByteManufacturerId( bytes );
-//    }
-//    inline bool is1ByteManufacturerId( uint32_t id ){
-//        return ((id >> 16) & DataMask) == SysExIdManufacturerExtension;
-//    }
-//
-//    inline bool is3ByteManufacturerId( uint32_t id ){
-//        return !is1ByteManufacturerId(  id );
-//    }
-
 
     inline uint8_t packSysExId( uint8_t * bytes, uint32_t id ){
         ASSERT( bytes != NULL );
@@ -618,12 +608,60 @@ namespace MidiMessage {
         return 1;
     }
 
-    const uint8_t SysExNonRtSdsDataPacketComputeChecksum = 0xFF;
+
+///////////// SysEx: DeviceId -> byte[2]              ///////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+    /**
+     * Get device Id of a sysex byte stream
+     */
+    inline uint8_t getDeviceId( uint8_t * bytes ){
+        ASSERT( bytes != NULL );
+        ASSERT( bytes[0] == SystemMessageSystemExclusive );
+
+        return bytes[2] & DataMask;
+    }
+
+
+
+///////////// SysEx: Non/Real Time SubId1 -> byte[3] ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExRtMidiTimeCode                  = 0x01, // SubId2 enum SysExRtMtc..
+        SysExRtMidiShowControl               = 0x02, // SubId2 enum SysExRtMsc..
+        SysExRtDeviceControl                 = 0x04, // SubId2 enum SysExRtDc..
+        SysExRtMidiTimeCodeCueing            = 0x05, // SubId2 enum SysExRtMtcCueing..
+        SysExRtMidiMachineControlCommand     = 0x06, // SubId2 enum SysExRtMmcCommand..
+        SysExRtMidiMachineControlResponse    = 0x07, // SubId2 enum SysExRtMmcResponse..
+        SysExRtMidiTuningStandard            = 0x08, // SubId2 enum SysExRtMts..
+        SysExRtControllerDestinationSetting  = 0x09, // SubId2 enum SysExRtCds..
+        SysExRtKeybasedInstrumentControl     = 0x0A, // SubId2 enum SysExRtKeys..
+        SysExRtScalablePolyphonyMidiMip      = 0x0B, // SubId2 enum SysExRtSpMidiMip..
+        SysExRtMobilePhoneControlMessage     = 0x0C  // SubId2 enum SysExRtMobile..
+    } SysExRt_t;
+
+    inline bool isSysExRt( uint8_t value ){
+        return (value == SysExRtMidiTimeCode ||
+                value == SysExRtMidiShowControl ||
+                value == SysExRtDeviceControl ||
+                value == SysExRtMidiTimeCodeCueing ||
+                value == SysExRtMidiMachineControlCommand ||
+                value == SysExRtMidiMachineControlResponse ||
+                value == SysExRtMidiTuningStandard ||
+                value == SysExRtControllerDestinationSetting ||
+                value == SysExRtKeybasedInstrumentControl ||
+                value == SysExRtScalablePolyphonyMidiMip ||
+                value == SysExRtMobilePhoneControlMessage);
+    }
 
     typedef enum {
         SysExNonRtSampleDumpHeader       = 0x01,
-        SysExNonRtSampleDataPacket       = 0x02, // 
-        SysExNonRtSampleDumpRequest      = 0x03, // 
+        SysExNonRtSampleDataPacket       = 0x02, //
+        SysExNonRtSampleDumpRequest      = 0x03, //
         SysExNonRtMidiTimeCode           = 0x04, // SubId2 enum SysExNonRtMtc..
         SysExNonRtSampleDumpExtension    = 0x05, // SubId2 enum SysExNonRtSds..
         SysExNonRtGeneralInformation     = 0x06, // SubId2 enum SysExNonRtGenInfo..
@@ -641,7 +679,7 @@ namespace MidiMessage {
         SysExNonRtNAK                    = 0x7E,
         SysExNonRtACK                    = 0x7F
     } SysExNonRt_t;
-    
+
     inline bool isSysExNonRt( uint8_t value ){
         return (value == SysExNonRtSampleDumpHeader ||
                 value == SysExNonRtSampleDataPacket ||
@@ -663,6 +701,8 @@ namespace MidiMessage {
                 value == SysExNonRtACK);
     }
 
+
+
     inline bool isSysExNonRtHandshake( uint8_t value ){
         return (value == SysExNonRtEndOfFile ||
                 value == SysExNonRtWait ||
@@ -670,6 +710,69 @@ namespace MidiMessage {
                 value == SysExNonRtNAK ||
                 value == SysExNonRtACK);
     }
+
+
+
+/////////////  MIDI Time Code + Cueing (non-/sysex + non-/rt)  //
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        MtcQuarterFrameMessageTypeFrameLS      = 0b000,
+        MtcQuarterFrameMessageTypeFrameMS      = 0b001,
+        MtcQuarterFrameMessageTypeSecondLS     = 0b010,
+        MtcQuarterFrameMessageTypeSecondMS     = 0b011,
+        MtcQuarterFrameMessageTypeMinuteLS     = 0b100,
+        MtcQuarterFrameMessageTypeMinuteMS     = 0b101,
+        MtcQuarterFrameMessageTypeHourLS       = 0b110,
+        MtcQuarterFrameMessageTypeHourMS       = 0b111
+    } MtcQuarterFrameMessageType_t;
+
+    inline bool isMtcQuarterMessageType( uint8_t value ){
+        return (value == MtcQuarterFrameMessageTypeFrameLS ||
+                value == MtcQuarterFrameMessageTypeFrameMS ||
+                value == MtcQuarterFrameMessageTypeSecondLS ||
+                value == MtcQuarterFrameMessageTypeSecondMS ||
+                value == MtcQuarterFrameMessageTypeMinuteLS ||
+                value == MtcQuarterFrameMessageTypeMinuteMS ||
+                value == MtcQuarterFrameMessageTypeHourLS ||
+                value == MtcQuarterFrameMessageTypeHourMS);
+    }
+
+    typedef enum {
+        MtcFrameRate24fps      = 0b00,
+        MtcFrameRate25fps      = 0b01,
+        MtcFrameRate29_97fps   = 0b10, // 30fps Drop-Frame
+        MtcFrameRate30fpsDropFrame = MtcFrameRate29_97fps,
+        MtcFrameRate30fps      = 0b11  // 30fps Non-Drop
+    } MtcFrameRate_t;
+
+    inline bool isMtcFrameRate( uint8_t fps ) {
+        return (fps == MtcFrameRate24fps ||
+                fps == MtcFrameRate25fps ||
+                fps == MtcFrameRate29_97fps ||
+                fps == MtcFrameRate30fps);
+    }
+
+
+    /**
+     * Container for MIDI Time Code Quarter Frames
+     */
+    typedef struct {
+        uint8_t MessageType;
+        uint8_t Nibble;
+    } MtcQuarterFrame_t;
+
+
+    typedef struct {
+        uint8_t Fps;
+        uint8_t Hour;
+        uint8_t Minute;
+        uint8_t Second;
+        uint8_t Frame;
+        uint8_t FractionalFrame;
+    } MidiTimeCode_t;
 
     typedef enum {
         SysExNonRtMtcSpecial                  = 0x00,
@@ -731,6 +834,369 @@ namespace MidiMessage {
                 value == SysExNonRtMtcSpecialSystemStop ||
                 value == SysExNonRtMtcSpecialEventListRequest);
     }
+    typedef enum {
+        SysExRtMtcFullMessage           = 0x01,
+        SysExRtMtcUserBits              = 0x02
+    } SysExRtMtc_t;
+
+    inline bool isSysExRtMtc( uint8_t value ){
+        return (value == SysExRtMtcFullMessage ||
+                value == SysExRtMtcUserBits);
+    }
+
+
+    typedef enum {
+        SysExRtMtcCueingSpecial                   = 0x00, // ??
+        SysExRtMtcCueingPunchInPoint              = 0x01,
+        SysExRtMtcCueingPunchOutPoint             = 0x02,
+        // 3 - 4 reserved
+        SysExRtMtcCueingEventStartPoint           = 0x05,
+        SysExRtMtcCueingEventStopPoint            = 0x06,
+        SysExRtMtcCueingEventStartPointWithInfo   = 0x07,
+        SysExRtMtcCueingEventStopPointWithInfo    = 0x08,
+        // 9 - A reserved
+        SysExRtMtcCueingCuePoint                  = 0x0B,
+        SysExRtMtcCueingCuePointWithInfo          = 0x0C,
+        // D reserved
+        SysExRtMtcCueingEventName                 = 0x0E
+    } SysExRtMtcCueing_t;
+
+    inline bool isSysExRtMtcCueing( uint8_t value ){
+        return (value == SysExRtMtcCueingSpecial ||
+                value == SysExRtMtcCueingPunchInPoint ||
+                value == SysExRtMtcCueingPunchOutPoint ||
+                value == SysExRtMtcCueingEventStartPoint ||
+                value == SysExRtMtcCueingEventStopPoint ||
+                value == SysExRtMtcCueingEventStartPointWithInfo ||
+                value == SysExRtMtcCueingEventStopPointWithInfo ||
+                value == SysExRtMtcCueingCuePoint ||
+                value == SysExRtMtcCueingCuePointWithInfo ||
+                value == SysExRtMtcCueingEventName);
+    }
+
+    inline bool isSysExRtMtcCueingWithAddInfo( uint8_t value ){
+        return (value == SysExRtMtcCueingEventStartPointWithInfo ||
+                value == SysExRtMtcCueingEventStopPointWithInfo ||
+                value == SysExRtMtcCueingCuePointWithInfo ||
+                value == SysExRtMtcCueingEventName);
+    }
+
+
+    typedef enum {
+        SysExRtMtcCueingSpecialSystemStop          = 0x04
+    } SysExRtMtcCueingSpecial_t;
+
+    inline bool isSysExRtMtcCueingSpecial( uint16_t value ){
+        return (value == SysExRtMtcCueingSpecialSystemStop);
+    }
+
+    typedef struct {
+        MidiTimeCode_t MidiTimeCode;
+        uint16_t EventNumber;
+    } MtcCueingData_t;
+
+
+    /**
+     * Extract complete MIDI Time Code from 8 QuarterFrames given in the expected message order.
+     */
+    inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
+        ASSERT( (nibbles[0] & NibbleMask) == nibbles[0] );
+        ASSERT( (nibbles[1] & NibbleMask) == nibbles[1] );
+        ASSERT( (nibbles[2] & NibbleMask) == nibbles[2] );
+        ASSERT( (nibbles[3] & NibbleMask) == nibbles[3] );
+        ASSERT( (nibbles[4] & NibbleMask) == nibbles[4] );
+        ASSERT( (nibbles[5] & NibbleMask) == nibbles[5] );
+        ASSERT( (nibbles[6] & NibbleMask) == nibbles[6] );
+        ASSERT( (nibbles[7] & NibbleMask) == nibbles[7] );
+
+        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
+        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
+        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
+        mtc->Fps = (nibbles[7] >> 1);
+        mtc->Hour = ((nibbles[7] << 4) | (nibbles[6])) & MtcHourMask;
+        mtc->FractionalFrame = 0;
+    }
+
+    /**
+     * Extract Quarter Frame nibble from given MIDI Time Code.
+     */
+    inline uint8_t MidiQuarterFrameNibbleFromTimeCode( MidiTimeCode_t * mtc, MtcQuarterFrameMessageType_t type ) {
+        ASSERT( mtc != NULL );
+        ASSERT( isMtcQuarterMessageType(type) );
+
+        switch(type){
+            case MtcQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
+            case MtcQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
+            case MtcQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
+            case MtcQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
+            case MtcQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
+            case MtcQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
+            case MtcQuarterFrameMessageTypeHourLS:      return mtc->Hour & 0x0F;
+            case MtcQuarterFrameMessageTypeHourMS:      return ((mtc->Fps << 1)| (mtc->Hour >> 4)) & 0b0111;
+            default:
+                break;
+        }
+
+        return (uint8_t) ~0;
+    }
+
+
+
+    inline uint8_t packMidiTimeCode( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        bytes[0] = (mtc->Fps << MtcFpsOffset) | mtc->Hour;
+        bytes[1] = mtc->Minute;
+        bytes[2] = mtc->Second;
+        bytes[3] = mtc->Frame;
+
+        return 4;
+    }
+
+    inline uint8_t unpackMidiTimeCode( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        mtc->Fps = bytes[0] >> MtcFpsOffset;
+        mtc->Hour = bytes[0] & MtcHourMask;
+        mtc->Minute = bytes[1];
+        mtc->Second = bytes[2];
+        mtc->Frame = bytes[3];
+        mtc->FractionalFrame = 0;
+
+        return 4;
+    }
+
+    inline uint8_t packMidiTimeCodeLong( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        bytes[0] = (mtc->Fps << MtcFpsOffset) || mtc->Hour;
+        bytes[1] = mtc->Minute;
+        bytes[2] = mtc->Second;
+        bytes[3] = mtc->Frame;
+        bytes[4] = mtc->FractionalFrame;
+
+        return 5;
+    }
+
+    inline uint8_t unpackMidiTimeCodeLong( uint8_t * bytes, MidiTimeCode_t * mtc ){
+        ASSERT( bytes != NULL );
+        ASSERT( mtc != NULL );
+
+        mtc->Fps = bytes[0] >> MtcFpsOffset;
+        mtc->Hour = bytes[0] & MtcHourMask;
+        mtc->Minute = bytes[1];
+        mtc->Second = bytes[2];
+        mtc->Frame = bytes[3];
+        mtc->FractionalFrame = bytes[4];
+
+        return 5;
+    }
+
+
+
+///////////// SysEx: General Information             ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExNonRtGenInfoIdentityRequest    = 0x01,
+        SysExNonRtGenInfoIdentityReply      = 0x02
+    } SysExNonRtGenInfo_t;
+
+    inline bool isSysExNonRtGeneralInformation( uint8_t value ){
+        return (value == SysExNonRtGenInfoIdentityRequest ||
+                value == SysExNonRtGenInfoIdentityReply);
+    }
+
+    typedef struct {
+        uint32_t ManufacturerId;
+        uint16_t DeviceFamily;
+        uint16_t DeviceFamilyMember;
+        uint8_t SoftwareRevision[4];
+    } SysExNonRtGeneralInformationData_t;
+
+
+///////////// SysEx: MIDI Capability Inquiry (CI)    ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExNonRtMidiCapInqTODO //TODO
+    } SysExNonRtMidiCapInq_t;
+
+    inline bool isSysExNonRtMidiCapInq( uint8_t value ){
+        return (value == SysExNonRtMidiCapInqTODO); //TODO
+    }
+
+
+///////////// SysEx: General MIDI                    ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExNonRtGmSystemOn1     = 0x01,
+        SysExNonRtGmSystemOff     = 0x02,
+        SysExNonRtGmSystemOn2     = 0x03
+    } SysExNonRtGm_t;
+
+    inline bool isSysExNonRtGeneralMidi( uint8_t value ){
+        return (value == SysExNonRtGmSystemOn1 ||
+                value == SysExNonRtGmSystemOff ||
+                value == SysExNonRtGmSystemOn2);
+    }
+
+
+///////////// SysEx: Device Control                  ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExRtDcMasterVolume           = 0x01,
+        SysExRtDcMasterBalance          = 0x02,
+        SysExRtDcMasterFineTuning       = 0x03,
+        SysExRtDcMasterCoarseTuning     = 0x04,
+        SysExRtDcGlobalParameterControl = 0x05
+    } SysExRtDc_t;
+
+    inline bool isSysExRtDeviceControl( uint8_t value ) {
+        return (value == SysExRtDcMasterVolume ||
+                value == SysExRtDcMasterBalance ||
+                value == SysExRtDcMasterFineTuning ||
+                value == SysExRtDcMasterCoarseTuning ||
+                value == SysExRtDcGlobalParameterControl);
+    }
+
+
+    typedef struct {
+        uint8_t SlotPathLength;
+        uint8_t ParameterIdWidth;
+        uint8_t ValueWidth;
+        uint8_t DataLength; // In principle, it is a stream terminated with an EOX
+        uint8_t * Data;
+    } GlobalParameterControl_t;
+
+
+    typedef union {
+        uint16_t Value;
+        GlobalParameterControl_t GlobalParameterControl;
+    } SysExRtDeviceControlData_t;
+
+
+
+    inline uint16_t getIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i ){
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( i < gpc->SlotPathLength );
+        ASSERT( 2*i < gpc->DataLength );
+
+        // msb - lsb
+        return (((uint16_t)gpc->Data[2*i]) << 7) | ((uint16_t)gpc->Data[2*i + 1]);
+    }
+
+    inline void setIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i, uint16_t value ){
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( i < gpc->SlotPathLength );
+        ASSERT( value <= MaxU14 );
+        ASSERT( 2*i < gpc->DataLength );
+
+        // msb - lsb
+        gpc->Data[2*i] = (value >> 7) & DataMask;
+        gpc->Data[2*i + 1] = value & DataMask;
+    }
+
+    inline uint8_t * getIthGpcParameterIdAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) <= gpc->DataLength );
+
+        return &gpc->Data[ 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) ];
+    }
+
+
+    inline uint8_t * getIthGpcParameterValueAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
+        ASSERT( gpc != NULL );
+        ASSERT( gpc->Data != NULL );
+        ASSERT( 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth <= gpc->DataLength );
+
+        return &gpc->Data[ 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth ];
+    }
+
+
+///////////// SysEx: Controller Destination Setting  ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExRtCdsChannelPressure         = 0x01,
+        SysExRtCdsPolyphonicKeyPressure   = 0x02,
+        SysExRtCdsController              = 0x03
+    } SysExRtCds_t;
+
+    inline bool isSysExRtCds( uint8_t value ) {
+        return (value == SysExRtCdsChannelPressure ||
+                value == SysExRtCdsPolyphonicKeyPressure ||
+                value == SysExRtCdsController);
+    }
+
+///////////// SysEx: Keybased Instrument Control     ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExRtKeysBasicMessage = 0x01
+    } SysExRtKeys_t;
+
+    inline bool isSysExRtKeys( uint8_t value ){
+        return (value == SysExRtKeysBasicMessage);
+    }
+
+
+///////////// SysEx: File Dump                       ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExNonRtFileDumpHeader       = 0x01,
+        SysExNonRtFileDumpDataPacket   = 0x02,
+        SysExNonRtFileDumpRequest      = 0x03
+    } SysExNonRtFileDump_t;
+
+    inline bool isSysExNonRtFileDump( uint8_t value ){
+        return (value == SysExNonRtFileDumpHeader ||
+                value == SysExNonRtFileDumpDataPacket ||
+                value == SysExNonRtFileDumpRequest);
+    }
+
+///////////// SysEx: Sample Dump Standard            ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    /**
+     * Library interna: Compute checksum if this value is provided, otherwise use given checksum.
+     */
+    const uint8_t SysExNonRtSdsDataPacketComputeChecksum = 0xFF;
+
+    inline uint8_t xorChecksum( uint8_t * bytes, uint8_t length ){
+        uint8_t chk = bytes[0];
+
+        for( uint8_t i = 1; i < length; i++){
+            chk ^= bytes[i];
+        }
+
+        return chk;
+    }
 
     typedef enum {
         SysExNonRtSdsLoopPointsTransmission    = 0x01,
@@ -753,26 +1219,167 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        SysExNonRtGenInfoIdentityRequest    = 0x01,
-        SysExNonRtGenInfoIdentityReply      = 0x02
-    } SysExNonRtGenInfo_t;
+        SysExNonRtSdsLoopTypeForwardOnly       = 0x00,
+        SysExNonRtSdsLoopTypeForwardBackward   = 0x01,
+        SysExNonRtSdsLoopTypeLoopOff           = 0x7F
+    } SysExNonRtSdsLoopType_t;
 
-    inline bool isSysExNonRtGeneralInformation( uint8_t value ){
-        return (value == SysExNonRtGenInfoIdentityRequest ||
-                value == SysExNonRtGenInfoIdentityReply);
+    inline bool isSysExNonRtSdsLoopType( uint8_t value ){
+        return (value == SysExNonRtSdsLoopTypeForwardOnly ||
+                value == SysExNonRtSdsLoopTypeForwardBackward ||
+                value == SysExNonRtSdsLoopTypeLoopOff);
     }
+
+    typedef struct {
+        uint16_t SampleNumber;
+        uint8_t SampleFormat; // # of significant bits from 8 - 28
+        uint32_t SamplePeriod; // in nsec (3 bytes)
+        uint32_t SampleLength; // in words (3 bytes)
+        uint32_t LoopStartPoint; // Word number (3 bytes)
+        uint32_t LoopEndPoint; // Word number (3 bytes)
+        uint8_t LoopType; //
+    } SysExNonRtSdsHeaderData_t;
+
+    typedef struct {
+        uint16_t SampleNumber;
+    } SysExNonRtSdsRequestData_t;
+
+    typedef struct {
+        uint8_t RunningPacketCount;
+        uint8_t Length;
+        uint8_t * Data;
+        uint8_t ChecksumData; // XOR of complete message to end of payload
+        uint8_t ChecksumComputed;
+    } SysExNonRtSdsDataPacket_t;
+
 
     typedef enum {
-        SysExNonRtFileDumpHeader       = 0x01,
-        SysExNonRtFileDumpDataPacket   = 0x02,
-        SysExNonRtFileDumpRequest      = 0x03
-    } SysExNonRtFileDump_t;
+        SysExNonRtSdsExtLoopTypeForward                    = 0x00,
+        SysExNonRtSdsExtLoopTypeForwardBackward            = 0x01,
+        SysExNonRtSdsExtLoopTypeForwardWithRelease         = 0x02,
+        SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease = 0x03,
+        SysExNonRtSdsExtLoopTypeBackward                   = 0x40,
+        SysExNonRtSdsExtLoopTypeBackwardForward            = 0x41,
+        SysExNonRtSdsExtLoopTypeBackwardWithRelease        = 0x42,
+        SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease = 0x43,
+        SysExNonRtSdsExtLoopTypeBackwardOneShot            = 0x7E,
+        SysExNonRtSdsExtLoopTypeForwardOneShot             = 0x7F
+    } SysExNonRtSdsExtLoopType_t;
 
-    inline bool isSysExNonRtFileDump( uint8_t value ){
-        return (value == SysExNonRtFileDumpHeader ||
-                value == SysExNonRtFileDumpDataPacket ||
-                value == SysExNonRtFileDumpRequest);
+
+    bool inline isSampleDumpExtLoopType( uint8_t value ){
+        return (value == SysExNonRtSdsExtLoopTypeForward ||
+                value == SysExNonRtSdsExtLoopTypeForwardBackward ||
+                value == SysExNonRtSdsExtLoopTypeForwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeBackward ||
+                value == SysExNonRtSdsExtLoopTypeBackwardForward ||
+                value == SysExNonRtSdsExtLoopTypeBackwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease ||
+                value == SysExNonRtSdsExtLoopTypeBackwardOneShot ||
+                value == SysExNonRtSdsExtLoopTypeForwardOneShot);
     }
+
+    // SubId2 1
+    typedef struct {
+        uint16_t SampleNumber;
+        uint16_t LoopNumber;
+        uint8_t LoopType;
+        uint32_t LoopStartAddress;
+        uint32_t LoopEndAddress;
+    } SysExNonRtSdsLoopPointTransmissionData_t;
+
+
+
+    // SubId2 5
+    typedef struct {
+        uint16_t SampleNumber;
+        uint8_t SampleFormat; // # of significant bits from 8 - 28
+        uint32_t SampleRateIntegerPortion; // in Hz
+        uint32_t SampleRateFractionalPortion; // in Hz
+        uint64_t SampleLength; // in words
+        uint64_t SustainLoopStart; // word number
+        uint64_t SustainLoopEnd; // word number
+        uint8_t LoopType;
+        uint8_t NumberofChannels;
+    } SysExNonRtSdsExtHeaderData_t;
+
+    // SubId2 06
+    typedef struct {
+        uint16_t SampleNumber;
+        uint16_t LoopNumber; // 7f7f delete all loops
+        uint8_t LoopType;
+        uint64_t LoopStartAddress;
+        uint64_t LoopEndAddress;
+    } SysExNonRtSdsExtLoopPointTransmissionData_t;
+
+    // SubId2 07
+    typedef struct {
+        uint16_t SampleNumber;
+        uint16_t LoopNumber; // 7F7F = all loops
+    } SysExNonRtSdsExtLoopPointRequestData_t;
+
+    // SubId2 03
+    typedef struct {
+        uint16_t SampleNumber;
+        uint8_t LanguageTagLength;
+        uint8_t * LanguageTag;
+        uint8_t NameLength;
+        uint8_t * Name;
+    } SysExNonRtSdsExtNameTransmissionData_t;
+
+    // SubId2 04
+    typedef struct {
+        uint16_t SampleNumber;
+    } SysExNonRtSdsExtNameRequestData_t;
+
+
+///////////// SysEx: Downloadable Sounds             ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExNonRtDlsTurnDlsOn      = 0x01,
+        SysExNonRtDlsTurnDlsOff     = 0x02,
+        SysExNonRtDlsTurnDlsVoiceAllocOff = 0x03,
+        SysExNonRtDlsTurnDlsVoiceAllocOn  = 0x04
+    } SysExNonRtDls_t;
+
+    inline bool isSysExNonRtDownloadableSounds( uint8_t value ){
+        return (value == SysExNonRtDlsTurnDlsOn ||
+                value == SysExNonRtDlsTurnDlsOff ||
+                value == SysExNonRtDlsTurnDlsVoiceAllocOff ||
+                value == SysExNonRtDlsTurnDlsVoiceAllocOn);
+    }
+
+
+///////////// SysEx: File Reference                  ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    typedef enum {
+        SysExNonRtFileRefOpenFile         = 0x01,
+        SysExNonRtFileRefSelectContents   = 0x02,
+        SysExNonRtFileRefOpenAndSelect    = 0x03,
+        SysExNonRtFileRefCloseFile        = 0x04
+    } SysExNonRtFileRef_t;
+
+    inline bool isSysExNonRtFileReferenceMessage( uint8_t value ){
+        return (value == SysExNonRtFileRefOpenFile ||
+                value == SysExNonRtFileRefSelectContents ||
+                value == SysExNonRtFileRefOpenAndSelect ||
+                value == SysExNonRtFileRefCloseFile);
+    }
+
+
+
+
+///////////// SysEx: MIDI Tuning Standard            ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     typedef enum {
         SysExNonRtMtsBulkDumpRequest        = 0x00,
@@ -797,45 +1404,44 @@ namespace MidiMessage {
                 value == SysExNonRtMtsScaleTuning2Byte);
     }
 
-    typedef enum {
-        SysExNonRtGmSystemOn1     = 0x01,
-        SysExNonRtGmSystemOff     = 0x02,
-        SysExNonRtGmSystemOn2     = 0x03
-    } SysExNonRtGm_t;
 
-    inline bool isSysExNonRtGeneralMidi( uint8_t value ){
-        return (value == SysExNonRtGmSystemOn1 ||
-                value == SysExNonRtGmSystemOff ||
-                value == SysExNonRtGmSystemOn2);
-    }
 
     typedef enum {
-        SysExNonRtDlsTurnDlsOn      = 0x01,
-        SysExNonRtDlsTurnDlsOff     = 0x02,
-        SysExNonRtDlsTurnDlsVoiceAllocOff = 0x03,
-        SysExNonRtDlsTurnDlsVoiceAllocOn  = 0x04
-    } SysExNonRtDls_t;
+        SysExRtMtsSingleNoteTuningChange                = 0x01,
+        SysExRtMtsSingleNoteTuningChangeWithBankSelect  = 0x02,
+        SysExRtMtsScaleTuning1Byte                      = 0x03,
+        SysExRtMtsScaleTuning2Byte                      = 0x04
+    } SysExRtMts_t;
 
-    inline bool isSysExNonRtDownloadableSounds( uint8_t value ){
-        return (value == SysExNonRtDlsTurnDlsOn ||
-                value == SysExNonRtDlsTurnDlsOff ||
-                value == SysExNonRtDlsTurnDlsVoiceAllocOff ||
-                value == SysExNonRtDlsTurnDlsVoiceAllocOn);
+    inline bool isSysExRtMts( uint8_t value ) {
+        return (value == SysExRtMtsSingleNoteTuningChange ||
+                value == SysExRtMtsSingleNoteTuningChangeWithBankSelect ||
+                value == SysExRtMtsScaleTuning1Byte ||
+                value == SysExRtMtsScaleTuning2Byte);
     }
+
+///////////// SysEx: Notation Information            ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     typedef enum {
-        SysExNonRtFileRefOpenFile         = 0x01,
-        SysExNonRtFileRefSelectContents   = 0x02,
-        SysExNonRtFileRefOpenAndSelect    = 0x03,
-        SysExNonRtFileRefCloseFile        = 0x04
-    } SysExNonRtFileRef_t;
+        SysExRtNotationInformationBarNumber                = 0x01,
+        SysExRtNotationInformationTimeSignatureImmediate   = 0x02,
+        SysExRtNotationInformationTimeSignatureDelayed     = 0x03
+    } SysExRtNotationInformation_t;
 
-    inline bool isSysExNonRtFileReferenceMessage( uint8_t value ){
-        return (value == SysExNonRtFileRefOpenFile ||
-                value == SysExNonRtFileRefSelectContents ||
-                value == SysExNonRtFileRefOpenAndSelect ||
-                value == SysExNonRtFileRefCloseFile);
+    inline bool isSysExRtNotationInformation( uint8_t value ){
+        return (value == SysExRtNotationInformationBarNumber ||
+                value == SysExRtNotationInformationTimeSignatureImmediate ||
+                value == SysExRtNotationInformationTimeSignatureDelayed);
     }
+
+
+///////////// SysEx: MIDI Visual Control (MVC)       ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     typedef enum {
         SysExNonRtMvcTODO //TODO
@@ -845,51 +1451,13 @@ namespace MidiMessage {
         return (value == SysExNonRtMvcTODO); //TODO
     }
 
-    typedef enum {
-        SysExNonRtMidiCapInqTODO //TODO
-    } SysExNonRtMidiCapInq_t;
 
-    inline bool isSysExNonRtMidiCapInq( uint8_t value ){
-        return (value == SysExNonRtMidiCapInqTODO); //TODO
-    }
 
-    typedef enum {
-        SysExRtMidiTimeCode                  = 0x01, // SubId2 enum SysExRtMtc..
-        SysExRtMidiShowControl               = 0x02, // SubId2 enum SysExRtMsc.. 
-        SysExRtDeviceControl                 = 0x04, // SubId2 enum SysExRtDc..
-        SysExRtMidiTimeCodeCueing            = 0x05, // SubId2 enum SysExRtMtcCueing..
-        SysExRtMidiMachineControlCommand     = 0x06, // SubId2 enum SysExRtMmcCommand..
-        SysExRtMidiMachineControlResponse    = 0x07, // SubId2 enum SysExRtMmcResponse..
-        SysExRtMidiTuningStandard            = 0x08, // SubId2 enum SysExRtMts..
-        SysExRtControllerDestinationSetting  = 0x09, // SubId2 enum SysExRtCds..
-        SysExRtKeybasedInstrumentControl     = 0x0A, // SubId2 enum SysExRtKeys..
-        SysExRtScalablePolyphonyMidiMip      = 0x0B, // SubId2 enum SysExRtSpMidiMip..
-        SysExRtMobilePhoneControlMessage     = 0x0C  // SubId2 enum SysExRtMobile..
-    } SysExRt_t;
 
-    inline bool isSysExRt( uint8_t value ){
-        return (value == SysExRtMidiTimeCode ||
-                value == SysExRtMidiShowControl ||
-                value == SysExRtDeviceControl ||
-                value == SysExRtMidiTimeCodeCueing ||
-                value == SysExRtMidiMachineControlCommand ||
-                value == SysExRtMidiMachineControlResponse ||
-                value == SysExRtMidiTuningStandard ||
-                value == SysExRtControllerDestinationSetting ||
-                value == SysExRtKeybasedInstrumentControl ||
-                value == SysExRtScalablePolyphonyMidiMip ||
-                value == SysExRtMobilePhoneControlMessage);
-    }
-
-    typedef enum {
-        SysExRtMtcFullMessage           = 0x01,
-        SysExRtMtcUserBits              = 0x02
-    } SysExRtMtc_t;
-
-    inline bool isSysExRtMtc( uint8_t value ){
-        return (value == SysExRtMtcFullMessage ||
-                value == SysExRtMtcUserBits);
-    }
+///////////// SysEx: MIDI Show Control (MSC)         ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     /**
      * MIDI Show Control
@@ -1054,7 +1622,7 @@ namespace MidiMessage {
         return (value & 0x70);
     }
 
-    inline bool isSysExRtMsgCategory( uint8_t value, uint8_t category ){
+    inline bool isSysExRtMscCategory( uint8_t value, uint8_t category ){
         return (value & 0x70) == category;
     }
 
@@ -1234,77 +1802,167 @@ namespace MidiMessage {
     }
 
 
-    typedef enum {
-        SysExRtNotationInformationBarNumber                = 0x01,
-        SysExRtNotationInformationTimeSignatureImmediate   = 0x02,
-        SysExRtNotationInformationTimeSignatureDelayed     = 0x03
-    } SysExRtNotationInformation_t;
+    typedef struct {
+        uint8_t * Number;
+        uint8_t * List;
+        uint8_t * Path;
+    } MscCueNumber_t;
 
-    inline bool isSysExRtNotationInformation( uint8_t value ){
-        return (value == SysExRtNotationInformationBarNumber ||
-                value == SysExRtNotationInformationTimeSignatureImmediate ||
-                value == SysExRtNotationInformationTimeSignatureDelayed);
+    inline bool isMscCueNumberChar( uint8_t value ){
+        return ( '0' <= value && value <= '9') || value == '.';
     }
 
-    typedef enum {
-        SysExRtDcMasterVolume           = 0x01,
-        SysExRtDcMasterBalance          = 0x02,
-        SysExRtDcMasterFineTuning       = 0x03,
-        SysExRtDcMasterCoarseTuning     = 0x04,
-        SysExRtDcGlobalParameterControl = 0x05
-    } SysExRtDc_t;
+    inline bool isValidMscCueNumberPart( uint8_t * str ){
+        if (str == NULL || str[0] == '\0'){
+            return true;
+        }
 
-    inline bool isSysExRtDeviceControl( uint8_t value ) {
-        return (value == SysExRtDcMasterVolume ||
-                value == SysExRtDcMasterBalance ||
-                value == SysExRtDcMasterFineTuning ||
-                value == SysExRtDcMasterCoarseTuning ||
-                value == SysExRtDcGlobalParameterControl);
+        for (uint8_t i = 0; str[i] != '\0'; i++){
+            if ( ! isMscCueNumberChar(str[i]) ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    typedef enum {
-        SysExRtMtcCueingSpecial                    = 0x00, // ??
-        SysExRtMtcCueingPunchInPoint              = 0x01,
-        SysExRtMtcCueingPunchOutPoint             = 0x02,
-        // 3 - 4 reserved
-        SysExRtMtcCueingEventStartPoint           = 0x05,
-        SysExRtMtcCueingEventStopPoint            = 0x06,
-        SysExRtMtcCueingEventStartPointWithInfo    = 0x07,
-        SysExRtMtcCueingEventStopPointWithInfo    = 0x08,
-        // 9 - A reserved
-        SysExRtMtcCueingCuePoint                  = 0x0B,
-        SysExRtMtcCueingCuePointWithInfo          = 0x0C,
-        // D reserved
-        SysExRtMtcCueingEventName                 = 0x0E
-    } SysExRtMtcCueing_t;
+    inline uint8_t packMscCueNumber( uint8_t * bytes, uint8_t * number, uint8_t * list, uint8_t * path ){
+        ASSERT( bytes != NULL );
+        ASSERT( isValidMscCueNumberPart(number) && number != NULL && isMscCueNumberChar(number[0]) );
+        ASSERT( isValidMscCueNumberPart(list) );
+        ASSERT( isValidMscCueNumberPart(path) );
 
-    inline bool isSysExRtMtcCueing( uint8_t value ){
-        return (value == SysExRtMtcCueingSpecial ||
-                value == SysExRtMtcCueingPunchInPoint ||
-                value == SysExRtMtcCueingPunchOutPoint ||
-                value == SysExRtMtcCueingEventStartPoint ||
-                value == SysExRtMtcCueingEventStopPoint ||
-                value == SysExRtMtcCueingEventStartPointWithInfo ||
-                value == SysExRtMtcCueingEventStopPointWithInfo ||
-                value == SysExRtMtcCueingCuePoint ||
-                value == SysExRtMtcCueingCuePointWithInfo ||
-                value == SysExRtMtcCueingEventName);
+        int len = 0;
+
+        for(uint8_t i = 0; number[i] != '\0'; i++){
+            bytes[len++] = number[i];
+        }
+
+        if (list == NULL || ! isMscCueNumberChar(list[0]) ){
+            return len;
+        }
+
+        bytes[len++] = '\0';
+
+        for ( uint8_t i = 0; list[i] != '\0'; i++){
+            bytes[len++] = list[i];
+        }
+
+        if (path == NULL || ! isMscCueNumberChar(path[0]) ) {
+            return len;
+        }
+
+        bytes[len++] = '\0';
+
+        for ( uint8_t i = 0; path[i] != '\0'; i++){
+            bytes[len++] = list[i];
+        }
+
+        return len;
     }
 
-    inline bool isSysExRtMtcCueingWithAddInfo( uint8_t value ){
-        return (value == SysExRtMtcCueingEventStartPointWithInfo ||
-                value == SysExRtMtcCueingEventStopPointWithInfo ||
-                value == SysExRtMtcCueingCuePointWithInfo ||
-                value == SysExRtMtcCueingEventName);
+    inline bool unpackMscCueNumber( uint8_t * bytes, uint8_t len, uint8_t ** number, uint8_t ** list, uint8_t ** path ){
+        ASSERT( bytes != NULL );
+        ASSERT( number != NULL );
+        ASSERT( list != NULL );
+        ASSERT( path != NULL );
+
+        if (len < 1){
+            return false;
+        }
+
+        uint8_t l = 0;
+
+        *number = bytes;
+
+        for(; l < len; l++){
+            if (bytes[l] == '\0'){
+                break;
+            }
+            if (bytes[l] == SystemMessageEndOfExclusive){
+                bytes[l] = '\0';
+                *list = NULL;
+                *path = NULL;
+                return true;
+            }
+            if ( ! isMscCueNumberChar(bytes[l]) ){
+                return false;
+            }
+        }
+
+        l++;
+
+        if ( l >= len || ! isMscCueNumberChar(bytes[l]) ){
+            *list = NULL;
+            *path = NULL;
+            return true;
+        }
+
+        *list = &bytes[l];
+
+        for(; l < len; l++){
+            if (bytes[l] == '\0'){
+                break;
+            }
+            if (bytes[l] == SystemMessageEndOfExclusive){
+                bytes[l] = '\0';
+                *path = NULL;
+                return true;
+            }
+            if ( ! isMscCueNumberChar(bytes[l]) ){
+                return false;
+            }
+        }
+
+        l++;
+
+        if ( l >= len || ! isMscCueNumberChar(bytes[l]) ){
+            *path = NULL;
+            return true;
+        }
+
+
+        for(; l < len; l++){
+            if (bytes[l] == '\0') {
+                // by specification Cue numbers must end with an EOX
+                return false;
+            }
+            if (bytes[l] == SystemMessageEndOfExclusive){
+                bytes[l] = '\0';
+                return true;
+            }
+            if ( ! isMscCueNumberChar(bytes[l]) ){
+                return false;
+            }
+        }
+
+        return false;
     }
 
-    typedef enum {
-        SysExRtMtcCueingSpecialSystemStop          = 0x04
-    } SysExRtMtcCueingSpecial_t;
 
-    inline bool isSysExRtMtcCueingSpecial( uint16_t value ){
-        return (value == SysExRtMtcCueingSpecialSystemStop);
-    }
+
+
+    typedef struct {
+        ExtensibleValue_t CommandFormat;
+        ExtensibleValue_t Command;
+        MscCueNumber_t CueNumber;
+        MidiTimeCode_t MidiTimeCode;
+        uint16_t Controller;
+        uint16_t Value;
+        uint8_t MacroNumber;
+        uint16_t Checksum;
+        uint16_t SequenceNumber;
+        uint16_t Status;
+        uint8_t Data[4];
+    } MidiShowControlData_t;
+
+
+
+
+///////////// SysEx: MIDI Machine Control (MMC)      ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     const uint8_t SysExRtMmcCommandSegmentFirstByteMarker = 0x40;
 
@@ -1782,39 +2440,41 @@ namespace MidiMessage {
     }
 
 
-    typedef enum {
-        SysExRtMtsSingleNoteTuningChange                = 0x01,
-        SysExRtMtsSingleNoteTuningChangeWithBankSelect  = 0x02,
-        SysExRtMtsScaleTuning1Byte                      = 0x03,
-        SysExRtMtsScaleTuning2Byte                      = 0x04
-    } SysExRtMts_t;
-
-    inline bool isSysExRtMts( uint8_t value ) {
-        return (value == SysExRtMtsSingleNoteTuningChange ||
-                value == SysExRtMtsSingleNoteTuningChangeWithBankSelect ||
-                value == SysExRtMtsScaleTuning1Byte ||
-                value == SysExRtMtsScaleTuning2Byte);
-    }
 
     typedef enum {
-        SysExRtCdsChannelPressure         = 0x01,
-        SysExRtCdsPolyphonicKeyPressure   = 0x02,
-        SysExRtCdsController              = 0x03
-    } SysExRtCds_t;
+        SysExRtMmcCommandLocateSubCommandInformationField        = 0,
+        SysExRtMmcCommandLocateSubCommandTarget    = 1
+    } SysExRtMmcCommandLocateSubCommand_t;
 
-    inline bool isSysExRtCds( uint8_t value ) {
-        return (value == SysExRtCdsChannelPressure ||
-                value == SysExRtCdsPolyphonicKeyPressure ||
-                value == SysExRtCdsController);
+    inline bool isSysExRtMmcCommandLocateSubCommand(uint8_t value){
+        return (value == SysExRtMmcCommandLocateSubCommandInformationField ||
+                value == SysExRtMmcCommandLocateSubCommandTarget );
     }
 
-    typedef enum {
-        SysExRtKeysBasicMessage = 0x01
-    } SysExRtKeys_t;
+//    typedef union {
+//        uint32_t Value;
+//        uint8_t Bytes[3];
+//    } SysExRtMmcCommandExtensible_t;
 
-    inline bool isSysExRtKeys( uint8_t value ){
-        return (value == SysExRtKeysBasicMessage);
-    }
+    typedef struct {
+        ExtensibleValue_t Command;
+        union {
+            SysExRtMmcStandardSpeed_t StandardSpeed;
+            uint8_t U7;
+            int8_t S7;
+            struct {
+                uint8_t SubCommand;
+                uint8_t InformationField;
+                MidiTimeCode_t MidiTimeCode;
+            } Locate;
+        } Data;
+    } SysExRtMmcCommandData_t;
+
+
+///////////// SysEx: Mobile Phone Control            ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     typedef enum {
         SysExRtMobileDeviceClassReserved            = 0x00,
@@ -1877,268 +2537,11 @@ namespace MidiMessage {
         uint8_t Level;
     } SysExRtMobileData_t;
 
-    typedef enum {
-        MtcQuarterFrameMessageTypeFrameLS      = 0b000,
-        MtcQuarterFrameMessageTypeFrameMS      = 0b001,
-        MtcQuarterFrameMessageTypeSecondLS     = 0b010,
-        MtcQuarterFrameMessageTypeSecondMS     = 0b011,
-        MtcQuarterFrameMessageTypeMinuteLS     = 0b100,
-        MtcQuarterFrameMessageTypeMinuteMS     = 0b101,
-        MtcQuarterFrameMessageTypeHourLS       = 0b110,
-        MtcQuarterFrameMessageTypeHourMS       = 0b111
-    } MtcQuarterFrameMessageType_t;
 
-    inline bool isMtcQuarterMessageType( uint8_t value ){
-        return (value == MtcQuarterFrameMessageTypeFrameLS ||
-                value == MtcQuarterFrameMessageTypeFrameMS ||
-                value == MtcQuarterFrameMessageTypeSecondLS ||
-                value == MtcQuarterFrameMessageTypeSecondMS ||
-                value == MtcQuarterFrameMessageTypeMinuteLS ||
-                value == MtcQuarterFrameMessageTypeMinuteMS ||
-                value == MtcQuarterFrameMessageTypeHourLS ||
-                value == MtcQuarterFrameMessageTypeHourMS);
-    }
-
-    typedef enum {
-        MtcFrameRate24fps      = 0b00,
-        MtcFrameRate25fps      = 0b01,
-        MtcFrameRate29_97fps   = 0b10, // 30fps Drop-Frame
-        MtcFrameRate30fpsDropFrame = MtcFrameRate29_97fps,
-        MtcFrameRate30fps      = 0b11  // 30fps Non-Drop
-    } MtcFrameRate_t;
-
-    inline bool isMtcFrameRate( uint8_t fps ) {
-        return (fps == MtcFrameRate24fps ||
-                fps == MtcFrameRate25fps ||
-                fps == MtcFrameRate29_97fps ||
-                fps == MtcFrameRate30fps);
-    }
-
-    inline uint8_t getFps( uint8_t fpsHour ){
-        return (fpsHour & MtcFpsMask) >> MtcFpsOffset;
-    }
-
-    inline uint8_t setFps( uint8_t fps ){
-        return (fps << MtcFpsOffset) & MtcFpsMask;
-    }
-//
-//    inline uint8_t getHour( uint8_t fpsHour ){
-//        return fpsHour & MtcHourMask;
-//    }
-
-
-    // Structures
-    /////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////
-
-
-    /**
-     * Container for MIDI Time Code Quarter Frames
-     */
-    typedef struct {
-        uint8_t MessageType;
-        uint8_t Nibble;
-    } MtcQuarterFrame_t;
-
-
-    typedef struct {
-        uint8_t Fps;
-        uint8_t Hour;
-        uint8_t Minute;
-        uint8_t Second;
-        uint8_t Frame;
-        uint8_t FractionalFrame;
-    } MidiTimeCode_t;
-
-
-    typedef struct {
-        uint8_t SlotPathLength;
-        uint8_t ParameterIdWidth;
-        uint8_t ValueWidth;
-        uint8_t DataLength; // In principle, it is a stream terminated with an EOX
-        uint8_t * Data;
-    } GlobalParameterControl_t;
-
-
-    typedef union {
-        uint16_t Value;
-        GlobalParameterControl_t GlobalParameterControl;
-    } SysExRtDeviceControlData_t;
-
-    typedef struct {
-        uint8_t * Number;
-        uint8_t * List;
-        uint8_t * Path;
-    } MscCueNumber_t;
-
-    inline bool isMscCueNumberChar( uint8_t value ){
-        return ( '0' <= value && value <= '9') || value == '.';
-    }
-
-    typedef struct {
-        ExtensibleValue_t CommandFormat;
-        ExtensibleValue_t Command;
-        MscCueNumber_t CueNumber;
-        MidiTimeCode_t MidiTimeCode;
-        uint16_t Controller;
-        uint16_t Value;
-        uint8_t MacroNumber;
-        uint16_t Checksum;
-        uint16_t SequenceNumber;
-        uint16_t Status;
-        uint8_t Data[4];
-    } MidiShowControlData_t;
-
-    typedef struct {
-        MidiTimeCode_t MidiTimeCode;
-        uint16_t EventNumber;
-    } MtcCueingData_t;
-
-    typedef struct {
-        uint32_t ManufacturerId;
-        uint16_t DeviceFamily;
-        uint16_t DeviceFamilyMember;
-        uint8_t SoftwareRevision[4];
-    } SysExNonRtGeneralInformationData_t;
-
-
-    typedef enum {
-        SysExNonRtSdsLoopTypeForwardOnly       = 0x00,
-        SysExNonRtSdsLoopTypeBackwardForward   = 0x01,
-        SysExNonRtSdsLoopTypeLoopOff           = 0x7F
-    } SysExNonRtSdsLoopType_t;
-
-    inline bool isSysExNonRtSdsLoopType( uint8_t value ){
-        return (value == SysExNonRtSdsLoopTypeForwardOnly ||
-                value == SysExNonRtSdsLoopTypeBackwardForward ||
-                value == SysExNonRtSdsLoopTypeLoopOff);
-    }
-
-    typedef struct {
-        uint16_t SampleNumber;
-        uint8_t SampleFormat; // # of significant bits from 8 - 28
-        uint32_t SamplePeriod; // in nsec (3 bytes)
-        uint32_t SampleLength; // in words (3 bytes)
-        uint32_t LoopStartPoint; // Word number (3 bytes)
-        uint32_t LoopEndPoint; // Word number (3 bytes)
-        uint8_t LoopType; //
-    } SysExNonRtSdsHeaderData_t;
-
-    typedef struct {
-        uint16_t SampleNumber;
-    } SysExNonRtSdsRequestData_t;
-
-    typedef struct {
-        uint8_t RunningPacketCount;
-        uint8_t Length;
-        uint8_t * Data;
-        uint8_t ChecksumData; // XOR of complete message to end of payload
-        uint8_t ChecksumComputed;
-    } SysExNonRtSdsDataPacket_t;
-
-    inline uint8_t xorChecksum( uint8_t * bytes, uint8_t length ){
-        uint8_t chk = bytes[0];
-
-        for( uint8_t i = 1; i < length; i++){
-            chk ^= bytes[i];
-        }
-
-        return chk;
-    }
-
-    typedef enum {
-        SysExNonRtSdsExtLoopTypeForward                    = 0x00,
-        SysExNonRtSdsExtLoopTypeForwardBackward            = 0x01,
-        SysExNonRtSdsExtLoopTypeForwardWithRelease         = 0x02,
-        SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease = 0x03,
-        SysExNonRtSdsExtLoopTypeBackward                   = 0x40,
-        SysExNonRtSdsExtLoopTypeBackwardForward            = 0x41,
-        SysExNonRtSdsExtLoopTypeBackwardWithRelease        = 0x42,
-        SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease = 0x43,
-        SysExNonRtSdsExtLoopTypeBackwardOneShot            = 0x7E,
-        SysExNonRtSdsExtLoopTypeForwardOneShot             = 0x7F
-    } SysExNonRtSdsExtLoopType_t;
-    
-    
-    bool inline isSampleDumpExtLoopType( uint8_t value ){
-        return (value == SysExNonRtSdsExtLoopTypeForward ||
-                value == SysExNonRtSdsExtLoopTypeForwardBackward ||
-                value == SysExNonRtSdsExtLoopTypeForwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeBackward ||
-                value == SysExNonRtSdsExtLoopTypeBackwardForward ||
-                value == SysExNonRtSdsExtLoopTypeBackwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeBackwardOneShot ||
-                value == SysExNonRtSdsExtLoopTypeForwardOneShot);
-    }
-
-    typedef struct {
-        uint16_t SampleNumber;
-        uint8_t SampleFormat; // # of significant bits from 8 - 28
-        uint32_t SampleRateIntegerPortion; // in Hz
-        uint32_t SampleRateFractionalPortion; // in Hz
-        uint64_t SampleLength; // in words
-        uint64_t SustainLoopStart; // word number
-        uint64_t SustainLoopEnd; // word number
-        uint8_t LoopType;
-        uint8_t NumberofChannels;
-    } SysExNonRtSdsExtHeaderData_t;
-
-    typedef struct {
-        uint16_t SampleNumber;
-        uint16_t LoopNumber; // 7f7f delete all loops
-        uint8_t LoopType;
-        uint64_t LoopStartAddress;
-        uint64_t LoopEndAddress;
-    } SysExNonRtSdsExtLoopPointTransmissionData_t;
-
-    typedef struct {
-        uint16_t SampleNumber;
-        uint16_t LoopNumber; // 7F7F = all loops
-    } SysExNonRtSdsExtLoopPointRequestData_t;
-
-    typedef struct {
-        uint16_t SampleNumber;
-        uint8_t LanguageTagLength;
-        uint8_t * LanguageTag;
-        uint8_t NameLength;
-        uint8_t * Name;
-    } SysExNonRtSdsExtNameTransmissionData_t;
-
-    typedef struct {
-        uint16_t SampleNumber;
-    } SysExNonRtSdsExtNameRequestData_t;
-
-    typedef enum {
-        SysExRtMmcCommandLocateSubCommandInformationField        = 0,
-        SysExRtMmcCommandLocateSubCommandTarget    = 1
-    } SysExRtMmcCommandLocateSubCommand_t;
-
-    inline bool isSysExRtMmcCommandLocateSubCommand(uint8_t value){
-        return (value == SysExRtMmcCommandLocateSubCommandInformationField ||
-                value == SysExRtMmcCommandLocateSubCommandTarget );
-    }
-
-//    typedef union {
-//        uint32_t Value;
-//        uint8_t Bytes[3];
-//    } SysExRtMmcCommandExtensible_t;
-
-    typedef struct {
-        ExtensibleValue_t Command;
-        union {
-            SysExRtMmcStandardSpeed_t StandardSpeed;
-            uint8_t U7;
-            int8_t S7;
-            struct {
-                uint8_t SubCommand;
-                uint8_t InformationField;
-                MidiTimeCode_t MidiTimeCode;
-            } Locate;
-        } Data;
-    } SysExRtMmcCommandData_t;
-
+///////////// MIDI Message Core Struct               ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
 
     typedef struct {
@@ -2227,6 +2630,10 @@ namespace MidiMessage {
     } Message_t;
 
 
+///////////// MIDI Message Utilities                 ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
     /**
      * Test wether message is a system common message.
      */
@@ -2272,302 +2679,12 @@ namespace MidiMessage {
         return isChannelVoiceMessage( msg->StatusClass, msg->Data.ControlChange.Controller );
     }
 
-    /**
-     * Get device Id of a sysex byte stream
-     */
-    inline uint8_t getDeviceId( uint8_t * bytes ){
-        ASSERT( bytes != NULL );
-        ASSERT( bytes[0] == SystemMessageSystemExclusive );
-
-        return bytes[2] & DataMask;
-    }
-
-    /**
-     * Extract complete MIDI Time Code from 8 QuarterFrames given in the expected message order.
-     */
-    inline void MidiTimeCodeFromQuarterFrameNibbles( MidiTimeCode_t * mtc, uint8_t * nibbles ) {
-        ASSERT( (nibbles[0] & NibbleMask) == nibbles[0] );
-        ASSERT( (nibbles[1] & NibbleMask) == nibbles[1] );
-        ASSERT( (nibbles[2] & NibbleMask) == nibbles[2] );
-        ASSERT( (nibbles[3] & NibbleMask) == nibbles[3] );
-        ASSERT( (nibbles[4] & NibbleMask) == nibbles[4] );
-        ASSERT( (nibbles[5] & NibbleMask) == nibbles[5] );
-        ASSERT( (nibbles[6] & NibbleMask) == nibbles[6] );
-        ASSERT( (nibbles[7] & NibbleMask) == nibbles[7] );
-
-        mtc->Frame = (nibbles[1] << 4) | (nibbles[0]);
-        mtc->Second = (nibbles[3] << 4) | (nibbles[2]);
-        mtc->Minute = (nibbles[5] << 4) | (nibbles[4]);
-        mtc->Fps = (nibbles[7] >> 1);
-        mtc->Hour = ((nibbles[7] << 4) | (nibbles[6])) & MtcHourMask;
-        mtc->FractionalFrame = 0;
-    }
-
-    /**
-     * Extract Quarter Frame nibble from given MIDI Time Code.
-     */
-    inline uint8_t MidiQuarterFrameNibbleFromTimeCode( MidiTimeCode_t * mtc, MtcQuarterFrameMessageType_t type ) {
-        ASSERT( mtc != NULL );
-        ASSERT( isMtcQuarterMessageType(type) );
-
-        switch(type){
-            case MtcQuarterFrameMessageTypeFrameLS:     return mtc->Frame & 0x0F;
-            case MtcQuarterFrameMessageTypeFrameMS:     return (mtc->Frame >> 4) & 0b1;
-            case MtcQuarterFrameMessageTypeSecondLS:    return mtc->Second & 0x0F;
-            case MtcQuarterFrameMessageTypeSecondMS:    return (mtc->Second >> 4) & 0b0011;
-            case MtcQuarterFrameMessageTypeMinuteLS:    return mtc->Minute & 0x0F;
-            case MtcQuarterFrameMessageTypeMinuteMS:    return (mtc->Minute >> 4) & 0b0011;
-            case MtcQuarterFrameMessageTypeHourLS:      return mtc->Hour & 0x0F;
-            case MtcQuarterFrameMessageTypeHourMS:      return ((mtc->Fps << 1)| (mtc->Hour >> 4)) & 0b0111;
-            default:
-                break;
-        }
-
-        return (uint8_t) ~0;
-    }
 
 
-
-    inline uint8_t packMidiTimeCode( uint8_t * bytes, MidiTimeCode_t * mtc ){
-        ASSERT( bytes != NULL );
-        ASSERT( mtc != NULL );
-
-        bytes[0] = (mtc->Fps << MtcFpsOffset) | mtc->Hour;
-        bytes[1] = mtc->Minute;
-        bytes[2] = mtc->Second;
-        bytes[3] = mtc->Frame;
-
-        return 4;
-    }
-
-    inline uint8_t unpackMidiTimeCode( uint8_t * bytes, MidiTimeCode_t * mtc ){
-        ASSERT( bytes != NULL );
-        ASSERT( mtc != NULL );
-
-        mtc->Fps = bytes[0] >> MtcFpsOffset;
-        mtc->Hour = bytes[0] & MtcHourMask;
-        mtc->Minute = bytes[1];
-        mtc->Second = bytes[2];
-        mtc->Frame = bytes[3];
-        mtc->FractionalFrame = 0;
-
-        return 4;
-    }
-
-    inline uint8_t packMidiTimeCodeLong( uint8_t * bytes, MidiTimeCode_t * mtc ){
-        ASSERT( bytes != NULL );
-        ASSERT( mtc != NULL );
-
-        bytes[0] = (mtc->Fps << MtcFpsOffset) || mtc->Hour;
-        bytes[1] = mtc->Minute;
-        bytes[2] = mtc->Second;
-        bytes[3] = mtc->Frame;
-        bytes[4] = mtc->FractionalFrame;
-
-        return 5;
-    }
-
-    inline uint8_t unpackMidiTimeCodeLong( uint8_t * bytes, MidiTimeCode_t * mtc ){
-        ASSERT( bytes != NULL );
-        ASSERT( mtc != NULL );
-
-        mtc->Fps = bytes[0] >> MtcFpsOffset;
-        mtc->Hour = bytes[0] & MtcHourMask;
-        mtc->Minute = bytes[1];
-        mtc->Second = bytes[2];
-        mtc->Frame = bytes[3];
-        mtc->FractionalFrame = bytes[4];
-
-        return 5;
-    }
-
-    inline uint16_t getIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i ){
-        ASSERT( gpc != NULL );
-        ASSERT( gpc->Data != NULL );
-        ASSERT( i < gpc->SlotPathLength );
-        ASSERT( 2*i < gpc->DataLength );
-
-        // msb - lsb
-        return (((uint16_t)gpc->Data[2*i]) << 7) | ((uint16_t)gpc->Data[2*i + 1]);
-    }
-
-    inline void setIthGpcSlot( GlobalParameterControl_t * gpc, uint8_t i, uint16_t value ){
-        ASSERT( gpc != NULL );
-        ASSERT( gpc->Data != NULL );
-        ASSERT( i < gpc->SlotPathLength );
-        ASSERT( value <= MaxU14 );
-        ASSERT( 2*i < gpc->DataLength );
-
-        // msb - lsb
-        gpc->Data[2*i] = (value >> 7) & DataMask;
-        gpc->Data[2*i + 1] = value & DataMask;
-    }
-
-    inline uint8_t * getIthGpcParameterIdAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
-        ASSERT( gpc != NULL );
-        ASSERT( gpc->Data != NULL );
-        ASSERT( 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) <= gpc->DataLength );
-
-        return &gpc->Data[ 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) ];
-    }
-
-
-    inline uint8_t * getIthGpcParameterValueAddr( GlobalParameterControl_t * gpc, uint8_t i ) {
-        ASSERT( gpc != NULL );
-        ASSERT( gpc->Data != NULL );
-        ASSERT( 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth <= gpc->DataLength );
-
-        return &gpc->Data[ 2*gpc->SlotPathLength + i * (gpc->ParameterIdWidth + gpc->ValueWidth) + gpc->ParameterIdWidth ];
-    }
-
-    inline bool isValidMscCueNumberPart( uint8_t * str ){
-        if (str == NULL || str[0] == '\0'){
-            return true;
-        }
-
-        for (uint8_t i = 0; str[i] != '\0'; i++){
-            if ( ! isMscCueNumberChar(str[i]) ) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    inline uint8_t packMscCueNumber( uint8_t * bytes, uint8_t * number, uint8_t * list, uint8_t * path ){
-        ASSERT( bytes != NULL );
-        ASSERT( isValidMscCueNumberPart(number) && number != NULL && isMscCueNumberChar(number[0]) );
-        ASSERT( isValidMscCueNumberPart(list) );
-        ASSERT( isValidMscCueNumberPart(path) );
-
-        int len = 0;
-
-        for(uint8_t i = 0; number[i] != '\0'; i++){
-            bytes[len++] = number[i];
-        }
-
-        if (list == NULL || ! isMscCueNumberChar(list[0]) ){
-            return len;
-        }
-
-        bytes[len++] = '\0';
-
-        for ( uint8_t i = 0; list[i] != '\0'; i++){
-            bytes[len++] = list[i];
-        }
-
-        if (path == NULL || ! isMscCueNumberChar(path[0]) ) {
-            return len;
-        }
-
-        bytes[len++] = '\0';
-
-        for ( uint8_t i = 0; path[i] != '\0'; i++){
-            bytes[len++] = list[i];
-        }
-
-        return len;
-    }
-
-    inline bool unpackMscCueNumber( uint8_t * bytes, uint8_t len, uint8_t ** number, uint8_t ** list, uint8_t ** path ){
-        ASSERT( bytes != NULL );
-        ASSERT( number != NULL );
-        ASSERT( list != NULL );
-        ASSERT( path != NULL );
-
-        if (len < 1){
-            return false;
-        }
-
-        uint8_t l = 0;
-
-        *number = bytes;
-
-        for(; l < len; l++){
-            if (bytes[l] == '\0'){
-                break;
-            }
-            if (bytes[l] == SystemMessageEndOfExclusive){
-                bytes[l] = '\0';
-                *list = NULL;
-                *path = NULL;
-                return true;
-            }
-            if ( ! isMscCueNumberChar(bytes[l]) ){
-                return false;
-            }
-        }
-
-        l++;
-
-        if ( l >= len || ! isMscCueNumberChar(bytes[l]) ){
-            *list = NULL;
-            *path = NULL;
-            return true;
-        }
-
-        *list = &bytes[l];
-
-        for(; l < len; l++){
-            if (bytes[l] == '\0'){
-                break;
-            }
-            if (bytes[l] == SystemMessageEndOfExclusive){
-                bytes[l] = '\0';
-                *path = NULL;
-                return true;
-            }
-            if ( ! isMscCueNumberChar(bytes[l]) ){
-                return false;
-            }
-        }
-
-        l++;
-
-        if ( l >= len || ! isMscCueNumberChar(bytes[l]) ){
-            *path = NULL;
-            return true;
-        }
-
-
-        for(; l < len; l++){
-            if (bytes[l] == '\0') {
-                // by specification Cue numbers must end with an EOX
-                return false;
-            }
-            if (bytes[l] == SystemMessageEndOfExclusive){
-                bytes[l] = '\0';
-                return true;
-            }
-            if ( ! isMscCueNumberChar(bytes[l]) ){
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-
-
-
-//    inline uint8_t copyMmcExtensibleCommand( uint8_t * dst, uint8_t * src ) {
-//        ASSERT(dst != NULL);
-//        ASSERT(src != NULL);
-//
-//        dst[0] = src[0];
-//        if (src[0] != SysExRtMmcCommandExtension) {
-//            return 1;
-//        }
-//
-//        dst[1] = src[1];
-//        if (src[1] != SysExRtMmcCommandExtension) {
-//            return 2;
-//        }
-//
-//        dst[2] = src[2];
-//
-//        return 3;
-//    }
+///////////// MIDI Message Core Processing           ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 
     /**
      *  Tries to pack a given midi <msg> into the corresponding sequence of raw bytes.

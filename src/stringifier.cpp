@@ -2690,7 +2690,7 @@ namespace MidiMessage {
                         if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeForwardOnly){
                             length += sprintf( (char*)&bytes[length], "forward");
                         }
-                        else if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeBackwardForward){
+                        else if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeForwardBackward){
                             length += sprintf( (char*)&bytes[length], "forward-backward");
                         }
                         else if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeLoopOff){
