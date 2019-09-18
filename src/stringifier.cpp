@@ -34,7 +34,7 @@ namespace MidiMessage {
 #endif
 
 
-    bool readHex( uint8_t * bytes, uint8_t * length, uint8_t *argv, uint8_t expectedLength ){
+    static bool readHex( uint8_t * bytes, uint8_t * length, uint8_t *argv, uint8_t expectedLength ){
         int l = strlen((char*)argv);
 
         if (l % 2 != 0){
@@ -63,7 +63,7 @@ namespace MidiMessage {
         return 2 * length;
     }
 
-    bool readMtc(MidiTimeCode_t * mtc, uint8_t *argv[]){
+    static bool readMtc(MidiTimeCode_t * mtc, uint8_t *argv[]){
         uint8_t fps = atoi((char*)argv[0]);
 
         switch (fps) {
@@ -97,7 +97,8 @@ namespace MidiMessage {
 
         return true;
     }
-    bool readMtcLong(MidiTimeCode_t * mtc, uint8_t *argv[]){
+
+    static bool readMtcLong(MidiTimeCode_t * mtc, uint8_t *argv[]){
         if (readMtc(mtc, argv)){
             mtc->FractionalFrame = atoi((char*)argv[5]);
             if (mtc->FractionalFrame > MtcMaxFractionalFrame) return false;
@@ -105,7 +106,8 @@ namespace MidiMessage {
         }
         return false;
     }
-    int sprintfMtc( uint8_t * dst, MidiTimeCode_t * mtc){
+
+    static int sprintfMtc( uint8_t * dst, MidiTimeCode_t * mtc){
 
         uint8_t fps = 0;
         switch(mtc->Fps){
@@ -123,7 +125,8 @@ namespace MidiMessage {
                mtc->Frame
         );
     }
-    int sprintfMtcLong( uint8_t * dst, MidiTimeCode_t * mtc){
+
+    static int sprintfMtcLong( uint8_t * dst, MidiTimeCode_t * mtc){
         int length = sprintfMtc(dst, mtc);
 
         length += sprintf((char*)&dst[length], " %d", mtc->FractionalFrame);
@@ -131,7 +134,7 @@ namespace MidiMessage {
         return length;
     }
 
-    uint8_t readCueNumberPart( uint8_t * dst, uint8_t * argv ){
+    static uint8_t readCueNumberPart( uint8_t * dst, uint8_t * argv ){
 
         if ( ! isValidMscCueNumberPart(argv) ){
             return 0;
@@ -149,7 +152,7 @@ namespace MidiMessage {
         return i;
     }
 
-    bool readCueNumber( uint8_t * dst, MscCueNumber_t *cueNumber, uint8_t argc, uint8_t ** argv ){
+    static bool readCueNumber( uint8_t * dst, MscCueNumber_t *cueNumber, uint8_t argc, uint8_t ** argv ){
 
         uint8_t len = readCueNumberPart( dst, argv[0] );
 
@@ -190,7 +193,7 @@ namespace MidiMessage {
         return true;
     }
 
-    uint8_t sprintfCueNumber( uint8_t * dst, MscCueNumber_t *cueNumber ){
+    static uint8_t sprintfCueNumber( uint8_t * dst, MscCueNumber_t *cueNumber ){
         uint8_t len = sprintf( (char*)dst, "%s", cueNumber->Number );
 
         if (cueNumber->List == NULL){
@@ -208,6 +211,93 @@ namespace MidiMessage {
         return len;
     }
 
+    static bool readSdsLoopType( uint8_t *loopType, uint8_t * argv, bool extendedSet){
+        if (str_eq(argv, "uni-forward")){
+            *loopType = SysExNonRtSdsLoopTypeForward;
+            return true;
+        }
+        if (str_eq(argv, "bi-forward")){
+            *loopType = SysExNonRtSdsLoopTypeForwardBackward;
+            return true;
+        }
+        if (str_eq(argv, "forward-once")){
+            *loopType = SysExNonRtSdsLoopTypeForwardOneShot;
+            return true;
+        }
+        if (!extendedSet){
+            return false;
+        }
+        if (str_eq(argv, "uni-forward-release")){
+            *loopType = SysExNonRtSdsLoopTypeForwardWithRelease;
+            return true;
+        }
+        if (str_eq(argv, "bi-forward-release")){
+            *loopType = SysExNonRtSdsLoopTypeForwardBackwardWithRelease;
+            return true;
+        }
+
+        if (str_eq(argv, "uni-backward")){
+            *loopType = SysExNonRtSdsLoopTypeBackward;
+            return true;
+        }
+        if (str_eq(argv, "bi-backward")){
+            *loopType = SysExNonRtSdsLoopTypeBackwardForward;
+            return true;
+        }
+        if (str_eq(argv, "uni-backward-release")){
+            *loopType = SysExNonRtSdsLoopTypeBackwardWithRelease;
+            return true;
+        }
+        if (str_eq(argv, "bi-backward-release")){
+            *loopType = SysExNonRtSdsLoopTypeBackwardForwardWithRelease;
+            return true;
+        }
+
+        if (str_eq(argv, "backward-once")){
+            *loopType = SysExNonRtSdsLoopTypeBackwardOneShot;
+            return true;
+        }
+
+        return false;
+    }
+
+
+    static uint8_t sprintfSdsLoopType( uint8_t * dst, uint8_t loopType ){
+
+        switch (loopType){
+            case SysExNonRtSdsLoopTypeForward:
+                return sprintf( (char*)dst, "uni-forward");
+
+            case SysExNonRtSdsLoopTypeForwardBackward:
+                return sprintf( (char*)dst, "bi-forward");
+
+            case SysExNonRtSdsLoopTypeForwardWithRelease:
+                return sprintf( (char*)dst, "uni-forward-release");
+
+            case SysExNonRtSdsLoopTypeForwardBackwardWithRelease:
+                return sprintf( (char*)dst, "bi-forward-release");
+
+            case SysExNonRtSdsLoopTypeBackward:
+                return sprintf( (char*)dst, "uni-backward");
+
+            case SysExNonRtSdsLoopTypeBackwardForward:
+                return sprintf( (char*)dst, "bi-backward");
+
+            case SysExNonRtSdsLoopTypeBackwardWithRelease:
+                return sprintf( (char*)dst, "uni-backward-release");
+
+            case SysExNonRtSdsLoopTypeBackwardForwardWithRelease:
+                return sprintf( (char*)dst, "bi-backward-release");
+
+            case SysExNonRtSdsLoopTypeBackwardOneShot:
+                return sprintf( (char*)dst, "backward-once");
+
+            case SysExNonRtSdsLoopTypeForwardOneShot:
+                return sprintf( (char*)dst, "forward-once");
+        }
+
+        return 0;
+    }
 
     inline int ArgsToMccData( uint8_t * bytes, uint8_t * length, uint8_t argc, uint8_t ** argv){
 
@@ -2687,15 +2777,7 @@ namespace MidiMessage {
                                            msg->Data.SysEx.Data.SampleDump.Header.LoopStartPoint,
                                            msg->Data.SysEx.Data.SampleDump.Header.LoopEndPoint
                         );
-                        if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeForwardOnly){
-                            length += sprintf( (char*)&bytes[length], "forward");
-                        }
-                        else if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeForwardBackward){
-                            length += sprintf( (char*)&bytes[length], "forward-backward");
-                        }
-                        else if (msg->Data.SysEx.Data.SampleDump.Header.LoopType == SysExNonRtSdsLoopTypeLoopOff){
-                            length += sprintf( (char*)&bytes[length], "no-loop");
-                        }
+                        length += sprintfSdsLoopType(&bytes[length], msg->Data.SysEx.Data.SampleDump.Header.LoopType);
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpRequest){
                         length += sprintf( (char*)&bytes[length], "sds-request %d",
@@ -2714,49 +2796,58 @@ namespace MidiMessage {
                         length += sprintf( (char*)&bytes[length], "sds-ext ");
 
                         if (msg->Data.SysEx.SubId2 == SysExNonRtSdsLoopPointsTransmission){
-//                            length += sprintf( (char*)&bytes[length], "loop-point-tx %d %d",
-//                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission
-//                            );
+                            length += sprintf( (char*)&bytes[length], "loop-point-tx %u %u ",
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopNumber
+                            );
+                            length += sprintfSdsLoopType(&bytes[length], msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopType);
+                            length += sprintf( (char*)&bytes[length], " %u %u",
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopStartAddress,
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopEndAddress
+                            );
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsLoopPointsRequest){
-//                            length += sprintf( (char*)&bytes[length], "loop-point-request ");
+                            length += sprintf( (char*)&bytes[length], "loop-point-request %u %u",
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointRequest.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointRequest.LoopNumber
+                            );
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameTransmission){
                             length += sprintf( (char*)&bytes[length], "name-tx %d - %s",
-                                               msg->Data.SysEx.Data.SampleDumpExt.NameTransmission.SampleNumber,
-                                               msg->Data.SysEx.Data.SampleDumpExt.NameTransmission.Name
+                                               msg->Data.SysEx.Data.SampleDump.NameTransmission.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDump.NameTransmission.Name
                             );
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameRequest){
-                            length += sprintf( (char*)&bytes[length], "name-request %u", msg->Data.SysEx.Data.SampleDumpExt.NameRequest.SampleNumber);
+                            length += sprintf( (char*)&bytes[length], "name-request %u", msg->Data.SysEx.Data.SampleDump.NameRequest.SampleNumber);
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedDumpHeader){
                             length += sprintf( (char*)&bytes[length], "ext-header %u %u %u %u %llu %llu %llu",
-                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleNumber,
-                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleFormat,
-                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleRateIntegerPortion,
-                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleRateFractionalPortion,
-                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SampleLength,
-                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SustainLoopStart,
-                                               msg->Data.SysEx.Data.SampleDumpExt.Header.SustainLoopEnd
+                                               msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleFormat,
+                                               msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateIntegerPortion,
+                                               msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleRateFractionalPortion,
+                                               msg->Data.SysEx.Data.SampleDump.ExtHeader.SampleLength,
+                                               msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopStart,
+                                               msg->Data.SysEx.Data.SampleDump.ExtHeader.SustainLoopEnd
                             );
-                            //TODO loop-type
+                            length += sprintfSdsLoopType(&bytes[length], msg->Data.SysEx.Data.SampleDump.ExtHeader.LoopType);
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsTransmission){
                             length += sprintf( (char*)&bytes[length], "ext-loop-point-tx %u %u",
-                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.SampleNumber,
-                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.LoopNumber
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDump.LoopPointTransmission.LoopNumber
                             );
-                            //TODO loop-type
+                            length += sprintfSdsLoopType(&bytes[length], msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopType);
                             length += sprintf( (char*)&bytes[length], " %llu %llu",
-                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.LoopStartAddress,
-                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission.LoopEndAddress
+                                               msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopStartAddress,
+                                               msg->Data.SysEx.Data.SampleDump.ExtLoopPointTransmission.LoopEndAddress
                             );
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsRequest){
                             length += sprintf( (char*)&bytes[length], "ext-loop-point-request %u %u",
-                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.SampleNumber,
-                                               msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.LoopNumber
+                                               msg->Data.SysEx.Data.SampleDump.ExtLoopPointRequest.SampleNumber,
+                                               msg->Data.SysEx.Data.SampleDump.ExtLoopPointRequest.LoopNumber
                             );
                         }
                         else {

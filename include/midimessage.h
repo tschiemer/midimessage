@@ -1221,15 +1221,35 @@ namespace MidiMessage {
     }
 
     typedef enum {
-        SysExNonRtSdsLoopTypeForwardOnly       = 0x00,
-        SysExNonRtSdsLoopTypeForwardBackward   = 0x01,
-        SysExNonRtSdsLoopTypeLoopOff           = 0x7F
+        SysExNonRtSdsLoopTypeForward                    = 0x00,
+        SysExNonRtSdsLoopTypeForwardBackward            = 0x01,
+        SysExNonRtSdsLoopTypeForwardWithRelease         = 0x02,
+        SysExNonRtSdsLoopTypeForwardBackwardWithRelease = 0x03,
+        SysExNonRtSdsLoopTypeBackward                   = 0x40,
+        SysExNonRtSdsLoopTypeBackwardForward            = 0x41,
+        SysExNonRtSdsLoopTypeBackwardWithRelease        = 0x42,
+        SysExNonRtSdsLoopTypeBackwardForwardWithRelease = 0x43,
+        SysExNonRtSdsLoopTypeBackwardOneShot            = 0x7E,
+        SysExNonRtSdsLoopTypeForwardOneShot             = 0x7F
     } SysExNonRtSdsLoopType_t;
 
-    inline bool isSysExNonRtSdsLoopType( uint8_t value ){
-        return (value == SysExNonRtSdsLoopTypeForwardOnly ||
+    bool inline isSysExNonRtSdsExtendedLoopType( uint8_t value ){
+        return (value == SysExNonRtSdsLoopTypeForward ||
                 value == SysExNonRtSdsLoopTypeForwardBackward ||
-                value == SysExNonRtSdsLoopTypeLoopOff);
+                value == SysExNonRtSdsLoopTypeForwardWithRelease ||
+                value == SysExNonRtSdsLoopTypeForwardBackwardWithRelease ||
+                value == SysExNonRtSdsLoopTypeBackward ||
+                value == SysExNonRtSdsLoopTypeBackwardForward ||
+                value == SysExNonRtSdsLoopTypeBackwardWithRelease ||
+                value == SysExNonRtSdsLoopTypeBackwardForwardWithRelease ||
+                value == SysExNonRtSdsLoopTypeBackwardOneShot ||
+                value == SysExNonRtSdsLoopTypeForwardOneShot);
+    }
+
+    inline bool isSysExNonRtSdsLoopType( uint8_t value ){
+        return (value == SysExNonRtSdsLoopTypeForward ||
+                value == SysExNonRtSdsLoopTypeForwardBackward ||
+                value == SysExNonRtSdsLoopTypeForwardOneShot);
     }
 
     typedef struct {
@@ -1255,32 +1275,6 @@ namespace MidiMessage {
     } SysExNonRtSdsDataPacketData_t;
 
 
-    typedef enum {
-        SysExNonRtSdsExtLoopTypeForward                    = 0x00,
-        SysExNonRtSdsExtLoopTypeForwardBackward            = 0x01,
-        SysExNonRtSdsExtLoopTypeForwardWithRelease         = 0x02,
-        SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease = 0x03,
-        SysExNonRtSdsExtLoopTypeBackward                   = 0x40,
-        SysExNonRtSdsExtLoopTypeBackwardForward            = 0x41,
-        SysExNonRtSdsExtLoopTypeBackwardWithRelease        = 0x42,
-        SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease = 0x43,
-        SysExNonRtSdsExtLoopTypeBackwardOneShot            = 0x7E,
-        SysExNonRtSdsExtLoopTypeForwardOneShot             = 0x7F
-    } SysExNonRtSdsExtLoopType_t;
-
-
-    bool inline isSampleDumpExtLoopType( uint8_t value ){
-        return (value == SysExNonRtSdsExtLoopTypeForward ||
-                value == SysExNonRtSdsExtLoopTypeForwardBackward ||
-                value == SysExNonRtSdsExtLoopTypeForwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeForwardBackwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeBackward ||
-                value == SysExNonRtSdsExtLoopTypeBackwardForward ||
-                value == SysExNonRtSdsExtLoopTypeBackwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeBackwardForwardWithRelease ||
-                value == SysExNonRtSdsExtLoopTypeBackwardOneShot ||
-                value == SysExNonRtSdsExtLoopTypeForwardOneShot);
-    }
 
     // SubId2 1
     typedef struct {
@@ -2617,17 +2611,14 @@ namespace MidiMessage {
                         SysExNonRtSdsHeaderData_t Header;
                         SysExNonRtSdsRequestData_t Request;
                         SysExNonRtSdsDataPacketData_t DataPacket;
-                    } SampleDump;
-
-                    union {
                         SysExNonRtSdsLoopPointTransmissionData_t LoopPointTransmission;
                         SysExNonRtSdsLoopPointRequestData_t LoopPointRequest;
-                        SysExNonRtSdsExtHeaderData_t Header;
+                        SysExNonRtSdsExtHeaderData_t ExtHeader;
                         SysExNonRtSdsExtLoopPointTransmissionData_t ExtLoopPointTransmission;
                         SysExNonRtSdsExtLoopPointRequestData_t ExtLoopPointRequest;
                         SysExNonRtSdsExtNameTransmissionData_t NameTransmission;
                         SysExNonRtSdsExtNameRequestData_t NameRequest;
-                    } SampleDumpExt;
+                    } SampleDump;
 
                 } Data;
 
