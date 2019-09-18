@@ -3191,7 +3191,7 @@ namespace MidiMessage {
         return length; // MsgLenSysExNonRtSdsPacketMin
     }
 
-    inline uint8_t packSysExNonRtSdsDataPacketObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsDataPacket_t * data){
+    inline uint8_t packSysExNonRtSdsDataPacketObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsDataPacketData_t * data){
         ASSERT( data != NULL );
 
         return packSysExNonRtSdsDataPacket(bytes, deviceId, data->RunningPacketCount, data->Data, data->Length, data->ChecksumData );
@@ -3241,7 +3241,7 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtSampleDataPacket(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsDataPacket_t * data ){
+    inline bool unpackSysExNonRtSampleDataPacket(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsDataPacketData_t * data ){
         ASSERT( data != NULL );
 
         return unpackSysExNonRtSdsDataPacket(bytes, length, deviceId, &data->RunningPacketCount, data->Data, &data->Length, &data->ChecksumData, &data->ChecksumComputed );

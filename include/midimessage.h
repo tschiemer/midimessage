@@ -1250,7 +1250,7 @@ namespace MidiMessage {
         uint8_t * Data;
         uint8_t ChecksumData; // XOR of complete message to end of payload
         uint8_t ChecksumComputed;
-    } SysExNonRtSdsDataPacket_t;
+    } SysExNonRtSdsDataPacketData_t;
 
 
     typedef enum {
@@ -2610,7 +2610,7 @@ namespace MidiMessage {
                     union {
                         SysExNonRtSdsHeaderData_t Header;
                         SysExNonRtSdsRequestData_t Request;
-                        SysExNonRtSdsDataPacket_t DataPacket;
+                        SysExNonRtSdsDataPacketData_t DataPacket;
                     } SampleDump;
 
                     union {
