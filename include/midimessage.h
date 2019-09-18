@@ -360,10 +360,12 @@ namespace MidiMessage {
     const uint8_t MsgLenSysExNonRtSdsDataPacketMin          = 7;
     const uint8_t MsgLenSysExNonRtSdsRequest                = 7;
 
-    const uint8_t MsgLenSysExNonRtSdsExtHeader                 = 34;
-    const uint8_t MsgLenSysExNonRtSdsExtLoopPointTransmission = 25;
-    const uint8_t MsgLenSysExNonRtSdsExtLoopPointRequest       = 10;
-    const uint8_t MsgLenSysExNonRtSdsExtSampleNameRequest      = 8;
+    const uint8_t MsgLenSysExNonRtSdsLoopPointTransmission      = 17;
+    const uint8_t MsgLenSysExNonRtSdsLoopPointRequest           = 10;
+    const uint8_t MsgLenSysExNonRtSdsExtHeader                  = 34;
+    const uint8_t MsgLenSysExNonRtSdsExtLoopPointTransmission   = 21;
+    const uint8_t MsgLenSysExNonRtSdsExtLoopPointRequest        = 10;
+    const uint8_t MsgLenSysExNonRtSdsSampleNameRequest          = 8;
 
 
     typedef enum {
@@ -522,29 +524,29 @@ namespace MidiMessage {
      * @see deunifySysExId()
      */
     typedef enum {
-        SysExIdManufacturerExtensionByte  = 0x00,
-        SysExIdExperimentalByte           = 0x7D,
-        SysExIdNonRealTimeByte            = 0x7E,
-        SysExIdRealTimeByte               = 0x7F
-    } SysExIdByte_t;
+        SysExIdManufacturerExtension_Byte  = 0x00,
+        SysExIdExperimental_Byte           = 0x7D,
+        SysExIdNonRealTime_Byte            = 0x7E,
+        SysExIdRealTime_Byte               = 0x7F
+    } SysExId_Byte_t;
 
     /**
      * Type check
      */
-    inline bool isSysExIdByte( uint8_t value ){
-        return (value == SysExIdManufacturerExtensionByte ||
-                value == SysExIdExperimentalByte ||
-                value == SysExIdNonRealTimeByte ||
-                value == SysExIdRealTimeByte);
+    inline bool isSysExId_Byte( uint8_t value ){
+        return (value == SysExIdManufacturerExtension_Byte ||
+                value == SysExIdExperimental_Byte ||
+                value == SysExIdNonRealTime_Byte ||
+                value == SysExIdRealTime_Byte);
     }
 
     /**
      * Test wether given byte belongs to a non-manufacturer id.
      */
     inline bool isSysExManufacturerIdByte( uint8_t byte0 ){
-        return (byte0 != SysExIdExperimentalByte &&
-                byte0 != SysExIdNonRealTimeByte &&
-                byte0 != SysExIdRealTimeByte);
+        return (byte0 != SysExIdExperimental_Byte &&
+                byte0 != SysExIdNonRealTime_Byte &&
+                byte0 != SysExIdRealTime_Byte);
     }
 
     /**
@@ -585,7 +587,7 @@ namespace MidiMessage {
 
         bytes[0] = (id >> 16) & DataMask;
 
-        if (bytes[0] == SysExIdManufacturerExtensionByte){
+        if (bytes[0] == SysExIdManufacturerExtension_Byte){
             bytes[1] = (id >> 8) & DataMask;
             bytes[2] = id & DataMask;
             return 3;
@@ -599,7 +601,7 @@ namespace MidiMessage {
 
         *id = ((uint32_t)bytes[0]) << 16;
 
-        if (bytes[0] == SysExIdManufacturerExtensionByte){
+        if (bytes[0] == SysExIdManufacturerExtension_Byte){
             *id |= ((uint32_t)bytes[1]) << 8;
             *id |= ((uint32_t)bytes[2]);
             return 3;
@@ -1289,6 +1291,24 @@ namespace MidiMessage {
         uint32_t LoopEndAddress;
     } SysExNonRtSdsLoopPointTransmissionData_t;
 
+    typedef struct {
+        uint16_t SampleNumber;
+        uint16_t LoopNumber;
+    } SysExNonRtSdsLoopPointRequestData_t;
+
+    // SubId2 03
+    typedef struct {
+        uint16_t SampleNumber;
+        uint8_t LanguageTagLength;
+        uint8_t * LanguageTag;
+        uint8_t NameLength;
+        uint8_t * Name;
+    } SysExNonRtSdsExtNameTransmissionData_t;
+
+    // SubId2 04
+    typedef struct {
+        uint16_t SampleNumber;
+    } SysExNonRtSdsExtNameRequestData_t;
 
 
     // SubId2 5
@@ -1318,20 +1338,6 @@ namespace MidiMessage {
         uint16_t SampleNumber;
         uint16_t LoopNumber; // 7F7F = all loops
     } SysExNonRtSdsExtLoopPointRequestData_t;
-
-    // SubId2 03
-    typedef struct {
-        uint16_t SampleNumber;
-        uint8_t LanguageTagLength;
-        uint8_t * LanguageTag;
-        uint8_t NameLength;
-        uint8_t * Name;
-    } SysExNonRtSdsExtNameTransmissionData_t;
-
-    // SubId2 04
-    typedef struct {
-        uint16_t SampleNumber;
-    } SysExNonRtSdsExtNameRequestData_t;
 
 
 ///////////// SysEx: Downloadable Sounds             ////////////
@@ -2583,7 +2589,7 @@ namespace MidiMessage {
                 uint8_t SubId1;
                 uint8_t SubId2;
                 union {
-                    uint8_t PacketNumber;
+                    uint8_t PacketNumber; // Handshakes
 
                     MidiTimeCode_t MidiTimeCode;
 
@@ -2614,9 +2620,11 @@ namespace MidiMessage {
                     } SampleDump;
 
                     union {
+                        SysExNonRtSdsLoopPointTransmissionData_t LoopPointTransmission;
+                        SysExNonRtSdsLoopPointRequestData_t LoopPointRequest;
                         SysExNonRtSdsExtHeaderData_t Header;
-                        SysExNonRtSdsExtLoopPointTransmissionData_t LoopPointTransmission;
-                        SysExNonRtSdsExtLoopPointRequestData_t LoopPointRequest;
+                        SysExNonRtSdsExtLoopPointTransmissionData_t ExtLoopPointTransmission;
+                        SysExNonRtSdsExtLoopPointRequestData_t ExtLoopPointRequest;
                         SysExNonRtSdsExtNameTransmissionData_t NameTransmission;
                         SysExNonRtSdsExtNameRequestData_t NameRequest;
                     } SampleDumpExt;

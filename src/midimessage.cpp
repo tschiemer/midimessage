@@ -315,7 +315,7 @@ namespace MidiMessage {
                 return false;
             }
 
-            if (bytes[1] == SysExIdExperimentalByte) {
+            if (bytes[1] == SysExIdExperimental_Byte) {
                 return unpackSysExExperimentalMessageObj( bytes, length, msg );
             } // (bytes[1] == SysExIdExperimental)
 
@@ -323,7 +323,7 @@ namespace MidiMessage {
                 return unpackSysExManufacturerMessageObj( bytes, length, msg );
             } // isSysExManufacturerId(bytes[1])
 
-            if (bytes[1] == SysExIdRealTimeByte) {
+            if (bytes[1] == SysExIdRealTime_Byte) {
                 if (length < 4) {
                     return false;
                 }
@@ -371,7 +371,7 @@ namespace MidiMessage {
                 return false;
             } // (bytes[1] == SysExIdRealTime)
 
-            if (bytes[1] == SysExIdNonRealTimeByte) {
+            if (bytes[1] == SysExIdNonRealTime_Byte) {
                 if (length < 4) {
                     return false;
                 }
@@ -438,7 +438,7 @@ namespace MidiMessage {
 
                 return false;
 
-            } // (bytes[1] == SysExIdNonRealTimeByte)
+            } // (bytes[1] == SysExIdNonRealTime_Byte)
 
         } // (msg->Status == SystemMessageSystemExclusive)
 

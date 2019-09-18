@@ -899,7 +899,7 @@ namespace MidiMessage {
         ASSERT( packetNumber <= MaxU7);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = subId1;
         bytes[4] = packetNumber;
@@ -926,7 +926,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtGeneralHandshaking){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || !isSysExNonRtHandshake(bytes[3]) ){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || !isSysExNonRtHandshake(bytes[3]) ){
             return false;
         }
 
@@ -962,7 +962,7 @@ namespace MidiMessage {
         uint8_t len = 2;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdExperimentalByte;
+        bytes[1] = SysExIdExperimental_Byte;
 
         for (uint8_t i = 0; i < dataLen; i++) {
             bytes[len++] = data[i];
@@ -991,7 +991,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdExperimentalByte) {
+        if (bytes[1] != SysExIdExperimental_Byte) {
             return false;
         }
 
@@ -1065,8 +1065,8 @@ namespace MidiMessage {
 
         uint8_t p = 1;
 
-        if ((len < 2 && bytes[1] != SysExIdManufacturerExtensionByte) ||
-            (len < 4 && bytes[1] == SysExIdManufacturerExtensionByte) ||
+        if ((len < 2 && bytes[1] != SysExIdManufacturerExtension_Byte) ||
+            (len < 4 && bytes[1] == SysExIdManufacturerExtension_Byte) ||
                 ! isControlByte(bytes[len-1])) {
             return false;
         }
@@ -1124,7 +1124,7 @@ namespace MidiMessage {
         ASSERT(frame <= MtcMaxFps[fps]);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtMidiTimeCode;
         bytes[4] = SysExRtMtcFullMessage;
@@ -1169,7 +1169,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
+        if (bytes[1] != SysExIdRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -1228,7 +1228,7 @@ namespace MidiMessage {
         ASSERT(userBits != NULL);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtMidiTimeCode;
         bytes[4] = SysExRtMtcUserBits;
@@ -1263,7 +1263,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
+        if (bytes[1] != SysExIdRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -1359,7 +1359,7 @@ namespace MidiMessage {
         int msgLen = MsgLenSysExNonRtMtcCueingSetupMessageMin - 1; // min message length (w/o EOX)
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExNonRtMidiTimeCode;
         bytes[4] = msgType;
@@ -1432,7 +1432,7 @@ namespace MidiMessage {
         if (len < MsgLenSysExNonRtMtcCueingSetupMessageMin - 1 || ! isControlByte(bytes[len-1])) {
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtMidiTimeCode || !isSysExNonRtMtc(bytes[4])) {
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtMidiTimeCode || !isSysExNonRtMtc(bytes[4])) {
             return false;
         }
 
@@ -1486,7 +1486,7 @@ namespace MidiMessage {
         int len = 7; // min message length (w/o EOX)
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExRtMidiTimeCodeCueing;
         bytes[4] = msgType;
@@ -1522,7 +1522,7 @@ namespace MidiMessage {
         if (len < MsgLenSysExRtMtcCueingSetupMessageMin || ! isControlByte(bytes[len-1])) {
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtMidiTimeCodeCueing || !isSysExRtMtcCueing(bytes[4])) {
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTime_Byte || bytes[3] != SysExRtMidiTimeCodeCueing || !isSysExRtMtcCueing(bytes[4])) {
             return false;
         }
 
@@ -1562,7 +1562,7 @@ namespace MidiMessage {
         ASSERT(deviceId <= MaxU7);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExNonRtGeneralInformation;
         bytes[4] = SysExNonRtGenInfoIdentityRequest;
@@ -1583,7 +1583,7 @@ namespace MidiMessage {
         uint32_t len = 5;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExNonRtGeneralInformation;
         bytes[4] = SysExNonRtGenInfoIdentityReply;
@@ -1665,7 +1665,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdNonRealTimeByte) {
+        if (bytes[1] != SysExIdNonRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -1708,7 +1708,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdNonRealTimeByte) {
+        if (bytes[1] != SysExIdNonRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -1756,7 +1756,7 @@ namespace MidiMessage {
         ASSERT(type != SysExRtDcMasterFineTuning || value <= FineTuningMax);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtDeviceControl;
         bytes[4] = type;
@@ -1777,7 +1777,7 @@ namespace MidiMessage {
         uint32_t len = 8;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtDeviceControl;
         bytes[4] = SysExRtDcGlobalParameterControl;
@@ -1830,7 +1830,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
+        if (bytes[1] != SysExIdRealTime_Byte) {
             return false;
         }
 //        if ((bytes[2] & DataMask) != bytes[2]) {
@@ -1865,7 +1865,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
+        if (bytes[1] != SysExIdRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -1957,7 +1957,7 @@ namespace MidiMessage {
 
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExRtControllerDestinationSetting;
         bytes[4] = subId2;
@@ -1996,7 +1996,7 @@ namespace MidiMessage {
         if (length < 7 || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtControllerDestinationSetting || !isSysExRtCds(bytes[4])){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTime_Byte || bytes[3] != SysExRtControllerDestinationSetting || !isSysExRtCds(bytes[4])){
             return false;
         }
 
@@ -2055,7 +2055,7 @@ namespace MidiMessage {
 
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExRtKeybasedInstrumentControl;
         bytes[4] = SysExRtKeysBasicMessage;
@@ -2088,7 +2088,7 @@ namespace MidiMessage {
         if (length < 7 || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtKeybasedInstrumentControl || !isSysExRtCds(bytes[4])){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTime_Byte || bytes[3] != SysExRtKeybasedInstrumentControl || !isSysExRtCds(bytes[4])){
             return false;
         }
 
@@ -2135,7 +2135,7 @@ namespace MidiMessage {
         ASSERT( isSysExNonRtGeneralMidi(subId2) );
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtGeneralMidi;
         bytes[4] = subId2;
@@ -2162,7 +2162,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtGeneralMidi || !isControlByte((bytes[length-1]))){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtGeneralMidi || !isSysExNonRtGeneralMidi(bytes[4]) ){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtGeneralMidi || !isSysExNonRtGeneralMidi(bytes[4]) ){
             return false;
         }
 
@@ -2208,7 +2208,7 @@ namespace MidiMessage {
         uint32_t len = 4;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtMidiMachineControlCommand;
 
@@ -2243,7 +2243,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
+        if (bytes[1] != SysExIdRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -2503,7 +2503,7 @@ namespace MidiMessage {
         uint32_t len = 5;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtMidiMachineControlResponse;
 
@@ -2538,7 +2538,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
+        if (bytes[1] != SysExIdRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -2597,7 +2597,7 @@ namespace MidiMessage {
         uint8_t length = 6;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = phoneId;
         bytes[3] = SysExRtMobilePhoneControlMessage;
         bytes[4] = 0; // SubId2 always 0
@@ -2670,7 +2670,7 @@ namespace MidiMessage {
         if (length < 9 || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTimeByte || bytes[3] != SysExRtMobilePhoneControlMessage || bytes[4] != 0 || ! isSysExRtMobileCmdId(bytes[5])){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTime_Byte || bytes[3] != SysExRtMobilePhoneControlMessage || bytes[4] != 0 || ! isSysExRtMobileCmdId(bytes[5])){
             return false;
         }
 
@@ -2768,7 +2768,7 @@ namespace MidiMessage {
         uint8_t len = 4;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdRealTimeByte;
+        bytes[1] = SysExIdRealTime_Byte;
         bytes[2] = deviceId & DataMask;
         bytes[3] = SysExRtMidiShowControl;
 
@@ -2903,7 +2903,7 @@ namespace MidiMessage {
         if (bytes[0] != SystemMessageSystemExclusive) {
             return false;
         }
-        if (bytes[1] != SysExIdRealTimeByte) {
+        if (bytes[1] != SysExIdRealTime_Byte) {
             return false;
         }
         if ((bytes[2] & DataMask) != bytes[2]) {
@@ -3070,7 +3070,7 @@ namespace MidiMessage {
 
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpHeader;
 
@@ -3116,7 +3116,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtSdsHeader || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpHeader){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpHeader){
             return false;
         }
 
@@ -3169,7 +3169,7 @@ namespace MidiMessage {
         uint8_t length = 5;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDataPacket;
 
@@ -3218,7 +3218,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtSdsHeader || ! isControlByte(bytes[length-1]) ){
             return false;
         }
-        if ( bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDataPacket){
+        if ( bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDataPacket){
             return false;
         }
 
@@ -3268,7 +3268,7 @@ namespace MidiMessage {
         ASSERT( sampleNumber <= MaxU14 );
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpRequest;
 
@@ -3295,7 +3295,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtSdsRequest || ! isControlByte(bytes[length-1]) ){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpRequest){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpRequest){
             return false;
         }
 
@@ -3333,7 +3333,7 @@ namespace MidiMessage {
         ASSERT( numberofChannels <= MaxU7);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsExtendedDumpHeader;
@@ -3367,7 +3367,7 @@ namespace MidiMessage {
         ASSERT( msg != NULL );
         ASSERT(msg->StatusClass == StatusClassSystemMessage);
         ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
-        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTimeByte);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime_Byte);
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedDumpHeader);
 
@@ -3390,7 +3390,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtSdsHeader || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsExtendedDumpHeader){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsExtendedDumpHeader){
             return false;
         }
 
@@ -3432,17 +3432,173 @@ namespace MidiMessage {
         return false;
     }
 
+    inline uint8_t packSysExNonRtSdsLoopPointTransmission(uint8_t * bytes, uint8_t deviceId, uint16_t sampleNumber, uint16_t loopNumber, uint8_t loopType, uint32_t loopStartAddress, uint32_t loopEndAddress){
+        ASSERT(bytes != NULL);
+        ASSERT(deviceId <= MaxU7);
+        ASSERT(sampleNumber <= MaxU14);
+        ASSERT(loopNumber <= MaxU14);
+        ASSERT(isSysExNonRtSdsLoopType(loopType) );
+        ASSERT(loopStartAddress <= MaxU21);
+        ASSERT(loopEndAddress <= MaxU21);
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTime_Byte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpExtension;
+        bytes[4] = SysExNonRtSdsLoopPointsTransmission;
+
+        packU14( &bytes[5], sampleNumber );
+        packU14( &bytes[7], loopNumber );
+
+        bytes[9] = loopType;
+
+        packU21( &bytes[10], loopStartAddress);
+        packU21( &bytes[13], loopEndAddress);
+
+        bytes[16] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSdsLoopPointTransmission;
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointTransmissionObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsLoopPointTransmissionData_t * data ){
+        ASSERT(data != NULL);
+        return packSysExNonRtSdsLoopPointTransmission(bytes, deviceId, data->SampleNumber, data->LoopNumber, data->LoopType, data->LoopStartAddress, data->LoopEndAddress);
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointTransmissionObj(uint8_t *bytes, Message_t * msg){
+        ASSERT(msg != NULL);
+        return packSysExNonRtSdsLoopPointTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission);
+    }
+
+    inline bool unpackSysExNonRtSdsLoopPointTransmission(uint8_t * bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint16_t *loopNumber, uint8_t *loopType, uint32_t *loopStartAddress, uint32_t *loopEndAddress){
+        ASSERT(bytes != NULL);
+        ASSERT(deviceId != NULL);
+        ASSERT(sampleNumber != NULL);
+        ASSERT(loopNumber != NULL);
+        ASSERT(loopType != NULL);
+        ASSERT(loopStartAddress != NULL);
+        ASSERT(loopEndAddress != NULL);
+
+        if (length != MsgLenSysExNonRtSdsLoopPointTransmission || ! isControlByte(bytes[length-1])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsLoopPointsTransmission){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+
+        *sampleNumber = unpackU14( &bytes[5] );
+        *loopNumber = unpackU14( &bytes[7] );
+
+        *loopType = bytes[9];
+
+        *loopStartAddress = unpackU21( &bytes[10]);
+        *loopEndAddress = unpackU21( &bytes[13]);
+
+        return true;
+    }
+
+    inline bool unpackSysExNonRtSdsLoopPointTransmissionObjSds(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsLoopPointTransmissionData_t * data ){
+        ASSERT(data != NULL);
+
+        return unpackSysExNonRtSdsLoopPointTransmission(bytes, length, deviceId, &data->SampleNumber, &data->LoopNumber, &data->LoopType, &data->LoopStartAddress, &data->LoopEndAddress);
+    }
+
+    inline bool unpackSysExNonRtSdsLoopPointTransmissionObj(uint8_t *bytes, uint8_t length, Message_t * msg){
+        ASSERT(msg != NULL);
+
+        if (unpackSysExNonRtSdsLoopPointTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
+            msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpExtension;
+            msg->Data.SysEx.SubId2 = SysExNonRtSdsLoopPointsTransmission;
+            return true;
+        }
+
+        return false;
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint16_t loopNumber){
+        ASSERT( bytes != NULL);
+        ASSERT(deviceId <= MaxU7);
+        ASSERT(sampleNumber <= MaxU14);
+        ASSERT(loopNumber <= MaxU14);
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTime_Byte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtSampleDumpExtension;
+        bytes[4] = SysExNonRtSdsLoopPointsRequest;
+
+        packU14( &bytes[5], sampleNumber );
+        packU14( &bytes[7], loopNumber );
+
+        bytes[9] = SystemMessageEndOfExclusive;
+
+        return MsgLenSysExNonRtSdsLoopPointRequest;
+    }
+
+    inline uint8_t packSysExNonRtSdsLoopPointRequestObj(uint8_t *bytes, Message_t *msg){
+        ASSERT(msg != NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsLoopPointsRequest);
+
+        return packSysExNonRtSdsLoopPointRequest( bytes, msg->Channel, msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.SampleNumber, msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.LoopNumber);
+    }
+
+
+    inline bool unpackSysExNonRtSdsLoopPointRequest(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint16_t *loopNumber){
+        ASSERT( bytes != NULL);
+        ASSERT(deviceId != NULL);
+        ASSERT(sampleNumber != NULL);
+        ASSERT(loopNumber != NULL);
+
+        if (length != MsgLenSysExNonRtSdsLoopPointRequest || ! isControlByte(bytes[length-1]) ){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsLoopPointsRequest){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+
+        *sampleNumber = unpackU14( &bytes[5]);
+        *loopNumber = unpackU14( &bytes[7]);
+
+        return true;
+    }
+
+    inline bool unpackSysExNonRtSdsLoopPointRequestObj(uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT(msg != NULL);
+
+        if (unpackSysExNonRtSdsLoopPointRequest( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.SampleNumber, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.LoopNumber)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
+            msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpExtension;
+            msg->Data.SysEx.SubId2 = SysExNonRtSdsLoopPointsRequest;
+            return true;
+        }
+
+        return false;
+    }
+
     inline uint8_t packSysExNonRtSdsExtLoopPointTransmission(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint16_t loopNumber, uint8_t loopType, uint64_t loopStartAddress, uint64_t loopEndAddress){
         ASSERT(bytes!=NULL);
         ASSERT(deviceId<=MaxU7);
         ASSERT(sampleNumber <= MaxU14);
         ASSERT(loopNumber <= MaxU14);
-        ASSERT( loopType <= MaxU7);
+        ASSERT(loopType <= MaxU7);
         ASSERT(loopStartAddress <= MaxU35);
         ASSERT(loopEndAddress <= MaxU35);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsExtendedLoopPointsTransmission;
@@ -3452,10 +3608,10 @@ namespace MidiMessage {
 
         bytes[9] = loopType;
 
-        packU35( &bytes[14], loopStartAddress);
-        packU35( &bytes[19], loopEndAddress);
+        packU35( &bytes[10], loopStartAddress);
+        packU35( &bytes[15], loopEndAddress);
 
-        bytes[24] = SystemMessageEndOfExclusive;
+        bytes[20] = SystemMessageEndOfExclusive;
 
         return MsgLenSysExNonRtSdsExtLoopPointTransmission;
     }
@@ -3474,7 +3630,7 @@ namespace MidiMessage {
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsTransmission);
 
-        return packSysExNonRtSdsExtLoopPointTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission);
+        return packSysExNonRtSdsExtLoopPointTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.ExtLoopPointTransmission);
     }
 
 
@@ -3491,7 +3647,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtSdsExtLoopPointTransmission || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsExtendedLoopPointsTransmission){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsExtendedLoopPointsTransmission){
             return false;
         }
 
@@ -3515,7 +3671,7 @@ namespace MidiMessage {
     inline bool unpackSysExNonRtSdsExtLoopPointTransmissionObj(uint8_t *bytes, uint8_t length,  Message_t *msg){
         ASSERT( msg != NULL);
 
-        if (unpackSysExNonRtSdsExtLoopPointTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointTransmission)){
+        if (unpackSysExNonRtSdsExtLoopPointTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.ExtLoopPointTransmission)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3534,10 +3690,10 @@ namespace MidiMessage {
         ASSERT(loopNumber <= MaxU14);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpExtension;
-        bytes[4] = SysExNonRtSdsLoopPointsRequest;
+        bytes[4] = SysExNonRtSdsExtendedLoopPointsRequest;
 
         packU14( &bytes[5], sampleNumber );
         packU14( &bytes[7], loopNumber );
@@ -3553,9 +3709,9 @@ namespace MidiMessage {
         ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
         ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
-        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsLoopPointsRequest);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsExtendedLoopPointsRequest);
 
-        return packSysExNonRtSdsExtLoopPointRequest( bytes, msg->Channel, msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.SampleNumber, msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.LoopNumber);
+        return packSysExNonRtSdsExtLoopPointRequest( bytes, msg->Channel, msg->Data.SysEx.Data.SampleDumpExt.ExtLoopPointRequest.SampleNumber, msg->Data.SysEx.Data.SampleDumpExt.ExtLoopPointRequest.LoopNumber);
     }
 
 
@@ -3568,7 +3724,7 @@ namespace MidiMessage {
         if (length != MsgLenSysExNonRtSdsExtLoopPointRequest || ! isControlByte(bytes[length-1]) ){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsLoopPointsRequest){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsLoopPointsRequest){
             return false;
         }
 
@@ -3583,19 +3739,19 @@ namespace MidiMessage {
     inline bool unpackSysExNonRtSdsExtLoopPointRequestObj(uint8_t *bytes, uint8_t length, Message_t *msg){
         ASSERT(msg != NULL);
 
-        if (unpackSysExNonRtSdsExtLoopPointRequest( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.SampleNumber, &msg->Data.SysEx.Data.SampleDumpExt.LoopPointRequest.LoopNumber)){
+        if (unpackSysExNonRtSdsExtLoopPointRequest( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.ExtLoopPointRequest.SampleNumber, &msg->Data.SysEx.Data.SampleDumpExt.ExtLoopPointRequest.LoopNumber)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
             msg->Data.SysEx.SubId1 = SysExNonRtSampleDumpExtension;
-            msg->Data.SysEx.SubId2 = SysExNonRtSdsLoopPointsRequest;
+            msg->Data.SysEx.SubId2 = SysExNonRtSdsExtendedLoopPointsRequest;
             return true;
         }
 
         return false;
     }
 
-    inline uint8_t packSysExNonRtSdsExtSampleNameTransmission(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t languageTagLength, uint8_t * languageTag, uint8_t nameLength, uint8_t *name){
+    inline uint8_t packSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber, uint8_t languageTagLength, uint8_t * languageTag, uint8_t nameLength, uint8_t *name){
         ASSERT(bytes!=NULL);
         ASSERT(deviceId<=MaxU7);
         ASSERT(sampleNumber <= MaxU14);
@@ -3607,7 +3763,7 @@ namespace MidiMessage {
         uint8_t length = 7;
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsSampleNameTransmission;
@@ -3631,13 +3787,13 @@ namespace MidiMessage {
         return length;
     }
 
-    inline uint8_t packSysExNonRtSdsExtSampleNameTransmissionObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsExtNameTransmissionData_t * data){
+    inline uint8_t packSysExNonRtSdsSampleNameTransmissionObjSds(uint8_t *bytes, uint8_t deviceId, SysExNonRtSdsExtNameTransmissionData_t * data){
         ASSERT(data!=NULL);
 
-        return packSysExNonRtSdsExtSampleNameTransmission(bytes, deviceId, data->SampleNumber, data->LanguageTagLength, data->LanguageTag, data->NameLength, data->Name);
+        return packSysExNonRtSdsSampleNameTransmission(bytes, deviceId, data->SampleNumber, data->LanguageTagLength, data->LanguageTag, data->NameLength, data->Name);
     }
 
-    inline uint8_t packSysExNonRtSdsExtSampleNameTransmissionObj(uint8_t *bytes, Message_t *msg){
+    inline uint8_t packSysExNonRtSdsSampleNameTransmissionObj(uint8_t *bytes, Message_t *msg){
         ASSERT( msg != NULL);
         ASSERT( msg->StatusClass == StatusClassSystemMessage);
         ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
@@ -3645,10 +3801,10 @@ namespace MidiMessage {
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameTransmission);
 
-        return packSysExNonRtSdsExtSampleNameTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.NameTransmission);
+        return packSysExNonRtSdsSampleNameTransmissionObjSds(bytes, msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.NameTransmission);
     }
 
-    inline bool unpackSysExNonRtSdsExtSampleNameTransmission(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint8_t *languageTagLength, uint8_t * languageTag, uint8_t *nameLength, uint8_t *name){
+    inline bool unpackSysExNonRtSdsSampleNameTransmission(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber, uint8_t *languageTagLength, uint8_t * languageTag, uint8_t *nameLength, uint8_t *name){
         ASSERT(bytes!=NULL);
         ASSERT(deviceId!= NULL);
         ASSERT(sampleNumber != NULL);
@@ -3662,7 +3818,7 @@ namespace MidiMessage {
         if (length < 8 || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsSampleNameTransmission){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsSampleNameTransmission){
             return false;
         }
 
@@ -3684,16 +3840,16 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtSdsExtSampleNameTransmissionObjSds(uint8_t *bytes, uint8_t length, uint8_t * deviceId, SysExNonRtSdsExtNameTransmissionData_t * data){
+    inline bool unpackSysExNonRtSdsSampleNameTransmissionObjSds(uint8_t *bytes, uint8_t length, uint8_t * deviceId, SysExNonRtSdsExtNameTransmissionData_t * data){
         ASSERT(data!=NULL);
 
-        return unpackSysExNonRtSdsExtSampleNameTransmission(bytes, length, deviceId, &data->SampleNumber, &data->LanguageTagLength, data->LanguageTag, &data->NameLength, data->Name);
+        return unpackSysExNonRtSdsSampleNameTransmission(bytes, length, deviceId, &data->SampleNumber, &data->LanguageTagLength, data->LanguageTag, &data->NameLength, data->Name);
     }
 
-    inline bool unpackSysExNonRtSdsExtSampleNameTransmissionObj(uint8_t *bytes,uint8_t length, Message_t *msg){
+    inline bool unpackSysExNonRtSdsSampleNameTransmissionObj(uint8_t *bytes,uint8_t length, Message_t *msg){
         ASSERT( msg != NULL);
 
-        if (unpackSysExNonRtSdsExtSampleNameTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.NameTransmission)){
+        if (unpackSysExNonRtSdsSampleNameTransmissionObjSds(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.NameTransmission)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3706,13 +3862,13 @@ namespace MidiMessage {
     }
 
 
-    inline uint8_t packSysExNonRtSdsExtSampleNameRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber){
+    inline uint8_t packSysExNonRtSdsSampleNameRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber){
         ASSERT( bytes != NULL);
         ASSERT(deviceId <= MaxU7);
         ASSERT(sampleNumber <= MaxU14);
 
         bytes[0] = SystemMessageSystemExclusive;
-        bytes[1] = SysExIdNonRealTimeByte;
+        bytes[1] = SysExIdNonRealTime_Byte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpExtension;
         bytes[4] = SysExNonRtSdsSampleNameRequest;
@@ -3721,10 +3877,10 @@ namespace MidiMessage {
 
         bytes[7] = SystemMessageEndOfExclusive;
 
-        return MsgLenSysExNonRtSdsExtSampleNameRequest;
+        return MsgLenSysExNonRtSdsSampleNameRequest;
     }
 
-    inline uint8_t packSysExNonRtSdsExtSampleNameRequestObj(uint8_t *bytes, Message_t *msg){
+    inline uint8_t packSysExNonRtSdsSampleNameRequestObj(uint8_t *bytes, Message_t *msg){
         ASSERT(msg != NULL);
         ASSERT(msg->StatusClass == StatusClassSystemMessage);
         ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
@@ -3732,18 +3888,18 @@ namespace MidiMessage {
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameRequest);
 
-        return packSysExNonRtSdsExtSampleNameRequest( bytes, msg->Channel, msg->Data.SysEx.Data.SampleDumpExt.NameRequest.SampleNumber);
+        return packSysExNonRtSdsSampleNameRequest( bytes, msg->Channel, msg->Data.SysEx.Data.SampleDumpExt.NameRequest.SampleNumber);
     }
 
-    inline bool unpackSysExNonRtSdsExtSampleNameRequest(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber){
+    inline bool unpackSysExNonRtSdsSampleNameRequest(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint16_t *sampleNumber){
         ASSERT( bytes != NULL);
         ASSERT(deviceId != NULL);
         ASSERT(sampleNumber != NULL);
 
-        if (length != MsgLenSysExNonRtSdsExtSampleNameRequest || ! isControlByte(bytes[length-1])){
+        if (length != MsgLenSysExNonRtSdsSampleNameRequest || ! isControlByte(bytes[length-1])){
             return false;
         }
-        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTimeByte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsSampleNameRequest){
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtSampleDumpExtension || bytes[4] != SysExNonRtSdsSampleNameRequest){
             return false;
         }
 
@@ -3754,10 +3910,10 @@ namespace MidiMessage {
         return true;
     }
 
-    inline bool unpackSysExNonRtSdsExtSampleNameRequestObj(uint8_t *bytes, uint8_t length, Message_t *msg){
+    inline bool unpackSysExNonRtSdsSampleNameRequestObj(uint8_t *bytes, uint8_t length, Message_t *msg){
         ASSERT(msg != NULL);
 
-        if (unpackSysExNonRtSdsExtSampleNameRequest( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.NameRequest.SampleNumber)){
+        if (unpackSysExNonRtSdsSampleNameRequest( bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDumpExt.NameRequest.SampleNumber)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -3775,6 +3931,12 @@ namespace MidiMessage {
         ASSERT( isSysExNonRtSds(msg->Data.SysEx.SubId2) );
 
         switch(msg->Data.SysEx.SubId2){
+            case SysExNonRtSdsLoopPointsTransmission:
+                return packSysExNonRtSdsLoopPointTransmissionObj(bytes, msg);
+
+            case SysExNonRtSdsLoopPointsRequest:
+                return packSysExNonRtSdsLoopPointRequestObj(bytes, msg);
+
             case SysExNonRtSdsExtendedDumpHeader:
                 return packSysExNonRtSdsHeaderObj(bytes, msg);
 
@@ -3785,10 +3947,10 @@ namespace MidiMessage {
                 return packSysExNonRtSdsExtLoopPointRequestObj(bytes, msg);
 
             case SysExNonRtSdsExtendedLoopPointsTransmission:
-                return packSysExNonRtSdsExtSampleNameTransmissionObj(bytes, msg);
+                return packSysExNonRtSdsSampleNameTransmissionObj(bytes, msg);
 
             case SysExNonRtSdsExtendedLoopPointsRequest:
-                return packSysExNonRtSdsExtSampleNameRequestObj(bytes, msg);
+                return packSysExNonRtSdsSampleNameRequestObj(bytes, msg);
 
         }
 
@@ -3801,6 +3963,12 @@ namespace MidiMessage {
 
 
         switch(bytes[3]){
+            case SysExNonRtSdsLoopPointsTransmission:
+                return unpackSysExNonRtSdsLoopPointTransmissionObj(bytes, length, msg);
+
+            case SysExNonRtSdsLoopPointsRequest:
+                return unpackSysExNonRtSdsLoopPointRequestObj(bytes, length, msg);
+
             case SysExNonRtSdsExtendedDumpHeader:
                 return unpackSysExNonRtSdsHeaderObj(bytes, length, msg);
 
@@ -3811,10 +3979,10 @@ namespace MidiMessage {
                 return unpackSysExNonRtSdsExtLoopPointRequestObj(bytes, length, msg);
 
             case SysExNonRtSdsExtendedLoopPointsTransmission:
-                return unpackSysExNonRtSdsExtSampleNameTransmissionObj(bytes, length, msg);
+                return unpackSysExNonRtSdsSampleNameTransmissionObj(bytes, length, msg);
 
             case SysExNonRtSdsExtendedLoopPointsRequest:
-                return unpackSysExNonRtSdsExtSampleNameRequestObj(bytes, length, msg);
+                return unpackSysExNonRtSdsSampleNameRequestObj(bytes, length, msg);
 
         }
 
