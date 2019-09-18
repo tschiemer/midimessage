@@ -2025,7 +2025,7 @@ namespace MidiMessage {
     } SysExNonRtSdsHeaderData_t;
 
     typedef struct {
-        uint16_t RequestedSample;
+        uint16_t SampleNumber;
     } SysExNonRtSdsRequestData_t;
 
     typedef struct {

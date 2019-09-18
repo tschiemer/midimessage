@@ -2699,7 +2699,7 @@ namespace MidiMessage {
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpRequest){
                         length += sprintf( (char*)&bytes[length], "sds-request %d",
-                                           msg->Data.SysEx.Data.SampleDump.Request.RequestedSample
+                                           msg->Data.SysEx.Data.SampleDump.Request.SampleNumber
                         );
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDataPacket){

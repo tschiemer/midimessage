@@ -3261,18 +3261,18 @@ namespace MidiMessage {
         return false;
     }
 
-    inline uint8_t packSysExNonRtSdsRequest(uint8_t *bytes, uint8_t deviceId, uint16_t requestedSample ){
+    inline uint8_t packSysExNonRtSdsRequest(uint8_t *bytes, uint8_t deviceId, uint16_t sampleNumber ){
 
         ASSERT( bytes!= NULL );
         ASSERT( deviceId <= MaxU7 );
-        ASSERT( requestedSample <= MaxU14 );
+        ASSERT( sampleNumber <= MaxU14 );
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdNonRealTimeByte;
         bytes[2] = deviceId;
         bytes[3] = SysExNonRtSampleDumpRequest;
 
-        packU14( &bytes[4], requestedSample );
+        packU14( &bytes[4], sampleNumber );
 
         bytes[6] = SystemMessageEndOfExclusive;
 
@@ -3282,15 +3282,15 @@ namespace MidiMessage {
     inline uint8_t packSysExNonRtSdsRequestObj(uint8_t * bytes, Message_t *msg){
         ASSERT( msg != NULL);
 
-        return packSysExNonRtSdsRequest(bytes, msg->Channel, msg->Data.SysEx.Data.SampleDump.Request.RequestedSample);
+        return packSysExNonRtSdsRequest(bytes, msg->Channel, msg->Data.SysEx.Data.SampleDump.Request.SampleNumber);
     }
 
 
-    inline bool unpackSysExNonRtSdsRequest(uint8_t *bytes, uint8_t length, uint8_t * deviceId, uint16_t * requestedSample ){
+    inline bool unpackSysExNonRtSdsRequest(uint8_t *bytes, uint8_t length, uint8_t * deviceId, uint16_t * sampleNumber ){
 
         ASSERT( bytes!= NULL );
         ASSERT( deviceId != NULL );
-        ASSERT( requestedSample != NULL );
+        ASSERT( sampleNumber != NULL );
 
         if (length != MsgLenSysExNonRtSdsRequest || ! isControlByte(bytes[length-1]) ){
             return false;
@@ -3300,7 +3300,7 @@ namespace MidiMessage {
         }
 
         *deviceId = bytes[2];
-        *requestedSample = unpackU14( &bytes[4] );
+        *sampleNumber = unpackU14( &bytes[4] );
 
         return true;
     }
@@ -3308,7 +3308,7 @@ namespace MidiMessage {
     inline bool unpackSysExNonRtSdsRequestObj(uint8_t * bytes, uint8_t length, Message_t *msg){
         ASSERT( msg != NULL);
 
-        if (unpackSysExNonRtSdsRequest(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Request.RequestedSample)){
+        if (unpackSysExNonRtSdsRequest(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.Request.SampleNumber)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
