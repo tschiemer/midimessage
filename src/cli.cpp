@@ -13,6 +13,8 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include <util-hex.h>
+
 #include <midimessage.h>
 #include <midimessage/stringifier.h>
 #include <midimessage/parser.h>
@@ -25,13 +27,23 @@ using namespace MidiMessage;
 ///////// Defines
 
 typedef enum {
-    ModeUndefined   = 0,
-    ModeParse       = 1,
-    ModeGenerate    = 2
+    ModeUndefined       = 0,
+    ModeParse           = 1,
+    ModeGenerate        = 2,
+    ModeNibblize        = 3,
+    ModeDeNibblize      = 4,
+    ModeSevenbitize     = 5,
+    ModeDeSevenbitize   = 6
 } Mode_t;
 
 inline bool isValidMode( Mode_t mode ){
-    return (mode == ModeParse || mode == ModeGenerate);
+    return (mode == ModeParse ||
+            mode == ModeGenerate ||
+            mode == ModeNibblize ||
+            mode == ModeDeNibblize ||
+            mode == ModeSevenbitize ||
+            mode == ModeDeSevenbitize
+    );
 }
 
 typedef enum {
@@ -86,7 +98,11 @@ void discardingData( uint8_t * data, uint8_t length, void * context );
 
 
 void printHelp( void ) {
-    printf("Usage: midimessage-cli [-h?] [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d] [<binary-data>]] | --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
+    printf("Usage:\n");
+    printf("\t midimessage-cli [-h?]\n");
+    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d]]\n");
+    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
+    printf("\t midimessage-cli --convert=(nibblize|denibblize|sevenbitize|desevenbitize)\n");
 
     printf("\nOptions:\n");
     printf("\t -h|-? \t\t\t\t show this help\n");
@@ -99,6 +115,7 @@ void printHelp( void ) {
     printf("\t --suffix=<suffix> \t\t Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
     printf("\t -x0, -x1 \t\t\t In generation mode, exit on input error (-x1) or continue processing (-x0). Default := continue (-x0).\n");
     printf("\t -v0, -v1 \t\t\t In generation mode, print command parsing result (on error only) to STDERR. Default := do NOT print (-v0).\n");
+    printf("\t --convert=.. \t\t\t Enter convertion mode, ie transform incoming STDIN using convertion method and write to STDOUT (raw bytes).\n");
 
     printf("\nFancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
@@ -205,7 +222,7 @@ void printHelp( void ) {
     printf("\nSample Dump Standard (SDS)\n");
     printf("\t sysex nonrt <device-id (u7)> sds-header <sample-number (u14)> <sample-fmt (u7)> <sample-period (u21)> <sample-length (u21)> <loop-start (u21)> <loop-end (u21)> (uni-forward|bi-forward|forward-once)\n");
     printf("\t sysex nonrt <device-id (u7)> sds-request <sample-number (u14)>\n");
-    printf("\t sysex nonrt <device-id (u7)> sds-data <packet-index (u7)> <data (xN)> [<checksum-data (x1)> [<checksum-computed (x1)>]]*\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-data <packet-index (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]*\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext loop-point-tx <sample-number (u14)> <loop-number (u14)> (uni-forward|bi-forward|forward-once) <loop-start (u21)> <loop-end (u21)>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext loop-point-request <sample-number (u14)> <loop-number (u14)>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext ext-header <sample-number (u14)> <sample-fmt (u7)> <sample-rate-integer (u28)> <sample-rate-fraction (u28)> <sample-length (u35)> <loop-start (u35)> <loop-end (u35)> <loop-type**>\n");
@@ -213,7 +230,7 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id (u7)> sds-ext ext-loop-point-request <sample-number (u14)> <loop-number (u14)>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext name-tx <sample-number (u14)> -*** <sample-name (strN) ...>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext name-request <sample-number (u14)>\n");
-    printf("* Both checksums are given when parsing a MIDI stream (to allow verification). During generation, if <checksum-data> (see specification) is not given it is computed (recommended) and the <checksum-computed> is always ignored if given.\n");
+    printf("* <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.\n");
     printf("** <loop-type> := uni-forward|bi-forward|uni-forward-release|bi-forward-release|uni-backward|bi-backward|uni-backward-release|bi-backward-release|backward-once|forward-once\n");
     printf("*** In principle there is a language tag to support localization, but apart from the default (English) none are documented and thus likely not used. Thus momentarily only the default is supported which is chosen by specifying '-' as argument.\n");
 
@@ -224,6 +241,12 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id (u7)> mvc (playback-speed-range|keyboard-range-lower|keyboard-range-upper) <data (xN)>\n");
     printf("\t sysex nonrt <device-id (u7)> mvc <parameter-address (x3)> <data (xN)>\n");
 
+    printf("\nFile Dump\n");
+    printf("\t sysex nonrt <device-id (u7)> file-dump <sender-id (u7)> request <type (str4)*> <name (strN)>\n");
+    printf("\t sysex nonrt <device-id (u7)> file-dump <sender-id (u7)> header <type (str4)*> <length (u28)> <name (strN)>\n");
+    printf("\t sysex nonrt <device-id (u7)> file-dump <sender-id (u7)> data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]**\n");
+    printf("*<type> := four 7-bit ASCII bytes. Defined in specification: MIDI, MIEX, ESEQ, TEXT, BIN<space>, MAC<space>\n");
+    printf("** <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.\n");
 
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");
@@ -233,6 +256,8 @@ void printHelp( void ) {
     printf("\t bin/midimessage-cli -g --prefix='%%d ' --suffix=$'\\x0a'\n");
     printf("\t bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording\n");
     printf("\t cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p\n");
+    printf("\t echo -n $'\\x13\\x37'| bin/midimessage-cli --convert=nibblize | xxd\n");
+    printf("\t echo -n $'\\x03\\x01\\x07\\x03'| bin/midimessage-cli --convert=denibblize | xxd\n");
 }
 
 
@@ -401,6 +426,55 @@ void parser(void){
     }
 }
 
+
+uint8_t cNibblize(uint8_t * dst, uint8_t * src, uint8_t length){
+    return nibblize(dst, src, length);
+}
+uint8_t cDeNibblize(uint8_t * dst, uint8_t * src, uint8_t length){
+    return denibblize(dst, src, length);
+}
+uint8_t cSevenbitize(uint8_t * dst, uint8_t * src, uint8_t length){
+    return sevenbitize(dst, src, length);
+}
+uint8_t cDeSevenbitize(uint8_t * dst, uint8_t * src, uint8_t length){
+    return desevenbitize(dst, src, length);
+}
+
+void converter(int (*getc)(void), uint8_t(*fun)(uint8_t *,uint8_t *, uint8_t), uint8_t each){
+
+    uint8_t src[16];
+    uint8_t dst[16];
+    uint8_t srcl = 0;
+
+    int ch;
+    while( (ch = fgetc(stdin)) != EOF ){
+        uint8_t byte = (uint8_t)ch;
+
+        src[srcl++] = byte;
+        if (srcl >= each){
+            uint8_t dstl = fun(dst, src, srcl);
+
+//            for(uint8_t i = 0; i < dstl; i++){
+//                printf("%02X", dst[i]);
+//            }
+
+            fwrite( dst, 1, dstl, stdout );
+
+            srcl = 0;
+        }
+    }
+    // in case input terminated before group full
+    if (srcl > 0){
+        uint8_t dstl = fun(dst, src, srcl);
+
+        fwrite( dst, 1, dstl, stdout );
+//        for(uint8_t i = 0; i < dstl; i++){
+//            printf("%02X", dst[i]);
+//        }
+    }
+
+}
+
 void parsedMessage( Message_t * msg, void * context ){
 
 
@@ -464,6 +538,7 @@ int main(int argc, char * argv[], char * env[]){
                 {"verbose", optional_argument, 0, 'v'},
                 {"exit-on-error", required_argument, 0, 'x'},
                 {"help",    no_argument,    0,  'h' },
+                {"convert", required_argument, 0, 0},
                 {0,         0,              0,  0 }
         };
 
@@ -482,12 +557,29 @@ int main(int argc, char * argv[], char * env[]){
                     }
                     strcpy(prefix, optarg);
                 }
-                if (strcmp(long_options[option_index].name, "suffix") == 0) {
+                else if (strcmp(long_options[option_index].name, "suffix") == 0) {
                     if (mode != ModeGenerate) {
                         printf("Can only use prefix when generating messages!\n");
                         exit(EXIT_FAILURE);
                     }
                     strcpy(suffix, optarg);
+                }
+                else if (strcmp(long_options[option_index].name, "convert") == 0) {
+                    if (mode != ModeUndefined){
+                        printf("Can only enter one mode!\n");
+                    }
+                    if (strcmp(optarg, "nibblize") == 0){
+                        mode = ModeNibblize;
+                    } else if (strcmp(optarg, "denibblize") == 0){
+                        mode = ModeDeNibblize;
+                    } else if (strcmp(optarg, "sevenbitize") == 0){
+                        mode = ModeSevenbitize;
+                    } else if (strcmp(optarg, "desevenbitize") == 0){
+                        mode = ModeDeSevenbitize;
+                    } else {
+                        printf("Conversion mode not recognized!\n");
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 break;
 
@@ -555,7 +647,7 @@ int main(int argc, char * argv[], char * env[]){
     }
 
     if ( ! isValidMode( mode) ){
-        printf("Must be called in either parsing or generation mode!\n");
+        printf("Must be called in either parsing or generation mode (or conversion mode, for that matter..)!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -595,6 +687,22 @@ int main(int argc, char * argv[], char * env[]){
 
         // enter parser loop (reads stdin until eof)
         parser();
+    }
+
+    if (mode == ModeNibblize){
+        converter(NULL, cNibblize, 1);
+    }
+
+    if (mode == ModeDeNibblize){
+        converter(NULL, cDeNibblize, 2);
+    }
+
+    if (mode == ModeSevenbitize){
+        converter(NULL, cSevenbitize, 7);
+    }
+
+    if (mode == ModeDeSevenbitize){
+        converter(NULL, cDeSevenbitize, 8);
     }
 
     return EXIT_SUCCESS;

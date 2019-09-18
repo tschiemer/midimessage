@@ -3162,7 +3162,7 @@ namespace MidiMessage {
 
 
 
-    inline uint8_t packSysExNonRtSdsDataPacket(uint8_t *bytes, uint8_t deviceId, uint8_t runningPacketCount, uint8_t * data, uint8_t dataLen, uint8_t checksumData ){
+    inline uint8_t packSysExNonRtSdsDataPacket(uint8_t *bytes, uint8_t deviceId, uint8_t runningPacketCount, uint8_t * data, uint8_t dataLen, uint8_t checksum ){
 
         ASSERT( bytes!= NULL );
         ASSERT( deviceId <= MaxU7 );
@@ -3183,11 +3183,11 @@ namespace MidiMessage {
             bytes[length] = data[i];
         }
 
-        if (checksumData == SysExNonRtSdsDataPacketComputeChecksum){
+        if (checksum == SysExNonRtSdsDataPacketComputeChecksum){
             bytes[length] = xorChecksum( &bytes[1], length-1 );
             length++;
         } else {
-            bytes[length++] = checksumData;
+            bytes[length++] = checksum;
         }
 
         bytes[length++] = SystemMessageEndOfExclusive;
@@ -3199,19 +3199,19 @@ namespace MidiMessage {
     inline uint8_t packSysExNonRtSdsDataPacketObj(uint8_t * bytes, Message_t *msg){
         ASSERT( msg != NULL);
 
-        return packSysExNonRtSdsDataPacket(bytes, msg->Channel, msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length, msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData );
+        return packSysExNonRtSdsDataPacket(bytes, msg->Channel, msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length, msg->Data.SysEx.Data.SampleDump.DataPacket.Checksum );
     }
 
 
-    inline bool unpackSysExNonRtSdsDataPacket(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint8_t *runningPacketCount, uint8_t * data, uint8_t * dataLen, uint8_t *checksumData, uint8_t *checksumComputed ){
+    inline bool unpackSysExNonRtSdsDataPacket(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint8_t *runningPacketCount, uint8_t * data, uint8_t * dataLen, uint8_t *checksum, uint8_t *checksumVerification ){
 
         ASSERT( bytes!= NULL );
         ASSERT( deviceId != NULL );
         ASSERT( runningPacketCount != NULL );
         ASSERT( data != NULL );
         ASSERT( dataLen != NULL );
-        ASSERT( checksumData != NULL );
-        ASSERT( checksumComputed != NULL );
+        ASSERT( checksum != NULL );
+        ASSERT( checksumVerification != NULL );
 
 
         if (length < MsgLenSysExNonRtSdsDataPacketMin || ! isControlByte(bytes[length-1]) ){
@@ -3234,9 +3234,9 @@ namespace MidiMessage {
             }
         }
 
-        *checksumData = bytes[length-2];
+        *checksum = bytes[length-2];
 
-        *checksumComputed =  xorChecksum( &bytes[1], length - 3 );
+        *checksumVerification =  xorChecksum( &bytes[1], length - 3 );
 
         return true;
     }
@@ -3244,14 +3244,14 @@ namespace MidiMessage {
 //    inline bool unpackSysExNonRtSampleDataPacket(uint8_t *bytes, uint8_t length, uint8_t *deviceId, SysExNonRtSdsDataPacketData_t * data ){
 //        ASSERT( data != NULL );
 //
-//        return unpackSysExNonRtSdsDataPacket(bytes, length, deviceId, &data->RunningPacketCount, data->Data, &data->Length, &data->ChecksumData, &data->ChecksumComputed );
+//        return unpackSysExNonRtSdsDataPacket(bytes, length, deviceId, &data->RunningPacketCount, data->Data, &data->Length, &data->Checksum, &data->ChecksumVerification );
 //    }
 
     inline bool unpackSysExNonRtSdsDataPacketObj(uint8_t * bytes, uint8_t length, Message_t *msg){
         ASSERT( msg != NULL);
 
 
-        if (unpackSysExNonRtSdsDataPacket(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, &msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData, &msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumComputed )){
+        if (unpackSysExNonRtSdsDataPacket(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, &msg->Data.SysEx.Data.SampleDump.DataPacket.Checksum, &msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumVerification )){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;

@@ -5,6 +5,8 @@
 #ifndef MIDIMESSAGE_H
 #define MIDIMESSAGE_H
 
+//#define MIDIMESSAGE_VERSION 0x000000
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -185,24 +187,72 @@ namespace MidiMessage {
         return (((uint64_t)bytes[3]) << 28) | (((uint64_t)bytes[3]) << 21) | (((uint64_t)bytes[2]) << 14) | (((uint64_t)bytes[1]) << 7) | ((uint64_t)bytes[0]);
     }
 
-    
-    inline int nibblize( uint8_t * dst, uint8_t * src, int len ){
-        for (int i = 0, j = 0; i < len; i++) {
+
+    /**
+     * Yes, yes, these nibblizers and sevenbitizers are for small amounts of bytes only.
+     * By official specification messages should be at most 128 bytes long which is managable.
+     */
+
+    inline uint8_t nibblize( uint8_t * dst, uint8_t * src, uint8_t length ){
+        ASSERT( (2 * length) > length ); // you are working with too long byte sequences (see note above)
+
+        for (uint8_t i = 0, j = 0; i < length; i++) {
             dst[j++] = getLsNibble( src[i] );
             dst[j++] = getMsNibble( src[i] );
         }
-        return 2 * len;
+        return 2 * length;
     }
 
-    inline int denibblize( uint8_t * dst, uint8_t * src, int len ){
-        ASSERT( len % 2 == 0 );
+    inline uint8_t denibblize( uint8_t * dst, uint8_t * src, uint8_t length ){
+        ASSERT( length % 2 == 0 );
 
-        for (int i = 0, j = 0; i < len; j++){
+        for (uint8_t i = 0, j = 0; i < length; j++){
             dst[j] = src[i++] & NibbleMask;
             dst[j] |= (src[i++] & NibbleMask) << 4;
         }
-        return len / 2;
+        return length / 2;
     }
+
+    inline uint8_t sevenbitize( uint8_t * dst, uint8_t * src, uint8_t length ){
+        uint8_t len = 0;
+        uint8_t * msb = dst;
+
+        for(uint8_t i = 0; i < length; i += 7, msb = &msb[8]){
+
+            uint8_t group = (length - i >= 7) ? 7 : length - i;
+
+            msb[0] = 0;
+
+            for(uint8_t j = 0; j < group; j++){
+                msb[0] |= (src[i+j] & 0b10000000) >> (j+1);
+                msb[j+1] = src[i+j] & 0b01111111;
+            }
+
+            len += group + 1;
+        }
+        return len;
+    }
+
+    inline uint8_t desevenbitize( uint8_t * dst, uint8_t * src, uint8_t length ){
+        uint8_t len = 0;
+        uint8_t * msb = src;
+
+        for(uint8_t i = 0; i < length; i += 8, msb = &msb[8]){
+
+            ASSERT( length - i >= 2 ); // sanity check
+
+            uint8_t group = (length - i >= 8) ? 7 : (length - i - 1);
+
+            for(uint8_t j = 0; j < group; j++){
+                dst[i+j] = ((src[0] << (j+1)) & 0b10000000) | src[j+1];
+            }
+
+            len += group;
+        }
+
+        return len;
+    }
+
 
     const uint8_t StatusClassMask = 0xF0;
     const uint8_t ChannelMask     = 0x0F;
@@ -668,11 +718,11 @@ namespace MidiMessage {
         SysExNonRtMidiTimeCode           = 0x04, // SubId2 enum SysExNonRtMtc..
         SysExNonRtSampleDumpExtension    = 0x05, // SubId2 enum SysExNonRtSds..
         SysExNonRtGeneralInformation     = 0x06, // SubId2 enum SysExNonRtGenInfo..
-        SysExNonRtFileDump               = 0x07, // SubId2 enum SysExNonRtFileDump..
+        SysExNonRtFileDump               = 0x07, // SubId2 enum SysExNonRtFDump..
         SysExNonRtMidiTuningStandard     = 0x08, // SubId2 enum SysExNonRtMts..
         SysExNonRtGeneralMidi            = 0x09, // SubId2 enum SysExNonRtGm..
         SysExNonRtDownloadableSounds     = 0x0A, // SubId2 enum SysExNonRtDls..
-        SysExNonRtFileReferenceMessage   = 0x0B, // SubId2 enum SysExNonRtFileRef..
+        SysExNonRtFileReferenceMessage   = 0x0B, // SubId2 enum SysExNonRtFRef..
         SysExNonRtMidiVisualControl      = 0x0C, // SubId2 enum SysExNonRtMvc..
         SysExNonRtMidiCapabilityInquiry  = 0x0D, // SubId2 enum SysExNonRtCapInq..
 
@@ -1271,8 +1321,8 @@ namespace MidiMessage {
         uint8_t RunningPacketCount;
 //        uint8_t Length;
 //        uint8_t * Data;
-        uint8_t ChecksumData; // XOR of complete message to end of payload
-        uint8_t ChecksumComputed;
+        uint8_t Checksum; // XOR of complete message to end of payload
+        uint8_t ChecksumVerification;
     } SysExNonRtSdsDataPacketData_t;
 
 
@@ -2697,6 +2747,15 @@ namespace MidiMessage {
                         SysExNonRtSdsExtNameTransmissionData_t NameTransmission;
                         SysExNonRtSdsExtNameRequestData_t NameRequest;
                     } SampleDump;
+
+                    struct {
+                        uint8_t SourceDeviceId;
+                        uint8_t Type[4];
+                        uint32_t FileLength;
+                        uint8_t PacketNumber;
+                        uint8_t Checksum;
+                        uint8_t ChecksumVerification;
+                    } FileDump;
 
                     union {
                         struct {

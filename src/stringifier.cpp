@@ -2201,11 +2201,11 @@ namespace MidiMessage {
                     }
 
                     if (argc > 6){
-                        if ( ! readHex(&msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData, NULL, argv[6], 1)){
+                        if ( ! readHex(&msg->Data.SysEx.Data.SampleDump.DataPacket.Checksum, NULL, argv[6], 1)){
                             return StringifierResultInvalidHex;
                         }
                     } else {
-                        msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData = SysExNonRtSdsDataPacketComputeChecksum;
+                        msg->Data.SysEx.Data.SampleDump.DataPacket.Checksum = SysExNonRtSdsDataPacketComputeChecksum;
                     }
 
                     return StringifierResultOk;
@@ -3103,7 +3103,7 @@ namespace MidiMessage {
                                            msg->Data.SysEx.Data.SampleDump.DataPacket.RunningPacketCount
                         );
                         length += sprintfHex( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
-                        length += sprintf( (char*)&bytes[length], " %02X %02X", msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumData, msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumComputed);
+                        length += sprintf( (char*)&bytes[length], " %02X %02X", msg->Data.SysEx.Data.SampleDump.DataPacket.Checksum, msg->Data.SysEx.Data.SampleDump.DataPacket.ChecksumVerification);
                     }
                     else if (msg->Data.SysEx.SubId1 == SysExNonRtSampleDumpExtension){
 
