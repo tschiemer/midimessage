@@ -62,7 +62,7 @@ tt = to test
 | Device Control | Master volume, balance, coarse/fine tuning, global parameters | SysEx Real Time | tt |
 | Controller Destination Settings | Channel/Key pressure, control change | SysEx Real Time | tt |
 | Key-based Instrument Control | | SysEx Real Time | tt |
-| Sample Dump | | SysEx Non-Real Time | tt / work in progress |
+| Sample Dump | (Extended) Header, Request, DataPacket, (Extended) Loop Point Request & Transmission, Name Request & Transmission  | SysEx Non-Real Time | tt |
 | File Dump | | Non-Real Time | TODO |
 | Downloadable Sounds | | Non-Real Time | TODO |
 | Notation Information | | Real Time | TODO |
