@@ -2390,6 +2390,75 @@ namespace MidiMessage {
                         return StringifierResultInvalidValue;
                     }
                 }
+                else if (str_eq(argv[3], "mvc")){
+                    if (argc != 6){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExNonRtMidiVisualControl;
+                    msg->Data.SysEx.SubId2 = SysExNonRtMvcVersion1;
+
+                    if (str_eq(argv[4], "on-off")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressMidiVisualControlOnOff;
+                    }
+                    else if (str_eq(argv[4], "clip-control-channel")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressClipControlRxChannel;
+                    }
+                    else if (str_eq(argv[4], "fx-control-channel")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressEffectControlRxChannel;
+                    }
+                    else if (str_eq(argv[4], "note-msg-enabled")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressNoteMessageEnabled;
+                    }
+                    else if (str_eq(argv[4], "playback-assign-msn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressPlaybackSpeedCtrlAssignMsn;
+                    }
+                    else if (str_eq(argv[4], "playback-assign-lsn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressPlaybackSpeedCtrlAssignLsn;
+                    }
+                    else if (str_eq(argv[4], "dissolve-assign-msn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressDissolveTimeCtrlAssignMsn;
+                    }
+                    else if (str_eq(argv[4], "dissolve-assign-lsn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressDissolveTimeCtrlAssignLsn;
+                    }
+                    else if (str_eq(argv[4], "fx1-assign-msn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressEffectControl1AssignMsn;
+                    }
+                    else if (str_eq(argv[4], "fx1-assign-lsn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressEffectControl1AssignLsn;
+                    }
+                    else if (str_eq(argv[4], "fx2-assign-msn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressEffectControl2AssignMsn;
+                    }
+                    else if (str_eq(argv[4], "fx2-assign-lsn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressEffectControl2AssignLsn;
+                    }
+                    else if (str_eq(argv[4], "fx3-assign-msn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressEffectControl3AssignMsn;
+                    }
+                    else if (str_eq(argv[4], "fx3-assign-lsn")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressEffectControl3AssignLsn;
+                    }
+                    else if (str_eq(argv[4], "playback-speed-range")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressPlaybackSpeedCtrlRange;
+                    }
+                    else if (str_eq(argv[4], "keyboard-range-lower")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressKeyboardRangeLower;
+                    }
+                    else if (str_eq(argv[4], "keyboard-range-upper")) {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = SysExNonRtMvcAddressKeyboardRangeUpper;
+                    }
+                    else {
+                        msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress = strtol((char*)argv[5], NULL, 16);
+                    }
+
+                    if ( ! readHex( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argv[5], 0)){
+                        return StringifierResultInvalidHex;
+                    }
+
+                    return StringifierResultOk;
+                }
                 else {
                     return StringifierResultInvalidValue;
                 }
@@ -3077,7 +3146,7 @@ namespace MidiMessage {
                                 bytes[length++] = msg->Data.SysEx.ByteData[j];
                             }
 
-                            bytes[length++] = '\0';
+                            bytes[length] = '\0';
                         }
                         else if (msg->Data.SysEx.SubId2 == SysExNonRtSdsSampleNameRequest){
                             length += sprintf( (char*)&bytes[length], "name-request %u", msg->Data.SysEx.Data.SampleDump.NameRequest.SampleNumber);
@@ -3114,6 +3183,38 @@ namespace MidiMessage {
                         else {
                             return 0;
                         }
+                    }
+
+                    else if (msg->Data.SysEx.SubId1 == SysExNonRtMidiVisualControl){
+                        length += sprintf( (char*)&bytes[length], "mvc ");
+
+                        switch(msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress){
+
+                            case SysExNonRtMvcAddressMidiVisualControlOnOff:        length += sprintf( (char*)&bytes[length], "on-off " ); break;
+                            case SysExNonRtMvcAddressClipControlRxChannel:          length += sprintf( (char*)&bytes[length], "clip-control-channel " ); break;
+                            case SysExNonRtMvcAddressEffectControlRxChannel:        length += sprintf( (char*)&bytes[length], "fx-control-channel " ); break;
+                            case SysExNonRtMvcAddressNoteMessageEnabled:            length += sprintf( (char*)&bytes[length], "note-msg-enabled " ); break;
+                            case SysExNonRtMvcAddressPlaybackSpeedCtrlAssignMsn:    length += sprintf( (char*)&bytes[length], "playback-assign-msn " ); break;
+                            case SysExNonRtMvcAddressPlaybackSpeedCtrlAssignLsn:    length += sprintf( (char*)&bytes[length], "playback-assign-lsn " ); break;
+                            case SysExNonRtMvcAddressDissolveTimeCtrlAssignMsn:     length += sprintf( (char*)&bytes[length], "dissolve-assign-msn " ); break;
+                            case SysExNonRtMvcAddressDissolveTimeCtrlAssignLsn:     length += sprintf( (char*)&bytes[length], "dissolve-assign-lsn " ); break;
+                            case SysExNonRtMvcAddressEffectControl1AssignMsn:       length += sprintf( (char*)&bytes[length], "fx1-assign-msn " ); break;
+                            case SysExNonRtMvcAddressEffectControl1AssignLsn:       length += sprintf( (char*)&bytes[length], "fx1-assign-lsn " ); break;
+                            case SysExNonRtMvcAddressEffectControl2AssignMsn:       length += sprintf( (char*)&bytes[length], "fx2-assign-msn " ); break;
+                            case SysExNonRtMvcAddressEffectControl2AssignLsn:       length += sprintf( (char*)&bytes[length], "fx2-assign-lsn " ); break;
+                            case SysExNonRtMvcAddressEffectControl3AssignMsn:       length += sprintf( (char*)&bytes[length], "fx3-assign-msn " ); break;
+                            case SysExNonRtMvcAddressEffectControl3AssignLsn:       length += sprintf( (char*)&bytes[length], "fx3-assign-lsn " ); break;
+                            case SysExNonRtMvcAddressPlaybackSpeedCtrlRange:        length += sprintf( (char*)&bytes[length], "playback-speed-range " ); break;
+                            case SysExNonRtMvcAddressKeyboardRangeLower:            length += sprintf( (char*)&bytes[length], "keyboard-range-lower " ); break;
+                            case SysExNonRtMvcAddressKeyboardRangeUpper:            length += sprintf( (char*)&bytes[length], "keyboard-range-upper " ); break;
+
+                            default:
+                                length += sprintf( (char*)&bytes[length], "%06X ", msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress);
+                        }
+
+                        length += sprintfHex( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
+
+                        bytes[length] = '\0';
                     }
                     else {
                         return 0;

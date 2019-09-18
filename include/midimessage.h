@@ -1445,14 +1445,91 @@ namespace MidiMessage {
 /////////////////////////////////////////////////////////////////
 
     typedef enum {
-        SysExNonRtMvcTODO //TODO
+        SysExNonRtMvcVersion1       = 0x01
     } SysExNonRtMvc_t;
 
     inline bool isSysExNonRtMvc( uint8_t value ){
-        return (value == SysExNonRtMvcTODO); //TODO
+        return (value == SysExNonRtMvcVersion1);
     }
 
+    typedef enum {
+        SysExNonRtMvcAddressMidiVisualControlOnOff      = 0x100000,
+        SysExNonRtMvcAddressClipControlRxChannel        = 0x100001,
+        SysExNonRtMvcAddressEffectControlRxChannel      = 0x100002,
+        SysExNonRtMvcAddressNoteMessageEnabled          = 0x100003,
 
+        SysExNonRtMvcAddressPlaybackSpeedCtrlAssignMsn  = 0x101000,
+        SysExNonRtMvcAddressPlaybackSpeedCtrlAssignLsn  = 0x101001,
+        SysExNonRtMvcAddressDissolveTimeCtrlAssignMsn   = 0x101002,
+        SysExNonRtMvcAddressDissolveTimeCtrlAssignLsn   = 0x101003,
+
+        SysExNonRtMvcAddressEffectControl1AssignMsn     = 0x102000,
+        SysExNonRtMvcAddressEffectControl1AssignLsn     = 0x102001,
+        SysExNonRtMvcAddressEffectControl2AssignMsn     = 0x102003,
+        SysExNonRtMvcAddressEffectControl2AssignLsn     = 0x102004,
+        SysExNonRtMvcAddressEffectControl3AssignMsn     = 0x102005,
+        SysExNonRtMvcAddressEffectControl3AssignLsn     = 0x102006,
+
+        SysExNonRtMvcAddressPlaybackSpeedCtrlRange      = 0x103001,
+        SysExNonRtMvcAddressKeyboardRangeLower          = 0x103002,
+        SysExNonRtMvcAddressKeyboardRangeUpper          = 0x103003,
+    } SysExNonRtMvcAddress_t;
+
+    inline bool isSysExNonRtMvcAddress( uint32_t value ){
+        return (value == SysExNonRtMvcAddressMidiVisualControlOnOff ||
+                value == SysExNonRtMvcAddressClipControlRxChannel ||
+                value == SysExNonRtMvcAddressEffectControlRxChannel ||
+                value == SysExNonRtMvcAddressNoteMessageEnabled ||
+                value == SysExNonRtMvcAddressPlaybackSpeedCtrlAssignMsn ||
+                value == SysExNonRtMvcAddressPlaybackSpeedCtrlAssignLsn ||
+                value == SysExNonRtMvcAddressDissolveTimeCtrlAssignMsn ||
+                value == SysExNonRtMvcAddressDissolveTimeCtrlAssignLsn ||
+                value == SysExNonRtMvcAddressEffectControl1AssignMsn ||
+                value == SysExNonRtMvcAddressEffectControl1AssignLsn ||
+                value == SysExNonRtMvcAddressEffectControl2AssignMsn ||
+                value == SysExNonRtMvcAddressEffectControl2AssignLsn ||
+                value == SysExNonRtMvcAddressEffectControl3AssignMsn ||
+                value == SysExNonRtMvcAddressEffectControl3AssignLsn ||
+                value == SysExNonRtMvcAddressPlaybackSpeedCtrlRange ||
+                value == SysExNonRtMvcAddressKeyboardRangeLower ||
+                value == SysExNonRtMvcAddressKeyboardRangeUpper);
+    }
+
+    const uint8_t SysExNonRtMvcAddressClipControlRxChannelDefault           = 0x00;
+    const uint8_t SysExNonRtMvcAddressEffectControlRxChannelDefault         = 0x00;
+    const uint8_t SysExNonRtMvcAddressNoteMessageEnabledDefault             = 0x00;
+    const uint8_t SysExNonRtMvcAddressPlaybackSpeedCtrlAssignMsnDefault     = 0x0E;
+    const uint8_t SysExNonRtMvcAddressPlaybackSpeedCtrlAssignLsnDefault     = 0x00;
+    const uint8_t SysExNonRtMvcAddressDissolveTimeCtrlAssignMsnDefault      = 0x00;
+    const uint8_t SysExNonRtMvcAddressDissolveTimeCtrlAssignLsnDefault      = 0x05;
+    const uint8_t SysExNonRtMvcAddressEffectControl1AssignMsnDefault        = 0x04;
+    const uint8_t SysExNonRtMvcAddressEffectControl1AssignLsnDefault        = 0x07;
+    const uint8_t SysExNonRtMvcAddressEffectControl2AssignMsnDefault        = 0x04;
+    const uint8_t SysExNonRtMvcAddressEffectControl2AssignLsnDefault        = 0x09;
+    const uint8_t SysExNonRtMvcAddressEffectControl3AssignMsnDefault        = 0x04;
+    const uint8_t SysExNonRtMvcAddressEffectControl3AssignLsnDefault        = 0x0A;
+    const uint8_t SysExNonRtMvcAddressPlaybackSpeedCtrlRangeDefault         = 0x00;
+    const uint8_t SysExNonRtMvcAddressKeyboardRangeLowerDefault             = 0x24;
+    const uint8_t SysExNonRtMvcAddressKeyboardRangeUpperDefault             = 0x54;
+
+
+    const uint8_t SysExNonRtMvcAddressMidiVisualControlOnOffMax         = 0x01;
+    const uint8_t SysExNonRtMvcAddressClipControlRxChannelMax           = 0x10;
+    const uint8_t SysExNonRtMvcAddressEffectControlRxChannelMax         = 0x10;
+    const uint8_t SysExNonRtMvcAddressNoteMessageEnabledMax             = 0x01;
+    const uint8_t SysExNonRtMvcAddressPlaybackSpeedCtrlAssignMsnMax     = 0x0F;
+    const uint8_t SysExNonRtMvcAddressPlaybackSpeedCtrlAssignLsnMax     = 0x0F;
+    const uint8_t SysExNonRtMvcAddressDissolveTimeCtrlAssignMsnMax      = 0x0F;
+    const uint8_t SysExNonRtMvcAddressDissolveTimeCtrlAssignLsnMax      = 0x0F;
+    const uint8_t SysExNonRtMvcAddressEffectControl1AssignMsnMax        = 0x0F;
+    const uint8_t SysExNonRtMvcAddressEffectControl1AssignLsnMax        = 0x0F;
+    const uint8_t SysExNonRtMvcAddressEffectControl2AssignMsnMax        = 0x0F;
+    const uint8_t SysExNonRtMvcAddressEffectControl2AssignLsnMax        = 0x0F;
+    const uint8_t SysExNonRtMvcAddressEffectControl3AssignMsnMax        = 0x0F;
+    const uint8_t SysExNonRtMvcAddressEffectControl3AssignLsnMax        = 0x0F;
+    const uint8_t SysExNonRtMvcAddressPlaybackSpeedCtrlRangeMax         = 0x7F;
+    const uint8_t SysExNonRtMvcAddressKeyboardRangeLowerMax             = 0x7F;
+    const uint8_t SysExNonRtMvcAddressKeyboardRangeUpperMax             = 0x7F;
 
 
 ///////////// SysEx: MIDI Show Control (MSC)         ////////////
@@ -2626,6 +2703,10 @@ namespace MidiMessage {
                             uint8_t TuningProgram;
                         } BulkDumpRequest;
                     } Tuning;
+
+                    struct {
+                        uint32_t ParameterAddress;
+                    } MidiVisualControl;
 
                 } Data;
 

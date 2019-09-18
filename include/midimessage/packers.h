@@ -3998,7 +3998,93 @@ namespace MidiMessage {
     }
 
 
-///////////// SysEx: MIDI Tuning Standard                  ////////////
+///////////// SysEx: MIDI Visual Control             ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    inline uint8_t packSysExNonRtMvcSetParameter(uint8_t *bytes, uint8_t deviceId, uint32_t parameterAddress, uint8_t * data, uint8_t dataLen){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId<=MaxU7);
+        ASSERT(isSysExNonRtMvcAddress(parameterAddress));
+        ASSERT(data!=NULL);
+        ASSERT(dataLen>0);
+
+        uint8_t length = 8;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdNonRealTime_Byte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExNonRtMidiVisualControl;
+        bytes[4] = SysExNonRtMvcVersion1;
+        bytes[5] = (parameterAddress >> 16) & DataMask;
+        bytes[6] = (parameterAddress >> 8) & DataMask;
+        bytes[7] = parameterAddress & DataMask;
+
+        for(uint8_t i = 0; i < dataLen; i++){
+            bytes[length++] = data[i];
+        }
+
+        bytes[length++] = SystemMessageEndOfExclusive;
+
+        return length;
+    }
+
+    inline uint8_t packSysExNonRtMvcSetParameterObj(uint8_t *bytes, Message_t *msg){
+        ASSERT(msg!=NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdNonRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtMidiVisualControl);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtMvcVersion1);
+
+        return packSysExNonRtMvcSetParameter(bytes, msg->Channel, msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress, msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
+    }
+
+    inline bool unpackSysExNonRtMvcSetParameter(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint32_t *parameterAddress, uint8_t * data, uint8_t *dataLen){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId!=NULL);
+        ASSERT(parameterAddress!=NULL);
+        ASSERT(data!=NULL);
+        ASSERT(dataLen!=NULL);
+
+        if (length < 10 || ! isControlByte(bytes[length-1])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdNonRealTime_Byte || bytes[3] != SysExNonRtMidiVisualControl || bytes[4] != SysExNonRtMvcVersion1){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+
+        *parameterAddress = (((uint32_t)bytes[5]) << 16) | (((uint32_t)bytes[6]) << 8) | ((uint32_t)bytes[7]);
+
+        *dataLen = length - 9;
+
+        for(uint8_t i = 0, b = 8; i < *dataLen; i++, b++){
+            data[i] = bytes[b];
+        }
+
+        return true;
+    }
+
+    inline bool unpackSysExNonRtMvcSetParameterObj(uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT(msg!=NULL);
+
+        if (unpackSysExNonRtMvcSetParameter(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.MidiVisualControl.ParameterAddress, msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdNonRealTime;
+            msg->Data.SysEx.SubId1 = SysExNonRtMidiVisualControl;
+            msg->Data.SysEx.SubId2 = SysExNonRtMvcVersion1;
+            return true;
+        }
+
+        return false;
+    }
+
+
+///////////// SysEx: MIDI Tuning Standard            ////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -4027,7 +4113,7 @@ namespace MidiMessage {
         ASSERT(msg->Data.SysEx.SubId1 == SysExNonRtMidiTuningStandard);
         ASSERT(msg->Data.SysEx.SubId2 == SysExNonRtMtsBulkDumpRequest);
 
-        return packSysExNonRtTuningBulkDumpRequestObj(bytes, msg->Channel, msg->Data.SysEx.Data.Tuning.BulkDumpRequest.TuningProgram );
+        return packSysExNonRtTuningBulkDumpRequest(bytes, msg->Channel, msg->Data.SysEx.Data.Tuning.BulkDumpRequest.TuningProgram );
     }
 
     inline bool unpackSysExNonRtTuningBulkDumpRequest(uint8_t * bytes, uint8_t length, uint8_t *deviceId, uint8_t *tuningProgram){
@@ -4051,7 +4137,7 @@ namespace MidiMessage {
     inline bool unpackSysExNonRtTuningBulkDumpRequestObj(uint8_t * bytes, uint8_t length, Message_t * msg){
         ASSERT(msg != NULL);
 
-        if (packSysExNonRtTuningBulkDumpRequest(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.Tuning.BulkDumpRequest.TuningProgram)){
+        if (unpackSysExNonRtTuningBulkDumpRequest(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.Tuning.BulkDumpRequest.TuningProgram)){
             msg->StatusClass = StatusClassSystemMessage;
             msg->SystemMessage = SystemMessageSystemExclusive;
             msg->Data.SysEx.Id = SysExIdNonRealTime;
@@ -4100,7 +4186,7 @@ namespace MidiMessage {
 
         switch(bytes[4]){
             case SysExNonRtMtsBulkDumpRequest:
-                return packSysExNonRtTuningBulkDumpRequestObj(bytes, length, msg);
+                return unpackSysExNonRtTuningBulkDumpRequestObj(bytes, length, msg);
 
             case SysExNonRtMtsBulkDumpReply:
                 break;

@@ -53,7 +53,7 @@ tt = to test
 | General SysEx NonRT Handshaking  | wait, cancel, ack, nak, end of file | SysEx Non-Real Time | tt |
 | MIDI Machine Control (MMC) |  | | work in progress |
 | MIDI Show Control (MSC) | All | SysEx Real Time | tt |
-| MIDI Visual Control (MVC)| | SysEx Non-Real Time | TODO |
+| MIDI Visual Control (MVC)| Set Parameter Message (all) | SysEx Non-Real Time | tt |
 | MIDI Tuning Standard | | | TODO |
 | Experimental messages |  | SysEx Experimental | tt |
 | Manufacturer messages (+ manufacturer ids)|  | SysEx Manufacturer | tt |
@@ -277,6 +277,13 @@ Sample Dump Standard (SDS)
 * Both checksums are given when parsing a MIDI stream (to allow verification). During generation, if <checksum-data> (see specification) is not given it is computed (recommended) and the <checksum-computed> is always ignored if given.
 ** <loop-type> := uni-forward|bi-forward|uni-forward-release|bi-forward-release|uni-backward|bi-backward|uni-backward-release|bi-backward-release|backward-once|forward-once
 *** In principle there is a language tag to support localization, but apart from the default (English) none are documented and thus likely not used. Thus momentarily only the default is supported which is chosen by specifying '-' as argument.
+
+MIDI Visual Control (MVC)
+	 sysex nonrt <device-id (u7)> mvc (on-off|clip-control-channel|fx-control-channel|note-msg-enabled) <data (xN)>
+	 sysex nonrt <device-id (u7)> mvc (playback-assign-msn|playback-assign-lsn|dissolve-assign-msn|dissolve-assign-lsn) <data (xN)>
+	 sysex nonrt <device-id (u7)> mvc (fx1-assign-msn|fx1-assign-lsn|fx2-assign-msn|fx2-assign-lsn|fx3-assign-msn|fx3-assign-lsn) <data (xN)>
+	 sysex nonrt <device-id (u7)> mvc (playback-speed-range|keyboard-range-lower|keyboard-range-upper) <data (xN)>
+	 sysex nonrt <device-id (u7)> mvc <parameter-address (x3)> <data (xN)>
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1

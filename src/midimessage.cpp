@@ -191,8 +191,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtMidiVisualControl:
-                        //TODO
-                        return false;
+                        return packSysExNonRtMvcSetParameterObj( bytes, msg );
 
                     case SysExNonRtMidiCapabilityInquiry:
                         //TODO
@@ -418,8 +417,7 @@ namespace MidiMessage {
                         return false;
 
                     case SysExNonRtMidiVisualControl:
-                        //TODO
-                        return false;
+                        return unpackSysExNonRtMvcSetParameterObj( bytes, length, msg );
 
                     case SysExNonRtMidiCapabilityInquiry:
                         //TODO

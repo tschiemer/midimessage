@@ -217,6 +217,14 @@ void printHelp( void ) {
     printf("** <loop-type> := uni-forward|bi-forward|uni-forward-release|bi-forward-release|uni-backward|bi-backward|uni-backward-release|bi-backward-release|backward-once|forward-once\n");
     printf("*** In principle there is a language tag to support localization, but apart from the default (English) none are documented and thus likely not used. Thus momentarily only the default is supported which is chosen by specifying '-' as argument.\n");
 
+    printf("\nMIDI Visual Control (MVC)\n");
+    printf("\t sysex nonrt <device-id (u7)> mvc (on-off|clip-control-channel|fx-control-channel|note-msg-enabled) <data (xN)>\n");
+    printf("\t sysex nonrt <device-id (u7)> mvc (playback-assign-msn|playback-assign-lsn|dissolve-assign-msn|dissolve-assign-lsn) <data (xN)>\n");
+    printf("\t sysex nonrt <device-id (u7)> mvc (fx1-assign-msn|fx1-assign-lsn|fx2-assign-msn|fx2-assign-lsn|fx3-assign-msn|fx3-assign-lsn) <data (xN)>\n");
+    printf("\t sysex nonrt <device-id (u7)> mvc (playback-speed-range|keyboard-range-lower|keyboard-range-upper) <data (xN)>\n");
+    printf("\t sysex nonrt <device-id (u7)> mvc <parameter-address (x3)> <data (xN)>\n");
+
+
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");
     printf("\t bin/midimessage-cli -g sysex experimental 1337\n");
