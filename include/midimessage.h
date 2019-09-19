@@ -1231,6 +1231,8 @@ namespace MidiMessage {
                 value == SysExNonRtFileDumpRequest);
     }
 
+    const uint8_t SysExNonRtFileDumpDataPacketComputeChecksum = 0xFF;
+
 ///////////// SysEx: Sample Dump Standard            ////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////

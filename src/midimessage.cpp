@@ -173,8 +173,7 @@ namespace MidiMessage {
                         return packSysExNonRtGeneralInformationObj( bytes, msg );
 
                     case SysExNonRtFileDump:
-                        //TODO
-                        return false;
+                        return packSysExNonRtFileDumpObj( bytes, msg);
 
                     case SysExNonRtMidiTuningStandard:
                         return packSysExNonRtTuningObj( bytes, msg );
@@ -397,10 +396,8 @@ namespace MidiMessage {
                     case SysExNonRtGeneralInformation:
                         return unpackSysExNonRtGeneralInformationObj( bytes, length, msg );
 
-
                     case SysExNonRtFileDump:
-                        //TODO
-                        return false;
+                        return unpackSysExNonRtFileDumpObj(bytes, length, msg);
 
                     case SysExNonRtMidiTuningStandard:
                         return unpackSysExNonRtTuningObj( bytes, length, msg );

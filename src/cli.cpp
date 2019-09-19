@@ -242,9 +242,9 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id (u7)> mvc <parameter-address (x3)> <data (xN)>\n");
 
     printf("\nFile Dump\n");
-    printf("\t sysex nonrt <device-id (u7)> file-dump <sender-id (u7)> request <type (str4)*> <name (strN)>\n");
-    printf("\t sysex nonrt <device-id (u7)> file-dump <sender-id (u7)> header <type (str4)*> <length (u28)> <name (strN)>\n");
-    printf("\t sysex nonrt <device-id (u7)> file-dump <sender-id (u7)> data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]**\n");
+    printf("\t sysex nonrt <device-id (u7)> file-dump request <sender-id (u7)> <type (str4)*> <name (strN)..>\n");
+    printf("\t sysex nonrt <device-id (u7)> file-dump header <sender-id (u7)> <type (str4)*> <length (u28)> <name (strN)..>\n");
+    printf("\t sysex nonrt <device-id (u7)> file-dump data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]**\n");
     printf("*<type> := four 7-bit ASCII bytes. Defined in specification: MIDI, MIEX, ESEQ, TEXT, BIN<space>, MAC<space>\n");
     printf("** <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.\n");
 
@@ -278,7 +278,7 @@ unsigned long getNow(){
 }
 
 void generator(void){
-    uint8_t line[256];
+    uint8_t line[255];
 
     uint8_t sysexBuffer[128];
     Message_t msg;
@@ -381,7 +381,7 @@ void writeMidiPacket( Message_t * msg ){
 
     static uint8_t runningStatusState = MidiMessage_RunningStatusNotSet;
 
-    uint8_t bytes[128];
+    uint8_t bytes[255];
     uint8_t length = pack( bytes, msg );
 
     if (length == 0){
@@ -407,9 +407,9 @@ void parser(void){
     Message_t msg;
     msg.Data.SysEx.ByteData = sysexBuffer;
 
-    uint8_t dataBuffer[128];
+    uint8_t dataBuffer[255];
     Parser_t parser;
-    parser_init(&parser, runningStatusEnabled, dataBuffer, 128, &msg, parsedMessage, discardingData, NULL );
+    parser_init(&parser, runningStatusEnabled, dataBuffer, 255, &msg, parsedMessage, discardingData, NULL );
 
     // start timer
     if (timedOpt.enabled){
@@ -478,7 +478,7 @@ void converter(int (*getc)(void), uint8_t(*fun)(uint8_t *,uint8_t *, uint8_t), u
 void parsedMessage( Message_t * msg, void * context ){
 
 
-    uint8_t stringBuffer[256];
+    uint8_t stringBuffer[255];
 
     int length = MessagetoString(  stringBuffer, msg );
 

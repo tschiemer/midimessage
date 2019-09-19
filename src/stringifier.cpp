@@ -2459,6 +2459,123 @@ namespace MidiMessage {
 
                     return StringifierResultOk;
                 }
+                else if (str_eq(argv[3], "file-dump")) {
+                    if (argc < 1){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExNonRtFileDump;
+
+                    if (str_eq(argv[4], "request")){
+                        if (argc < 8){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtFileDumpRequest;
+
+                        msg->Data.SysEx.Data.FileDump.SourceDeviceId = atoi((char*)argv[5]);
+                        assertU7(msg->Data.SysEx.Data.FileDump.SourceDeviceId);
+
+                        uint8_t l = strlen((char*)argv[6]);
+                        if (l < 1 || 4 < l){
+                            return StringifierResultInvalidValue;
+                        }
+                        for(uint8_t i = 0; i < 4; i++){
+                            if (i<l){
+                                msg->Data.SysEx.Data.FileDump.Type[i] = argv[6][i];
+                            } else {
+                                // fill unused chars with spaces
+                                msg->Data.SysEx.Data.FileDump.Type[i] = ' ';
+                            }
+                        }
+
+                        l = 0;
+                        for(uint8_t ai = 7; ai < argc; ai++){
+                            if (l > 0){
+                                msg->Data.SysEx.ByteData[l++] = ' ';
+                            }
+                            uint8_t li = strlen((char*)argv[ai]);
+                            for(uint8_t j = 0; j < li; j++){
+                                msg->Data.SysEx.ByteData[l++] = argv[ai][j];
+
+                                assertU7(argv[ai][j]);
+                            }
+                        }
+                        msg->Data.SysEx.Length = l;
+
+                        return StringifierResultOk;
+
+                    }
+                    else if (str_eq(argv[4], "header")){
+
+                        if (argc < 9){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtFileDumpHeader;
+
+                        msg->Data.SysEx.Data.FileDump.SourceDeviceId = atoi((char*)argv[5]);
+                        msg->Data.SysEx.Data.FileDump.FileLength = atoi((char*)argv[7]);
+
+                        assertU7(msg->Data.SysEx.Data.FileDump.SourceDeviceId);
+                        assertU28(msg->Data.SysEx.Data.FileDump.FileLength);
+
+                        uint8_t l = strlen((char*)argv[6]);
+                        if (l < 1 || 4 < l){
+                            return StringifierResultInvalidValue;
+                        }
+                        for(uint8_t i = 0; i < 4; i++){
+                            if (i<l){
+                                msg->Data.SysEx.Data.FileDump.Type[i] = argv[6][i];
+                            } else {
+                                // fill unused chars with spaces
+                                msg->Data.SysEx.Data.FileDump.Type[i] = ' ';
+                            }
+                        }
+
+                        l = 0;
+                        for(uint8_t ai = 8; ai < argc; ai++){
+                            if (l > 0){
+                                msg->Data.SysEx.ByteData[l++] = ' ';
+                            }
+                            uint8_t li = strlen((char*)argv[ai]);
+                            for(uint8_t j = 0; j < li; j++){
+                                msg->Data.SysEx.ByteData[l++] = argv[ai][j];
+
+                                assertU7(argv[ai][j]);
+                            }
+                        }
+                        msg->Data.SysEx.Length = l;
+
+                        return StringifierResultOk;
+                    }
+                    else if (str_eq(argv[4], "data")){
+                        if (argc < 7 || 9 < argc){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExNonRtFileDumpDataPacket;
+
+                        msg->Data.SysEx.Data.FileDump.PacketNumber = atoi((char*)argv[5]);
+                        assertU7(msg->Data.SysEx.Data.FileDump.PacketNumber);
+
+                        if (! readHex(msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argv[6], 0)){
+                            return StringifierResultInvalidHex;
+                        }
+
+                        if (argc > 7){
+                            msg->Data.SysEx.Data.FileDump.Checksum = atoi((char*)argv[7]);
+                            assertU7(msg->Data.SysEx.Data.FileDump.Checksum);
+                        } else {
+                            msg->Data.SysEx.Data.FileDump.Checksum = SysExNonRtFileDumpDataPacketComputeChecksum;
+                        }
+
+                        return StringifierResultOk;
+                    }
+                    else {
+                        return StringifierResultInvalidValue;
+                    }
+                }
                 else {
                     return StringifierResultInvalidValue;
                 }
@@ -3215,6 +3332,55 @@ namespace MidiMessage {
                         length += sprintfHex( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
 
                         bytes[length] = '\0';
+                    }
+                    else if (msg->Data.SysEx.SubId1 == SysExNonRtFileDump){
+                        length += sprintf( (char*)&bytes[length], "file-dump " );
+
+                        if (msg->Data.SysEx.SubId2 == SysExNonRtFileDumpRequest){
+                            length += sprintf( (char*)&bytes[length], "request %u %c%c%c%c ",
+                                               msg->Data.SysEx.Data.FileDump.SourceDeviceId,
+                                               msg->Data.SysEx.Data.FileDump.Type[0],
+                                               msg->Data.SysEx.Data.FileDump.Type[1],
+                                               msg->Data.SysEx.Data.FileDump.Type[2],
+                                               msg->Data.SysEx.Data.FileDump.Type[3]
+                            );
+
+//                            fprintf(stderr, "%d\n");
+//                            fprintf(stderr, "%02X%02X%02X%02X\n", msg->Data.SysEx.ByteData[0], msg->Data.SysEx.ByteData[1], msg->Data.SysEx.ByteData[2], msg->Data.SysEx.ByteData[3]);
+
+                            for(uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
+                                bytes[length++] = msg->Data.SysEx.ByteData[i];
+                            }
+                            bytes[length] = '\0';
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtFileDumpHeader){
+                            length += sprintf( (char*)&bytes[length], "header %u %c%c%c%c %u ",
+                                               msg->Data.SysEx.Data.FileDump.SourceDeviceId,
+                                               msg->Data.SysEx.Data.FileDump.Type[0],
+                                               msg->Data.SysEx.Data.FileDump.Type[1],
+                                               msg->Data.SysEx.Data.FileDump.Type[2],
+                                               msg->Data.SysEx.Data.FileDump.Type[3],
+                                               msg->Data.SysEx.Data.FileDump.FileLength
+                            );
+
+                            for(uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
+                                bytes[length++] = msg->Data.SysEx.ByteData[i];
+                            }
+                            bytes[length] = '\0';
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExNonRtFileDumpDataPacket){
+                            length += sprintf( (char*)&bytes[length], "data %u ",
+                                               msg->Data.SysEx.Data.FileDump.PacketNumber
+                            );
+
+                            length += sprintfHex( &bytes[length], msg->Data.SysEx.ByteData, msg->Data.SysEx.Length);
+
+                            length += sprintf( (char*)&bytes[length], " %02X %02X",
+                                               msg->Data.SysEx.Data.FileDump.Checksum,
+                                               msg->Data.SysEx.Data.FileDump.ChecksumVerification
+                            );
+                        }
+
                     }
                     else {
                         return 0;

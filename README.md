@@ -290,6 +290,13 @@ MIDI Visual Control (MVC)
 	 sysex nonrt <device-id (u7)> mvc (playback-speed-range|keyboard-range-lower|keyboard-range-upper) <data (xN)>
 	 sysex nonrt <device-id (u7)> mvc <parameter-address (x3)> <data (xN)>
 
+File Dump
+	 sysex nonrt <device-id (u7)> file-dump request <sender-id (u7)> <type (str4)*> <name (strN)..>
+	 sysex nonrt <device-id (u7)> file-dump header <sender-id (u7)> <type (str4)*> <length (u28)> <name (strN)..>
+	 sysex nonrt <device-id (u7)> file-dump data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]**
+*<type> := four 7-bit ASCII bytes. Defined in specification: MIDI, MIEX, ESEQ, TEXT, BIN<space>, MAC<space>
+** <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.
+
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
 	 bin/midimessage-cli -g sysex experimental 1337
