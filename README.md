@@ -150,8 +150,8 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 Usage:
 	 midimessage-cli [-h?]
 	 midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d]]
-	 midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])
-	 midimessage-cli --convert=(nibblize|denibblize|sevenbitize|desevenbitize)
+	 midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...]
+	 midimessage-cli --convert=(nibblize|denibblize|sevenbitize|desevenbitize) [--hex] [<data xN>]
 
 Options:
 	 -h|-? 				 show this help
@@ -165,6 +165,7 @@ Options:
 	 -x0, -x1 			 In generation mode, exit on input error (-x1) or continue processing (-x0). Default := continue (-x0).
 	 -v0, -v1 			 In generation mode, print command parsing result (on error only) to STDERR. Default := do NOT print (-v0).
 	 --convert=.. 			 Enter convertion mode, ie transform incoming STDIN using convertion method and write to STDOUT (raw bytes).
+	 --hex 				 In convertion mode (only), hex input/output
 
 Fancy pants note: the parsing output format is identical to the generation command format ;)
 
@@ -316,8 +317,8 @@ Examples:
 	 bin/midimessage-cli -g --prefix='%d ' --suffix=$'\x0a'
 	 bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording
 	 cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p
-	 echo -n $'\x13\x37'| bin/midimessage-cli --convert=nibblize | xxd
-	 echo -n $'\x03\x01\x07\x03'| bin/midimessage-cli --convert=denibblize | xxd
+	 bin/midimessage-cli --convert=nibblize --hex 1337
+	 bin/midimessage-cli --convert=denibblize --hex 03010703
 ```
 ## Docs
 

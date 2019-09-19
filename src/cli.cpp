@@ -30,21 +30,22 @@ typedef enum {
     ModeUndefined       = 0,
     ModeParse           = 1,
     ModeGenerate        = 2,
-    ModeNibblize        = 3,
-    ModeDeNibblize      = 4,
-    ModeSevenbitize     = 5,
-    ModeDeSevenbitize   = 6
+    ModeConvert        = 3
 } Mode_t;
 
 inline bool isValidMode( Mode_t mode ){
     return (mode == ModeParse ||
             mode == ModeGenerate ||
-            mode == ModeNibblize ||
-            mode == ModeDeNibblize ||
-            mode == ModeSevenbitize ||
-            mode == ModeDeSevenbitize
+            mode == ModeConvert
     );
 }
+
+typedef enum {
+    ProcessNibblize,
+    ProcessDeNibblize,
+    ProcessSevenbitize,
+    ProcessDeSevenbitize
+} Process_t;
 
 typedef enum {
     ResolutionMicro = 0,
@@ -82,6 +83,10 @@ bool exitOnError = true;
 
 int verbosity = 0;
 
+Process_t process;
+
+bool useHex = false;
+
 ///////// Signatures
 
 void printHelp( void );
@@ -101,8 +106,8 @@ void printHelp( void ) {
     printf("Usage:\n");
     printf("\t midimessage-cli [-h?]\n");
     printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d]]\n");
-    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...])\n");
-    printf("\t midimessage-cli --convert=(nibblize|denibblize|sevenbitize|desevenbitize)\n");
+    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...]\n");
+    printf("\t midimessage-cli --convert=(nibblize|denibblize|sevenbitize|desevenbitize) [--hex] [<data xN>]\n");
 
     printf("\nOptions:\n");
     printf("\t -h|-? \t\t\t\t show this help\n");
@@ -116,6 +121,7 @@ void printHelp( void ) {
     printf("\t -x0, -x1 \t\t\t In generation mode, exit on input error (-x1) or continue processing (-x0). Default := continue (-x0).\n");
     printf("\t -v0, -v1 \t\t\t In generation mode, print command parsing result (on error only) to STDERR. Default := do NOT print (-v0).\n");
     printf("\t --convert=.. \t\t\t Enter convertion mode, ie transform incoming STDIN using convertion method and write to STDOUT (raw bytes).\n");
+    printf("\t --hex \t\t\t\t In convertion mode (only), hex input/output\n");
 
     printf("\nFancy pants note: the parsing output format is identical to the generation command format ;) \n");
 
@@ -269,8 +275,8 @@ void printHelp( void ) {
     printf("\t bin/midimessage-cli -g --prefix='%%d ' --suffix=$'\\x0a'\n");
     printf("\t bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording\n");
     printf("\t cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p\n");
-    printf("\t echo -n $'\\x13\\x37'| bin/midimessage-cli --convert=nibblize | xxd\n");
-    printf("\t echo -n $'\\x03\\x01\\x07\\x03'| bin/midimessage-cli --convert=denibblize | xxd\n");
+    printf("\t bin/midimessage-cli --convert=nibblize --hex 1337\n");
+    printf("\t bin/midimessage-cli --convert=denibblize --hex 03010703\n");
 }
 
 
@@ -440,50 +446,63 @@ void parser(void){
 }
 
 
-uint8_t cNibblize(uint8_t * dst, uint8_t * src, uint8_t length){
-    return nibblize(dst, src, length);
-}
-uint8_t cDeNibblize(uint8_t * dst, uint8_t * src, uint8_t length){
-    return denibblize(dst, src, length);
-}
-uint8_t cSevenbitize(uint8_t * dst, uint8_t * src, uint8_t length){
-    return sevenbitize(dst, src, length);
-}
-uint8_t cDeSevenbitize(uint8_t * dst, uint8_t * src, uint8_t length){
-    return desevenbitize(dst, src, length);
-}
 
-void converter(int (*getc)(void), uint8_t(*fun)(uint8_t *,uint8_t *, uint8_t), uint8_t each){
+typedef int (*Reader_t)(void);
+typedef uint8_t(*Converter_t)(uint8_t *,uint8_t *, uint8_t);
+
+void convert(Reader_t reader, Converter_t converter, uint8_t each){
 
     uint8_t src[16];
     uint8_t dst[16];
     uint8_t srcl = 0;
 
+    void (*output)(uint8_t *,uint8_t) = [](uint8_t * data, uint8_t len){
+
+        uint8_t buf[32];
+
+        if (useHex){
+            byte_to_hex(buf, data, len);
+            fwrite( buf, 1, 2*len, stdout );
+        } else {
+            fwrite( data, 1, len, stdout );
+        }
+    };
+
     int ch;
-    while( (ch = fgetc(stdin)) != EOF ){
+    while( (ch = reader()) != EOF ){
         uint8_t byte = (uint8_t)ch;
 
-        src[srcl++] = byte;
+        if (useHex){
+            static uint8_t nibble = 0;
+            static uint8_t nibbles[2];
+
+            nibbles[nibble++] = byte;
+
+            if (nibble >= 2){
+                if ( ! hex_to_byte(&src[srcl], nibbles, 1) ){
+                    fprintf(stderr, "Error: invalid hex input!\n");
+                }
+                srcl++;
+                nibble = 0;
+            }
+        } else {
+            src[srcl++] = byte;
+        }
+
         if (srcl >= each){
-            uint8_t dstl = fun(dst, src, srcl);
 
-//            for(uint8_t i = 0; i < dstl; i++){
-//                printf("%02X", dst[i]);
-//            }
+            uint8_t dstl = converter(dst, src, srcl);
 
-            fwrite( dst, 1, dstl, stdout );
+            output(dst, dstl);
 
             srcl = 0;
         }
     }
     // in case input terminated before group full
     if (srcl > 0){
-        uint8_t dstl = fun(dst, src, srcl);
+        uint8_t dstl = converter(dst, src, srcl);
 
-        fwrite( dst, 1, dstl, stdout );
-//        for(uint8_t i = 0; i < dstl; i++){
-//            printf("%02X", dst[i]);
-//        }
+        output(dst, dstl);
     }
 
 }
@@ -525,6 +544,7 @@ void discardingData( uint8_t * data, uint8_t length, void * context ){
 
 }
 
+uint8_t ** gargv;
 
 int main(int argc, char * argv[], char * env[]){
 
@@ -535,7 +555,6 @@ int main(int argc, char * argv[], char * env[]){
         printHelp();
         return EXIT_SUCCESS;
     }
-    
 
     while (1) {
         int this_option_optind = optind ? optind : 1;
@@ -552,10 +571,11 @@ int main(int argc, char * argv[], char * env[]){
                 {"exit-on-error", required_argument, 0, 'x'},
                 {"help",    no_argument,    0,  'h' },
                 {"convert", required_argument, 0, 0},
+                {"hex", no_argument, 0, 0},
                 {0,         0,              0,  0 }
         };
 
-        c = getopt_long(argc, argv, "pgt::rhdv::x:?",
+        c = getopt_long(argc, argv, "pgt::rhdv::x:h?",
                         long_options, &option_index);
         if (c == -1)
             break;
@@ -581,18 +601,22 @@ int main(int argc, char * argv[], char * env[]){
                     if (mode != ModeUndefined){
                         printf("Can only enter one mode!\n");
                     }
+                    mode = ModeConvert;
                     if (strcmp(optarg, "nibblize") == 0){
-                        mode = ModeNibblize;
+                        process = ProcessNibblize;
                     } else if (strcmp(optarg, "denibblize") == 0){
-                        mode = ModeDeNibblize;
+                        process = ProcessDeNibblize;
                     } else if (strcmp(optarg, "sevenbitize") == 0){
-                        mode = ModeSevenbitize;
+                        process = ProcessSevenbitize;
                     } else if (strcmp(optarg, "desevenbitize") == 0){
-                        mode = ModeDeSevenbitize;
+                        process = ProcessDeSevenbitize;
                     } else {
                         printf("Conversion mode not recognized!\n");
                         exit(EXIT_FAILURE);
                     }
+                }
+                else if (strcmp(long_options[option_index].name, "hex") == 0){
+                    useHex = true;
                 }
                 break;
 
@@ -702,20 +726,60 @@ int main(int argc, char * argv[], char * env[]){
         parser();
     }
 
-    if (mode == ModeNibblize){
-        converter(NULL, cNibblize, 1);
-    }
+    if (mode == ModeConvert){
 
-    if (mode == ModeDeNibblize){
-        converter(NULL, cDeNibblize, 2);
-    }
+        Converter_t converter;
+        uint8_t each;
 
-    if (mode == ModeSevenbitize){
-        converter(NULL, cSevenbitize, 7);
-    }
+        switch(process){
+            case ProcessNibblize:
+                converter = [](uint8_t * dst, uint8_t * src, uint8_t length){
+                    return nibblize(dst, src, length);
+                };
+                each = 1;
+                break;
+            case ProcessDeNibblize:
+                converter = [](uint8_t * dst, uint8_t * src, uint8_t length){
+                    return denibblize(dst, src, length);
+                };
+                each = 2;
+                break;
+            case ProcessSevenbitize:
+                converter = [](uint8_t * dst, uint8_t * src, uint8_t length){
+                    return sevenbitize(dst, src, length);
+                };
+                each = 7;
+                break;
+            case ProcessDeSevenbitize:
+                converter = [](uint8_t * dst, uint8_t * src, uint8_t length){
+                    return desevenbitize(dst, src, length);
+                };
+                each = 8;
+                break;
+        }
 
-    if (mode == ModeDeSevenbitize){
-        converter(NULL, cDeSevenbitize, 8);
+        Reader_t reader;
+
+        if (optind < argc){
+
+            gargv = (uint8_t**)&argv[optind];
+
+            reader = []() -> int {
+                static int i = 0;
+                static int len = strlen((char*)gargv[0]);
+
+                if (i >= len){
+                    return EOF;
+                }
+                return gargv[0][i++];
+            };
+        } else {
+            reader = []() -> int {
+                return fgetc(stdin);
+            };
+        }
+
+        convert( reader, converter, each);
     }
 
     return EXIT_SUCCESS;
