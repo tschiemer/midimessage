@@ -70,7 +70,8 @@ namespace MidiMessage {
     typedef uint32_t U28;
     typedef uint64_t U35;
 
-    typedef int8_t I7;
+    typedef int8_t S7;
+    typedef int16_t S14;
 
     /**
      * Integer max values
@@ -82,10 +83,10 @@ namespace MidiMessage {
     const uint32_t MaxU28 = 0x0FFFFFFF;
     const uint64_t MaxU35 = 0x7FFFFFFFF;
 
-    const int8_t MaxI7      = 63; // 0x3F
-    const int8_t MinI7      = -64; // 0x40
-    const int16_t MaxI14    = 16383; // 0x3FFF
-    const int16_t MinI14    = -16384; // 0x4000;
+    const int8_t MaxS7      = 63; // 0x3F
+    const int8_t MinS7      = -64; // 0x40
+    const int16_t MaxS14    = 8191; // 0x1FFF
+    const int16_t MinS14    = -8192; // 0x2000;
 
     /**
      * Is it a data byte?
@@ -122,14 +123,14 @@ namespace MidiMessage {
     }
 
     inline void packU14( uint8_t * bytes, uint16_t value ) {
-        ASSERT( value < MaxU14 );
+        ASSERT( value <= MaxU14 );
 
         bytes[0] = value & DataMask;
         bytes[1] = (value >> 7) & DataMask;
     }
 
-    inline void packI14( uint8_t * bytes, int16_t value ){
-        return packU14(bytes, value & 0x3FFF);
+    inline void packS14( uint8_t * bytes, int16_t value ){
+        return packU14(bytes, ((uint16_t)value) & MaxU14);
     }
 
     inline uint16_t unpackU14( uint8_t * bytes ){
@@ -139,10 +140,10 @@ namespace MidiMessage {
         return (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
     }
 
-    inline int16_t unpackI14( uint8_t * bytes ){
-        int16_t v = unpackU14(bytes);
-        if (v & 0x0200){ // is sign bit set?
-            return v | 0xc0;
+    inline int16_t unpackS14( uint8_t * bytes ){
+        uint16_t v = unpackU14(bytes);
+        if (v & 0x2000){ // is sign bit set?
+            return v | 0xc000; // add missing sign bits for int16
         }
         return v;
     }
@@ -1506,8 +1507,8 @@ namespace MidiMessage {
                 value == SysExRtNiTimeSignatureDelayed);
     }
 
-    const int16_t SysExRtNiBarNumberNotRunning = MinI14;
-    const int16_t SysExRtNiBarNumberRunningUnknown = MaxI14;
+    const int16_t SysExRtNiBarNumberNotRunning = MinS14;
+    const int16_t SysExRtNiBarNumberRunningUnknown = MaxS14;
 
 ///////////// SysEx: MIDI Visual Control (MVC)       ////////////
 /////////////////////////////////////////////////////////////////

@@ -248,6 +248,11 @@ void printHelp( void ) {
     printf("*<type> := four 7-bit ASCII bytes. Defined in specification: MIDI, MIEX, ESEQ, TEXT, BIN<space>, MAC<space>\n");
     printf("** <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.\n");
 
+    printf("\nNotation Information\n");
+    printf("\t sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>\n");
+    printf("\t sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>\n");
+    printf("\t sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>\n");
+
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");
     printf("\t bin/midimessage-cli -g sysex experimental 1337\n");

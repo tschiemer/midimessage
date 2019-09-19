@@ -4529,7 +4529,7 @@ namespace MidiMessage {
     inline uint8_t packSysExRtNotationInformationBarNumber( uint8_t *bytes, uint8_t deviceId, int16_t barNumber){
         ASSERT(bytes!=NULL);
         ASSERT(deviceId<=MaxU7);
-        ASSERT(MinI14 <= barNumber && barNumber <= MaxI14);
+        ASSERT(MinS14 <= barNumber && barNumber <= MaxS14);
 
         bytes[0] = SystemMessageSystemExclusive;
         bytes[1] = SysExIdRealTime_Byte;
@@ -4537,7 +4537,7 @@ namespace MidiMessage {
         bytes[3] = SysExRtNotationInformation;
         bytes[4] = SysExRtNiBarNumber;
 
-        packI14( &bytes[5], barNumber);
+        packS14( &bytes[5], barNumber);
 
         bytes[7] = SystemMessageEndOfExclusive;
 
@@ -4569,7 +4569,7 @@ namespace MidiMessage {
 
         *deviceId = bytes[2];
 
-        *barNumber = unpackI14(&bytes[5]);
+        *barNumber = unpackS14(&bytes[5]);
 
         return true;
     }

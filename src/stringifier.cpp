@@ -18,7 +18,8 @@
 #define assertU21(x)        if (x > MaxU21) { return StringifierResultInvalidU21; }
 #define assertU28(x)        if (x > MaxU28) { return StringifierResultInvalidU28; }
 #define assertU35(x)        if (x > MaxU35) { return StringifierResultInvalidU35; }
-#define assertI7(x)         if (x < MinI7 || MaxI7 < x) { return StringifierResultInvalidValue; }
+#define assertS7(x)         if (x < MinS7 || MaxS7 < x) { return StringifierResultInvalidValue; }
+#define assertS14(x)         if (x < MinS14 || MaxS14 < x) { return StringifierResultInvalidValue; }
 #define assertData(bytes, len)   \
                             for(uint8_t i = 0; i < len; i++){ \
                                 assertU7(bytes[i]); \
@@ -478,7 +479,7 @@ namespace MidiMessage {
 
                     cmd.Data.S7 = atoi((char*)argv[1]);
 
-                    assertI7( cmd.Data.S7 );
+                    assertS7( cmd.Data.S7 );
 
 //                    printf("%d", cmd.Data.S7);
 //                    exit(0);
@@ -1894,6 +1895,35 @@ namespace MidiMessage {
                     return ArgsToMccData( msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length, argc - 4, &argv[4] );
 
                 }
+                else if (str_eq(argv[3], "notation")){
+                    if (argc < 5){
+                        return StringifierResultWrongArgCount;
+                    }
+
+                    msg->Data.SysEx.SubId1 = SysExRtNotationInformation;
+
+                    if (str_eq(argv[4], "bar-number")){
+                        if (argc < 6){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        msg->Data.SysEx.SubId2 = SysExRtNiBarNumber;
+
+                        if (str_eq(argv[5], "not-running")){
+                            msg->Data.SysEx.Data.NotationInformation.BarNumber = SysExRtNiBarNumberNotRunning;
+                        }
+                        else if (str_eq(argv[5], "running-unknown")){
+                            msg->Data.SysEx.Data.NotationInformation.BarNumber = SysExRtNiBarNumberRunningUnknown;
+                        }
+                        else {
+                            msg->Data.SysEx.Data.NotationInformation.BarNumber = atoi((char*)argv[5]);
+
+                            assertS14(msg->Data.SysEx.Data.NotationInformation.BarNumber);
+                        }
+
+                        return StringifierResultOk;
+                    }
+                }
                 else {
                     return StringifierResultInvalidValue;
                 }
@@ -3076,6 +3106,24 @@ namespace MidiMessage {
                     else if (msg->Data.SysEx.SubId1 == SysExRtMidiMachineControlResponse){
                         length += sprintf( (char*)&bytes[length], "mcr ");
                     }
+                    else if (msg->Data.SysEx.SubId1 == SysExRtNotationInformation){
+                        length += sprintf( (char*)&bytes[length], "notation ");
+
+                        if (msg->Data.SysEx.SubId2 == SysExRtNiBarNumber){
+
+                            if (msg->Data.SysEx.Data.NotationInformation.BarNumber == SysExRtNiBarNumberNotRunning){
+                                length += sprintf( (char*)&bytes[length], "not-running");
+                            }
+                            else if (msg->Data.SysEx.Data.NotationInformation.BarNumber == SysExRtNiBarNumberRunningUnknown){
+                                length += sprintf( (char*)&bytes[length], "running-unknown");
+                            }
+                            else {
+                                length += sprintf( (char*)&bytes[length], "%d", msg->Data.SysEx.Data.NotationInformation.BarNumber);
+                            }
+
+                        }
+                    }
+
 
                 }
 
