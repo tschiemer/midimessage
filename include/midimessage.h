@@ -2790,6 +2790,10 @@ namespace MidiMessage {
 
                     struct {
                         int16_t BarNumber;
+                        uint8_t TimeSignatureNumerator;
+                        uint8_t TimeSignatureDenominator;
+                        uint8_t MidiClocksInMetronomeClick;
+                        uint8_t Notes32sInMidiQuarterNote;
                     } NotationInformation;
                 } Data;
 

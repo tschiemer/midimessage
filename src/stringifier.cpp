@@ -1923,6 +1923,44 @@ namespace MidiMessage {
 
                         return StringifierResultOk;
                     }
+                    else if (str_eq(argv[4], "time-signature")){
+                        if (argc < 10 || (argc-10) % 2 == 1){
+                            return StringifierResultWrongArgCount;
+                        }
+
+                        if (str_eq(argv[5], "immediate")){
+                            msg->Data.SysEx.SubId2 = SysExRtNiTimeSignatureImmediate;
+                        }
+                        else if (str_eq(argv[5], "delayed")){
+                            msg->Data.SysEx.SubId2 = SysExRtNiTimeSignatureDelayed;
+                        }
+                        else {
+                            return StringifierResultInvalidValue;
+                        }
+
+                        msg->Data.SysEx.Data.NotationInformation.MidiClocksInMetronomeClick = atoi((char*)argv[6]);
+                        msg->Data.SysEx.Data.NotationInformation.Notes32sInMidiQuarterNote = atoi((char*)argv[7]);
+                        msg->Data.SysEx.Data.NotationInformation.TimeSignatureNumerator = atoi((char*)argv[8]);
+                        msg->Data.SysEx.Data.NotationInformation.TimeSignatureDenominator = atoi((char*)argv[9]);
+
+                        assertU7(msg->Data.SysEx.Data.NotationInformation.MidiClocksInMetronomeClick);
+                        assertU7(msg->Data.SysEx.Data.NotationInformation.Notes32sInMidiQuarterNote);
+                        assertU7(msg->Data.SysEx.Data.NotationInformation.TimeSignatureNumerator);
+                        assertU7(msg->Data.SysEx.Data.NotationInformation.TimeSignatureDenominator);
+
+
+                        for(uint8_t ai = 10, i = 0; ai < argc; ai++, i++){
+                            msg->Data.SysEx.ByteData[i] = atoi((char*)argv[ai]);
+
+                            assertU7(msg->Data.SysEx.ByteData[i]);
+                        }
+                        msg->Data.SysEx.Length = argc - 10;
+
+                        return StringifierResultOk;
+                    }
+                    else {
+                        return StringifierResultInvalidValue;
+                    }
                 }
                 else {
                     return StringifierResultInvalidValue;
@@ -3121,6 +3159,20 @@ namespace MidiMessage {
                                 length += sprintf( (char*)&bytes[length], "%d", msg->Data.SysEx.Data.NotationInformation.BarNumber);
                             }
 
+                        }
+                        else if (msg->Data.SysEx.SubId2 == SysExRtNiTimeSignatureDelayed || msg->Data.SysEx.SubId2 == SysExRtNiTimeSignatureImmediate){
+
+                            length += sprintf( (char*)&bytes[length], "time-signature %s %u %u %u %u",
+                                               msg->Data.SysEx.SubId2 == SysExRtNiTimeSignatureDelayed ? "delayed" : "immediate",
+                                               msg->Data.SysEx.Data.NotationInformation.MidiClocksInMetronomeClick,
+                                               msg->Data.SysEx.Data.NotationInformation.Notes32sInMidiQuarterNote,
+                                               msg->Data.SysEx.Data.NotationInformation.TimeSignatureNumerator,
+                                               msg->Data.SysEx.Data.NotationInformation.TimeSignatureDenominator
+                            );
+
+                            for(uint8_t i = 0; i < msg->Data.SysEx.Length; i++){
+                                length += sprintf( (char*)&bytes[length], " %u", msg->Data.SysEx.ByteData[i] );
+                            }
                         }
                     }
 

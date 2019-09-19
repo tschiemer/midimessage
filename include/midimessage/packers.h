@@ -4589,6 +4589,118 @@ namespace MidiMessage {
         return false;
     }
 
+    inline uint8_t packSysExRtNotationInformationTimeSignature(uint8_t *bytes, uint8_t deviceId, uint8_t subId2, uint8_t timeSignatureNumerator, uint8_t timeSignatureDenominator, uint8_t midiClocksInMetronomeClick, uint8_t notes32sInMidiQuarterNote, uint8_t *addSignature, uint8_t addSignatureLength){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId <= MaxU7);
+        ASSERT(timeSignatureNumerator <= MaxU7);
+        ASSERT(timeSignatureDenominator <= MaxU7);
+        ASSERT(midiClocksInMetronomeClick <= MaxU7);
+        ASSERT(notes32sInMidiQuarterNote <= MaxU7);
+        ASSERT(subId2 == SysExRtNiTimeSignatureImmediate || subId2 == SysExRtNiTimeSignatureDelayed);
+        ASSERT( addSignatureLength == 0 || addSignature != NULL);
+        ASSERT( addSignatureLength % 2 == 0);
+
+        uint8_t length = 10;
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdRealTime_Byte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExRtNotationInformation;
+        bytes[4] = subId2;
+
+        bytes[5] = 4 + addSignatureLength;
+
+        bytes[6] = timeSignatureNumerator;
+        bytes[7] = timeSignatureDenominator;
+        bytes[8] = midiClocksInMetronomeClick;
+        bytes[9] = notes32sInMidiQuarterNote;
+
+        for(uint8_t i = 0; i < addSignatureLength; i++){
+            bytes[length++] = addSignature[i];
+        }
+
+        bytes[length++] = SystemMessageEndOfExclusive;
+
+        return length;
+    }
+
+    inline uint8_t packSysExRtNotationInformationTimeSignatureObj(uint8_t *bytes, Message_t * msg){
+        ASSERT(msg!=NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExRtNotationInformation);
+
+        return packSysExRtNotationInformationTimeSignature(bytes, msg->Channel, msg->Data.SysEx.SubId2,
+                                                           msg->Data.SysEx.Data.NotationInformation.TimeSignatureNumerator,
+                                                           msg->Data.SysEx.Data.NotationInformation.TimeSignatureDenominator,
+                                                           msg->Data.SysEx.Data.NotationInformation.MidiClocksInMetronomeClick,
+                                                           msg->Data.SysEx.Data.NotationInformation.Notes32sInMidiQuarterNote,
+                                                           msg->Data.SysEx.ByteData,
+                                                           msg->Data.SysEx.Length
+        );
+    }
+
+    inline bool unpackSysExRtNotationInformationTimeSignature(uint8_t *bytes, uint8_t length, uint8_t *deviceId, uint8_t *subId2, uint8_t *timeSignatureNumerator, uint8_t *timeSignatureDenominator, uint8_t *midiClocksInMetronomeClick, uint8_t *notes32sInMidiQuarterNote, uint8_t *addSignature, uint8_t *addSignatureLength){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId!=NULL);
+        ASSERT(subId2!=NULL);
+        ASSERT(timeSignatureNumerator!=NULL);
+        ASSERT(timeSignatureDenominator!=NULL);
+        ASSERT(midiClocksInMetronomeClick!=NULL);
+        ASSERT(notes32sInMidiQuarterNote!=NULL);
+        ASSERT(addSignature!=NULL);
+        ASSERT(addSignatureLength!=NULL);
+
+        if (length < 11 || ! isControlByte(bytes[length-1])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTime_Byte || bytes[3] != SysExRtNotationInformation){
+            return false;
+        }
+        if (bytes[4] != SysExRtNiTimeSignatureImmediate && bytes[4] != SysExRtNiTimeSignatureDelayed ){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+        *subId2 = bytes[4];
+
+        uint8_t n = bytes[5] - 4;
+
+        *timeSignatureNumerator = bytes[6];
+        *timeSignatureDenominator = bytes[7];
+        *midiClocksInMetronomeClick = bytes[8];
+        *notes32sInMidiQuarterNote = bytes[9];
+
+        for (uint8_t i = 0, b = 10; i < n; i++, b++){
+            addSignature[i] = bytes[b];
+        }
+
+        *addSignatureLength = n;
+
+        return true;
+    }
+
+    inline bool unpackSysExRtNotationInformationTimeSignatureObj(uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT(msg != NULL);
+
+        if (unpackSysExRtNotationInformationTimeSignature(bytes, length, &msg->Channel, &msg->Data.SysEx.SubId2,
+                                                          &msg->Data.SysEx.Data.NotationInformation.TimeSignatureNumerator,
+                                                          &msg->Data.SysEx.Data.NotationInformation.TimeSignatureDenominator,
+                                                          &msg->Data.SysEx.Data.NotationInformation.MidiClocksInMetronomeClick,
+                                                          &msg->Data.SysEx.Data.NotationInformation.Notes32sInMidiQuarterNote,
+                                                          msg->Data.SysEx.ByteData, &msg->Data.SysEx.Length
+        )){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdRealTime;
+            msg->Data.SysEx.SubId1 = SysExRtNotationInformation;
+            return true;
+        }
+
+        return false;
+    }
+
     inline uint8_t packSysExRtNotationInformationObj( uint8_t *bytes, Message_t *msg){
         ASSERT(msg!=NULL);
 
@@ -4597,11 +4709,8 @@ namespace MidiMessage {
                 return packSysExRtNotationInformationBarNumberObj(bytes, msg);
 
             case SysExRtNiTimeSignatureDelayed:
-//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
-
             case SysExRtNiTimeSignatureImmediate:
-//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
-                break;
+                return packSysExRtNotationInformationTimeSignatureObj(bytes, msg);
         }
 
         return 0;
@@ -4616,14 +4725,11 @@ namespace MidiMessage {
                 return unpackSysExRtNotationInformationBarNumberObj(bytes, length, msg);
 
             case SysExRtNiTimeSignatureDelayed:
-//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
-
             case SysExRtNiTimeSignatureImmediate:
-//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
-                break;
+                return unpackSysExRtNotationInformationTimeSignatureObj(bytes, length, msg);
         }
 
-        return 0;
+        return false;
     }
 
 #ifdef __cplusplus

@@ -65,7 +65,7 @@ tt = to test
 | Sample Dump | (Extended) Header, Request, DataPacket, (Extended) Loop Point Request & Transmission, Name Request & Transmission  | SysEx Non-Real Time | tt |
 | File Dump | Request, Header, DataPacket | Non-Real Time | tt |
 | Downloadable Sounds | | Non-Real Time | TODO |
-| Notation Information | | Real Time | TODO |
+| Notation Information | Bar Number, Time Signature (delayed, immediate) | Real Time | tt |
 | Capability Inquiry (MIDI-CI) | | SysEx Non-Real Time | TODO |
 | Scalable Polyphony MIDI MIP (SP-MIDI MIP)| | SysEx Real Time | TODO |
 | Mobile Phone Control | on, off, reset, set level, set color, follow MIDI channels, manufacturer specific | SysEx Real Time | tt |
@@ -296,6 +296,11 @@ File Dump
 	 sysex nonrt <device-id (u7)> file-dump data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]**
 *<type> := four 7-bit ASCII bytes. Defined in specification: MIDI, MIEX, ESEQ, TEXT, BIN<space>, MAC<space>
 ** <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.
+
+Notation Information
+	 sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>)
+	 sysex rt <device-id (u7)> notation time-signature (immediate|delayed) <midi-clock-in-metronome-click (u7)> <32nd-notes-in-midi-quarter-note (u7)> <time-signature-nominator1 (u7)> <time-signature-denominator1 (u7)>  [<nominator2 (u7)> <denominator2 (u7)> ..]
+	 sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
