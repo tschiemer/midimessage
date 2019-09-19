@@ -275,8 +275,8 @@ void printHelp( void ) {
     printf("\t bin/midimessage-cli -g --prefix='%%d ' --suffix=$'\\x0a'\n");
     printf("\t bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording\n");
     printf("\t cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p\n");
-    printf("\t bin/midimessage-cli --convert=nibblize --hex 1337\n");
-    printf("\t bin/midimessage-cli --convert=denibblize --hex 03010703\n");
+    printf("\t bin/midimessage-cli --convert=nibblize --hex 1337 > test.nibblized\n");
+    printf("\t cat test.nibblized | bin/midimessage-cli --convert=denibblize --hex\n");
 }
 
 

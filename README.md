@@ -317,8 +317,8 @@ Examples:
 	 bin/midimessage-cli -g --prefix='%d ' --suffix=$'\x0a'
 	 bin/midimessage-cli -g | bin/midimessage-cli -ptmilli > test.recording
 	 cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p
-	 bin/midimessage-cli --convert=nibblize --hex 1337
-	 bin/midimessage-cli --convert=denibblize --hex 03010703
+	 bin/midimessage-cli --convert=nibblize --hex 1337 > test.nibblized
+	 cat test.nibblized | bin/midimessage-cli --convert=denibblize --hex
 ```
 ## Docs
 
