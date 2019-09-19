@@ -151,22 +151,31 @@ void printHelp( void ) {
     printf("\t song-position <position (u14)>\n");
     printf("\t song-select <songNumber (u7)>\n");
 
-    printf("\n(General) System Exclusives:\n");
+    printf("\n(Basic) System Exclusives:\n");
     printf("\t sysex experimental <data (xN)>\n");
     printf("\t sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>\n");
-    printf("\t sysex nonrt <device-id (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>\n");
-    printf("\t sysex nonrt <device-id* (u7)> info request\n");
+    printf("\t sysex nonrt <device-id* (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>\n");
+    printf("* <device-id> := 127 is all devices (broadcast)\n");
+
+    printf("\nGeneral Information\n");
+    printf("\t sysex nonrt <device-id (u7)> info request\n");
     printf("\t sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>\n");
+
+    printf("\nGeneral MIDI (extension)\n");
     printf("\t sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)\n");
-    printf("\t sysex nonrt <device-id (u7)> cds*** <channel (u4)> (channel-pressure|key-pressure)  <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
+
+    printf("\nController Destination Setting\n");
+    printf("\t sysex nonrt <device-id (u7)> cds <channel (u4)> (channel-pressure|key-pressure)  <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
     printf("\t sysex nonrt <device-id (u7)> cds <channel (u4)> cc <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]\n");
-    printf("\t sysex nonrt <device-id (u7)> keys**** <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]\n");
+
+    printf("\nKeybased Instrument Control\n");
+    printf("\t sysex nonrt <device-id (u7)> keys <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]\n");
+
+    printf("\nDevice Control\n");
     printf("\t sysex rt <device-id (u7)> dc** (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>\n");
     printf("\t sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]\n");
-    printf("* <device-id> := 127 is all devices (broadcast)\n");
-    printf("** dc := device control\n");
-    printf("*** cds := controller destination setting\n");
-    printf("**** keys := keybased instrument control\n");
+
+
 
     printf("\nMIDI Time Code + Cueing\n");
     printf("\t sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>\n");

@@ -200,22 +200,29 @@ System Commands:
 	 song-position <position (u14)>
 	 song-select <songNumber (u7)>
 
-(General) System Exclusives:
+(Basic) System Exclusives:
 	 sysex experimental <data (xN)>
 	 sysex manufacturer <manufacturer-id (x1..3)> <data (xN)>
 	 sysex nonrt <device-id* (u7)> (eof|wait|cancel|nak|ack) <packet-number (u7)>
+* <device-id> := 127 is all devices (broadcast)
+
+General Information
 	 sysex nonrt <device-id (u7)> info request
 	 sysex nonrt <device-id (u7)> info reply <manufacturer-id (x1, x3)> <device-family (u14)> <device-family-member (u14)> <software-revision (x4)>
+
+General MIDI (extension)
 	 sysex nonrt <device-id (u7)> gm (system-on1|system-off|system-on2)
+
+Controller Destination Setting
+	 sysex nonrt <device-id (u7)> cds <channel (u4)> (channel-pressure|key-pressure)  <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
+	 sysex nonrt <device-id (u7)> cds <channel (u4)> cc <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
+
+Keybased Instrument Control
+	 sysex nonrt <device-id (u7)> keys <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]
+
+Device Control
 	 sysex rt <device-id (u7)> dc** (master-volume|master-balance|coarse-tuning|fine-tuning) <value (u14)>
 	 sysex rt <device-id (u7)> dc global-parameter <slot-count (u7)> <parameter-id-width (u7)> <parameter-value-width (u7)> [<slot-path1 (u14)> [.. <slot-pathN (u14)>]] [<parameter-id1 (xN)> <parameter-value1 (xN)> [..  <parameter-idN (xN)> <parameter-valueN (xN)>]]
-	 sysex nonrt <device-id (u7)> cds*** <channel (u4)> (channel-pressure|key-pressure)  <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
-	 sysex nonrt <device-id (u7)> cds <channel (u4)> cc <controller (u7)> <parameter1 (u7)> <range1 (u7)> [<parameter2 (u7)> <range2 (u7)> .. <parameterN (u7)> <rangeN (u7)>]
-	 sysex nonrt <device-id (u7)> keys**** <channel (u7)> <key (u7)> <controller1 (u7)> <value1 (u7)> [<controller2 (u7)> <value2 (u7)> .. <controllerN (u7)> <valueN (u7)>]
-* <device-id> := 127 is all devices
-** dc := device control
-*** cds := controller destination setting
-**** keys := keybased instrument control
 
 MIDI Time Code + Cueing
 	 sysex rt <device-id (u7)> mtc full-message <fps = 24,25,29.97,30> <hour <= 23> <minute <= 59> <second <= 59> <frame < fps>
