@@ -251,7 +251,6 @@ void printHelp( void ) {
     printf("\nNotation Information\n");
     printf("\t sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>)\n");
     printf("\t sysex rt <device-id (u7)> notation time-signature (immediate|delayed) <midi-clock-in-metronome-click (u7)> <32nd-notes-in-midi-quarter-note (u7)> <time-signature-nominator1 (u7)> <time-signature-denominator1 (u7)>  [<nominator2 (u7)> <denominator2 (u7)> ..]\n");
-    printf("\t sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>\n");
 
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");

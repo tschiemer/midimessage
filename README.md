@@ -300,7 +300,6 @@ File Dump
 Notation Information
 	 sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>)
 	 sysex rt <device-id (u7)> notation time-signature (immediate|delayed) <midi-clock-in-metronome-click (u7)> <32nd-notes-in-midi-quarter-note (u7)> <time-signature-nominator1 (u7)> <time-signature-denominator1 (u7)>  [<nominator2 (u7)> <denominator2 (u7)> ..]
-	 sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
