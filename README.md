@@ -63,7 +63,7 @@ tt = to test
 | Controller Destination Settings | Channel/Key pressure, control change | SysEx Real Time | tt |
 | Key-based Instrument Control | | SysEx Real Time | tt |
 | Sample Dump | (Extended) Header, Request, DataPacket, (Extended) Loop Point Request & Transmission, Name Request & Transmission  | SysEx Non-Real Time | tt |
-| File Dump | | Non-Real Time | TODO |
+| File Dump | Request, Header, DataPacket | Non-Real Time | tt |
 | Downloadable Sounds | | Non-Real Time | TODO |
 | Notation Information | | Real Time | TODO |
 | Capability Inquiry (MIDI-CI) | | SysEx Non-Real Time | TODO |
