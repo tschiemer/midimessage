@@ -118,6 +118,9 @@ namespace MidiMessage {
                     case SysExRtMidiShowControl:
                         return packSysExRtMidiShowControlObj( bytes, msg );
 
+                    case SysExRtNotationInformation:
+                        return packSysExRtNotationInformationObj( bytes, msg );
+
                     case SysExRtDeviceControl:
                         return packSysExRtDeviceControlObj( bytes, msg );
 
@@ -331,6 +334,9 @@ namespace MidiMessage {
 
                     case SysExRtMidiShowControl:
                         return unpackSysExRtMidiShowControlObj(bytes, length, msg);
+
+                    case SysExRtNotationInformation:
+                        return unpackSysExRtNotationInformationObj( bytes, length, msg );
 
                     case SysExRtDeviceControl:
                         return unpackSysExRtDeviceControlObj( bytes, length, msg );

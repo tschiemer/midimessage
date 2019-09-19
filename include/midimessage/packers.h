@@ -4521,6 +4521,111 @@ namespace MidiMessage {
         return 0;
     }
 
+///////////// SysEx: MIDI Notation Information       ////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+    inline uint8_t packSysExRtNotationInformationBarNumber( uint8_t *bytes, uint8_t deviceId, int16_t barNumber){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId<=MaxU7);
+        ASSERT(MinI14 <= barNumber && barNumber <= MaxI14);
+
+        bytes[0] = SystemMessageSystemExclusive;
+        bytes[1] = SysExIdRealTime_Byte;
+        bytes[2] = deviceId;
+        bytes[3] = SysExRtNotationInformation;
+        bytes[4] = SysExRtNiBarNumber;
+
+        packI14( &bytes[5], barNumber);
+
+        bytes[7] = SystemMessageEndOfExclusive;
+
+        return 8;
+    }
+
+    inline uint8_t packSysExRtNotationInformationBarNumberObj(uint8_t *bytes, Message_t *msg){
+        ASSERT(msg!=NULL);
+        ASSERT(msg->StatusClass == StatusClassSystemMessage);
+        ASSERT(msg->SystemMessage == SystemMessageSystemExclusive);
+        ASSERT(msg->Data.SysEx.Id == SysExIdRealTime);
+        ASSERT(msg->Data.SysEx.SubId1 == SysExRtNotationInformation);
+        ASSERT(msg->Data.SysEx.SubId2 == SysExRtNiBarNumber);
+
+        return packSysExRtNotationInformationBarNumber(bytes, msg->Channel, msg->Data.SysEx.Data.NotationInformation.BarNumber);
+    }
+
+    inline bool unpackSysExRtNotationInformationBarNumber(uint8_t *bytes, uint8_t length, uint8_t *deviceId, int16_t *barNumber){
+        ASSERT(bytes!=NULL);
+        ASSERT(deviceId !=NULL);
+        ASSERT(barNumber!=NULL);
+
+        if (length != 8 || ! isControlByte(bytes[7])){
+            return false;
+        }
+        if (bytes[0] != SystemMessageSystemExclusive || bytes[1] != SysExIdRealTime_Byte || bytes[3] != SysExRtNotationInformation || bytes[4] != SysExRtNiBarNumber){
+            return false;
+        }
+
+        *deviceId = bytes[2];
+
+        *barNumber = unpackI14(&bytes[5]);
+
+        return true;
+    }
+
+    inline bool unpackSysExRtNotationInformationBarNumberObj(uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT(msg!=NULL);
+
+        if (unpackSysExRtNotationInformationBarNumber(bytes, length, &msg->Channel, &msg->Data.SysEx.Data.NotationInformation.BarNumber)){
+            msg->StatusClass = StatusClassSystemMessage;
+            msg->SystemMessage = SystemMessageSystemExclusive;
+            msg->Data.SysEx.Id = SysExIdRealTime;
+            msg->Data.SysEx.SubId1 = SysExRtNotationInformation;
+            msg->Data.SysEx.SubId2 = SysExRtNiBarNumber;
+            return true;
+        }
+
+        return false;
+    }
+
+    inline uint8_t packSysExRtNotationInformationObj( uint8_t *bytes, Message_t *msg){
+        ASSERT(msg!=NULL);
+
+        switch(msg->Data.SysEx.SubId2){
+            case SysExRtNiBarNumber:
+                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
+
+            case SysExRtNiTimeSignatureDelayed:
+//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
+
+            case SysExRtNiTimeSignatureImmediate:
+//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
+                break;
+        }
+
+        return 0;
+    }
+
+
+    inline bool unpackSysExRtNotationInformationObj( uint8_t *bytes, uint8_t length, Message_t *msg){
+        ASSERT(msg!=NULL);
+
+        switch(bytes[4]){
+            case SysExRtNiBarNumber:
+                return unpackSysExRtNotationInformationBarNumberObj(bytes, length, msg);
+
+            case SysExRtNiTimeSignatureDelayed:
+//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
+
+            case SysExRtNiTimeSignatureImmediate:
+//                return packSysExRtNotationInformationBarNumberObj(bytes, msg);
+                break;
+        }
+
+        return 0;
+    }
+
 #ifdef __cplusplus
     } // extern "C"
 } // namespace MidiMessage

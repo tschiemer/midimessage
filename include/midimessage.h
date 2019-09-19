@@ -82,8 +82,10 @@ namespace MidiMessage {
     const uint32_t MaxU28 = 0x0FFFFFFF;
     const uint64_t MaxU35 = 0x7FFFFFFFF;
 
-    const int8_t MaxI7      = 63;
-    const int8_t MinI7      = -64;
+    const int8_t MaxI7      = 63; // 0x3F
+    const int8_t MinI7      = -64; // 0x40
+    const int16_t MaxI14    = 16383; // 0x3FFF
+    const int16_t MinI14    = -16384; // 0x4000;
 
     /**
      * Is it a data byte?
@@ -126,12 +128,25 @@ namespace MidiMessage {
         bytes[1] = (value >> 7) & DataMask;
     }
 
+    inline void packI14( uint8_t * bytes, int16_t value ){
+        return packU14(bytes, value & 0x3FFF);
+    }
+
     inline uint16_t unpackU14( uint8_t * bytes ){
         ASSERT( bytes[0] <= MaxU7 );
         ASSERT( bytes[1] <= MaxU7 );
 
         return (((uint16_t)bytes[1]) << 7) | ((uint16_t)bytes[0]);
     }
+
+    inline int16_t unpackI14( uint8_t * bytes ){
+        int16_t v = unpackU14(bytes);
+        if (v & 0x0200){ // is sign bit set?
+            return v | 0xc0;
+        }
+        return v;
+    }
+
 
     inline void packU21( uint8_t * bytes, uint32_t value ) {
         ASSERT( value < MaxU21 );
@@ -686,6 +701,7 @@ namespace MidiMessage {
     typedef enum {
         SysExRtMidiTimeCode                  = 0x01, // SubId2 enum SysExRtMtc..
         SysExRtMidiShowControl               = 0x02, // SubId2 enum SysExRtMsc..
+        SysExRtNotationInformation           = 0x03, // SubId2 enum SysExRtNi..
         SysExRtDeviceControl                 = 0x04, // SubId2 enum SysExRtDc..
         SysExRtMidiTimeCodeCueing            = 0x05, // SubId2 enum SysExRtMtcCueing..
         SysExRtMidiMachineControlCommand     = 0x06, // SubId2 enum SysExRtMmcCommand..
@@ -1479,17 +1495,19 @@ namespace MidiMessage {
 /////////////////////////////////////////////////////////////////
 
     typedef enum {
-        SysExRtNotationInformationBarNumber                = 0x01,
-        SysExRtNotationInformationTimeSignatureImmediate   = 0x02,
-        SysExRtNotationInformationTimeSignatureDelayed     = 0x03
-    } SysExRtNotationInformation_t;
+        SysExRtNiBarNumber                = 0x01,
+        SysExRtNiTimeSignatureImmediate   = 0x02,
+        SysExRtNiTimeSignatureDelayed     = 0x03
+    } SysExRtNi_t;
 
-    inline bool isSysExRtNotationInformation( uint8_t value ){
-        return (value == SysExRtNotationInformationBarNumber ||
-                value == SysExRtNotationInformationTimeSignatureImmediate ||
-                value == SysExRtNotationInformationTimeSignatureDelayed);
+    inline bool isSysExRtNi( uint8_t value ){
+        return (value == SysExRtNiBarNumber ||
+                value == SysExRtNiTimeSignatureImmediate ||
+                value == SysExRtNiTimeSignatureDelayed);
     }
 
+    const int16_t SysExRtNiBarNumberNotRunning = MinI14;
+    const int16_t SysExRtNiBarNumberRunningUnknown = MaxI14;
 
 ///////////// SysEx: MIDI Visual Control (MVC)       ////////////
 /////////////////////////////////////////////////////////////////
@@ -2769,6 +2787,9 @@ namespace MidiMessage {
                         uint32_t ParameterAddress;
                     } MidiVisualControl;
 
+                    struct {
+                        int16_t BarNumber;
+                    } NotationInformation;
                 } Data;
 
                 uint8_t * ByteData;
