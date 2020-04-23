@@ -829,7 +829,7 @@ namespace MidiMessage {
 
             return StringifierResultOk;
         }
-        
+
         else if (str_eq(argv[0], "note")) {
             if (argc != 5) {
                 return StringifierResultWrongArgCount;
