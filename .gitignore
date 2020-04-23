@@ -38,6 +38,7 @@
 /Makefile
 
 .idea
+.DS_Store
 
 /docs
 /midi-docs
