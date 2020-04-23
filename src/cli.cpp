@@ -18,6 +18,7 @@
 #include <midimessage.h>
 #include <midimessage/stringifier.h>
 #include <midimessage/parser.h>
+#include <midimessage/commonccs.h>
 
 
 using namespace std;
@@ -237,7 +238,7 @@ void printHelp( void ) {
     printf("\nSample Dump Standard (SDS)\n");
     printf("\t sysex nonrt <device-id (u7)> sds-header <sample-number (u14)> <sample-fmt (u7)> <sample-period (u21)> <sample-length (u21)> <loop-start (u21)> <loop-end (u21)> (uni-forward|bi-forward|forward-once)\n");
     printf("\t sysex nonrt <device-id (u7)> sds-request <sample-number (u14)>\n");
-    printf("\t sysex nonrt <device-id (u7)> sds-data <packet-index (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]*\n");
+    printf("\t sysex nonrt <device-id (u7)> sds-data <packet-index (u7)> <data (xN)> [<checksum (x1)> [<verification-checksum (x1)>]]*\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext loop-point-tx <sample-number (u14)> <loop-number (u14)> (uni-forward|bi-forward|forward-once) <loop-start (u21)> <loop-end (u21)>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext loop-point-request <sample-number (u14)> <loop-number (u14)>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext ext-header <sample-number (u14)> <sample-fmt (u7)> <sample-rate-integer (u28)> <sample-rate-fraction (u28)> <sample-length (u35)> <loop-start (u35)> <loop-end (u35)> <loop-type**>\n");
@@ -245,7 +246,7 @@ void printHelp( void ) {
     printf("\t sysex nonrt <device-id (u7)> sds-ext ext-loop-point-request <sample-number (u14)> <loop-number (u14)>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext name-tx <sample-number (u14)> -*** <sample-name (strN) ...>\n");
     printf("\t sysex nonrt <device-id (u7)> sds-ext name-request <sample-number (u14)>\n");
-    printf("* <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.\n");
+    printf("* <checksum> := as sent/to be sent in message, <verification-checksum> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <verification-checksum> will always be ignored.\n");
     printf("** <loop-type> := uni-forward|bi-forward|uni-forward-release|bi-forward-release|uni-backward|bi-backward|uni-backward-release|bi-backward-release|backward-once|forward-once\n");
     printf("*** In principle there is a language tag to support localization, but apart from the default (English) none are documented and thus likely not used. Thus momentarily only the default is supported which is chosen by specifying '-' as argument.\n");
 
@@ -259,13 +260,28 @@ void printHelp( void ) {
     printf("\nFile Dump\n");
     printf("\t sysex nonrt <device-id (u7)> file-dump request <sender-id (u7)> <type (str4)*> <name (strN)..>\n");
     printf("\t sysex nonrt <device-id (u7)> file-dump header <sender-id (u7)> <type (str4)*> <length (u28)> <name (strN)..>\n");
-    printf("\t sysex nonrt <device-id (u7)> file-dump data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]**\n");
+    printf("\t sysex nonrt <device-id (u7)> file-dump data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<verification-checksum (x1)>]]**\n");
     printf("*<type> := four 7-bit ASCII bytes. Defined in specification: MIDI, MIEX, ESEQ, TEXT, BIN<space>, MAC<space>\n");
-    printf("** <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.\n");
+    printf("** <checksum> := as sent/to be sent in message, <verification-checksum> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <verification-checksum> will always be ignored.\n");
 
     printf("\nNotation Information\n");
     printf("\t sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>)\n");
     printf("\t sysex rt <device-id (u7)> notation time-signature (immediate|delayed) <midi-clock-in-metronome-click (u7)> <32nd-notes-in-midi-quarter-note (u7)> <time-signature-nominator1 (u7)> <time-signature-denominator1 (u7)>  [<nominator2 (u7)> <denominator2 (u7)> ..]\n");
+
+    printf("\nTuning Standard\n");
+    printf("\t sysex nonrt <device-id (u7)> tuning bulk-dump-request <program (u7)>\n");
+    printf("\t sysex nonrt <device-id (u7)> tuning bulk-dump-request-back <bank (u7)> <program (u7)>\n");
+    printf("\t sysex nonrt <device-id (u7)> tuning bulk-dump <program (u7)> <name (str16)> (-|<semitone1 (u7)> <cents1* (u14)>) .. (-|<semitone128 (u7)> <cents128* (u14)>) [<checksum (x1)> [<verification-checksum (x1)]]\n");
+    printf("\t sysex nonrt <device-id (u7)> tuning key-based-dump <bank (u7)> <preset (u7)> <name (str16)> (-|<semitone1 (u7)> <cents1* (u14)>) .. (-|<semitone128 (u7)> <cents128* (u14)>) [<checksum (x1)> [<verification-checksum (x1)]]\n");
+    printf("\t sysex nonrt <device-id (u7)> tuning single-note-change-back <bank (u7)> <preset (u7)> <key1 (u7)> <semitone1 (u7)> <cents1* (u14)> [..  <keyN (u7)> <semitoneN (u7)> <centsN* (u14)>]\n");
+    printf("\t sysex nonrt <device-id (u7)> tuning octave-dump-1byte <bank (u7)> <preset (u7)>  <name (str16)> <cent1** (s7)> .. <cents12** (s7)> ( [<checksum (x1)> [<verification-checksum (x1)]]\n");
+    printf("\t sysex nonrt <device-id (u7)> tuning octave-dump-2byte <bank (u7)> <preset (u7)>  <name (str16)> <cent1> .. <cents12 (s7)> ( [<checksum (x1)> [<verification-checksum (x1)]]\n");
+    printf("\t sysex rt <device-id (u7)> tuning single-note-change <program (u7)> <key1 (u7)> <semitone1 (u7)> <cents1* (u14)> [..  <keyN (u7)> <semitoneN (u7)> <centsN* (u14)>]\n");
+    printf("\t sysex rt <device-id (u7)> tuning single-note-change-bank <bank (u7)> <preset (u7)> <key1 (u7)> <semitone1 (u7)> <cents1* (u14)> [..  <keyN (u7)> <semitoneN (u7)> <centsN* (u14)>]\n");
+    printf("\t* in .0061-cent units\n");
+    printf("\t** from -64 (:=0) to 63 (:=127, ie 0 := 64)\n");
+    printf("\t*** in .012207-cents units\n");
+
 
     printf("\nExamples:\n");
     printf("\t bin/midimessage-cli -g note on 60 40 1\n");
@@ -336,13 +352,58 @@ void generator(void){
             firstArg = &firstArg[1];
         }
 
-        int result = MessagefromArgs( &msg,  argsCount, firstArg );
 
-        if (StringifierResultOk == result){
+        if (strcmp((char*)firstArg[0], "nrpn") == 0){
 
-            writeMidiPacket( &msg );
+            if (argsCount != 4) {
+                generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
+                continue;
+            }
+            msg.StatusClass = StatusClassControlChange;
+            msg.Channel = atoi((char*)firstArg[1]);
+
+            if (msg.Channel > MaxU7) {
+                generatorError(StringifierResultInvalidU7, argsCount, firstArg);
+                continue;
+            }
+
+            uint16_t controller = atoi((char*)firstArg[2]);
+            uint16_t value = atoi((char*)firstArg[3]);
+
+            if (controller > MaxU14) {
+                generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                continue;
+            }
+            if (value > MaxU14) {
+                generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                continue;
+            }
+
+            msg.Data.ControlChange.Controller = CcNonRegisteredParameterMSB;
+            msg.Data.ControlChange.Value = (controller >> 7) & DataMask;
+            writeMidiPacket(&msg);
+
+            msg.Data.ControlChange.Controller = CcNonRegisteredParameterLSB;
+            msg.Data.ControlChange.Value = controller & DataMask;
+            writeMidiPacket(&msg);
+
+            msg.Data.ControlChange.Controller = CcDataEntryMSB;
+            msg.Data.ControlChange.Value = (value >> 7) & DataMask;
+            writeMidiPacket(&msg);
+
+            msg.Data.ControlChange.Controller = CcDataEntryLSB;
+            msg.Data.ControlChange.Value = value & DataMask;
+            writeMidiPacket(&msg);
+
         } else {
-            generatorError(result, argsCount, firstArg);
+            int result = MessagefromArgs( &msg,  argsCount, firstArg );
+
+            if (StringifierResultOk == result){
+
+                writeMidiPacket( &msg );
+            } else {
+                generatorError(result, argsCount, firstArg);
+            }
         }
     }
 }
@@ -701,15 +762,64 @@ int main(int argc, char * argv[], char * env[]){
             uint8_t argsCount = (uint8_t) (argc - optind);
             uint8_t ** firstArg = (uint8_t **) &argv[optind];
 
-            int result = MessagefromArgs(&msg, argsCount, firstArg);
+            int result = StringifierResultGenericError;
 
-            if (result == StringifierResultOk) {
+            if (strcmp((char*)firstArg[0], "nrpn") == 0){
+
+                if (argsCount != 4) {
+                    generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
+                    exit(EXIT_FAILURE);
+                }
+                msg.StatusClass = StatusClassControlChange;
+                msg.Channel = atoi((char*)firstArg[1]);
+
+                if (msg.Channel > MaxU7) {
+                    generatorError(StringifierResultInvalidU7, argsCount, firstArg);
+                    exit(EXIT_FAILURE);
+                }
+
+                uint16_t controller = atoi((char*)firstArg[2]);
+                uint16_t value = atoi((char*)firstArg[3]);
+
+                if (controller > MaxU14) {
+                    generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                    exit(EXIT_FAILURE);
+                }
+                if (value > MaxU14) {
+                    generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                    exit(EXIT_FAILURE);
+                }
+
+                msg.Data.ControlChange.Controller = CcNonRegisteredParameterMSB;
+                msg.Data.ControlChange.Value = (controller >> 7) & DataMask;
                 writeMidiPacket(&msg);
+
+                msg.Data.ControlChange.Controller = CcNonRegisteredParameterLSB;
+                msg.Data.ControlChange.Value = controller & DataMask;
+                writeMidiPacket(&msg);
+
+                msg.Data.ControlChange.Controller = CcDataEntryMSB;
+                msg.Data.ControlChange.Value = (value >> 7) & DataMask;
+                writeMidiPacket(&msg);
+
+                msg.Data.ControlChange.Controller = CcDataEntryLSB;
+                msg.Data.ControlChange.Value = value & DataMask;
+                writeMidiPacket(&msg);
+
                 exit(EXIT_SUCCESS);
+
             } else {
-                generatorError(result, argsCount, firstArg);
-                exit(EXIT_FAILURE);
+                result = MessagefromArgs(&msg, argsCount, firstArg);
+
+                if (result == StringifierResultOk) {
+                    writeMidiPacket(&msg);
+                    exit(EXIT_SUCCESS);
+                } else {
+                    generatorError(result, argsCount, firstArg);
+                    exit(EXIT_FAILURE);
+                }
             }
+
         }
 
         // enter generator loop (reads stdin until eof)
