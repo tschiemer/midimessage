@@ -149,8 +149,8 @@ void receivedMidiMessageFromSomewhere( uint8_t * buf, int len ){
 ```
 Usage:
 	 midimessage-cli [-h?]
-	 midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d]]
-	 midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...]
+	 midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p) [-d] [--nprn-filter]
+	 midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--generate|-g) [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...]
 	 midimessage-cli --convert=(nibblize|denibblize|sevenbitize|desevenbitize) [--hex] [<data xN>]
 
 Options:
@@ -158,7 +158,8 @@ Options:
 	 --running-status|-r 		 Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)
 	 --timed|-t[milli|micro] 	 Enables the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)
 	 --parse|-p [<binary-data>] 	 Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.
-	 -d 				 In parsing mode, instead of silent discarding output any discarded data to STDERR.
+	 -d 				 In parsing mode only, instead of silent discarding output any discarded data to STDERR.
+	 --nrpn-filter 				 In parsing mode only, assume CC-sequences 99-98-96 (increment), 99-98-97 (decrement), 99-98-6-38 (data entry) are NRPN sequences, thus these will be filtered even if impartial (!! ie, 99-98-6-2 will only output the message for 2; this is a convenience feature and can not be solved for the general case)
 	 --generate|-g [<cmd> ...] 	 Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.
 	 --prefix=<prefix> 		 Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).
 	 --suffix=<suffix> 		 Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).
@@ -255,7 +256,7 @@ MIDI Show Control (MSC)
 MIDI Machine Commands (MMC)
 For MMC the MIDI format acts as container for a command stream of its own, where several MMC commands can be packed into one MIDI message.
 
-	 sysex rt <device-id (u7) mcc <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]
+	 sysex rt <device-id (u7)> mcc <command1 ..> [<command2 ..> [ .. <commandN ..>] .. ]]
 		 <commandN ..> :
 		 (stop|play|deferred-play|fast-forward|rewind|record-strobe|record-exit|record-pause|pause|eject|chase|command-error-reset|mmc-reset|wait|resume)
 		 (variable-play|search|shuttle|deferred-variable-play|record-strobe-variable) <speed (float)>
@@ -279,7 +280,7 @@ Mobile Phone Control
 Sample Dump Standard (SDS)
 	 sysex nonrt <device-id (u7)> sds-header <sample-number (u14)> <sample-fmt (u7)> <sample-period (u21)> <sample-length (u21)> <loop-start (u21)> <loop-end (u21)> (uni-forward|bi-forward|forward-once)
 	 sysex nonrt <device-id (u7)> sds-request <sample-number (u14)>
-	 sysex nonrt <device-id (u7)> sds-data <packet-index (u7)> <data (xN)> [<checksum-data (x1)> [<checksum-computed (x1)>]]*
+	 sysex nonrt <device-id (u7)> sds-data <packet-index (u7)> <data (xN)> [<checksum (x1)> [<verification-checksum (x1)>]]*
 	 sysex nonrt <device-id (u7)> sds-ext loop-point-tx <sample-number (u14)> <loop-number (u14)> (uni-forward|bi-forward|forward-once) <loop-start (u21)> <loop-end (u21)>
 	 sysex nonrt <device-id (u7)> sds-ext loop-point-request <sample-number (u14)> <loop-number (u14)>
 	 sysex nonrt <device-id (u7)> sds-ext ext-header <sample-number (u14)> <sample-fmt (u7)> <sample-rate-integer (u28)> <sample-rate-fraction (u28)> <sample-length (u35)> <loop-start (u35)> <loop-end (u35)> <loop-type**>
@@ -287,7 +288,7 @@ Sample Dump Standard (SDS)
 	 sysex nonrt <device-id (u7)> sds-ext ext-loop-point-request <sample-number (u14)> <loop-number (u14)>
 	 sysex nonrt <device-id (u7)> sds-ext name-tx <sample-number (u14)> -*** <sample-name (strN) ...>
 	 sysex nonrt <device-id (u7)> sds-ext name-request <sample-number (u14)>
-* Both checksums are given when parsing a MIDI stream (to allow verification). During generation, if <checksum-data> (see specification) is not given it is computed (recommended) and the <checksum-computed> is always ignored if given.
+* <checksum> := as sent/to be sent in message, <verification-checksum> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <verification-checksum> will always be ignored.
 ** <loop-type> := uni-forward|bi-forward|uni-forward-release|bi-forward-release|uni-backward|bi-backward|uni-backward-release|bi-backward-release|backward-once|forward-once
 *** In principle there is a language tag to support localization, but apart from the default (English) none are documented and thus likely not used. Thus momentarily only the default is supported which is chosen by specifying '-' as argument.
 
@@ -301,13 +302,27 @@ MIDI Visual Control (MVC)
 File Dump
 	 sysex nonrt <device-id (u7)> file-dump request <sender-id (u7)> <type (str4)*> <name (strN)..>
 	 sysex nonrt <device-id (u7)> file-dump header <sender-id (u7)> <type (str4)*> <length (u28)> <name (strN)..>
-	 sysex nonrt <device-id (u7)> file-dump data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<checksum-verification (x1)>]]**
+	 sysex nonrt <device-id (u7)> file-dump data <packet-number (u7)> <data (xN)> [<checksum (x1)> [<verification-checksum (x1)>]]**
 *<type> := four 7-bit ASCII bytes. Defined in specification: MIDI, MIEX, ESEQ, TEXT, BIN<space>, MAC<space>
-** <checksum> := as sent/to be sent in message, <checksum-verification> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <checksum-verification> will always be ignored.
+** <checksum> := as sent/to be sent in message, <verification-checksum> := as computed. Both checksums are given when parsing a MIDI stream but during generation, if no <checksum> is given it is computed (recommended) otherwise its value will be used; <verification-checksum> will always be ignored.
 
 Notation Information
 	 sysex rt <device-id (u7)> notation bar-number (not-running|running-unknown|<s14>)
 	 sysex rt <device-id (u7)> notation time-signature (immediate|delayed) <midi-clock-in-metronome-click (u7)> <32nd-notes-in-midi-quarter-note (u7)> <time-signature-nominator1 (u7)> <time-signature-denominator1 (u7)>  [<nominator2 (u7)> <denominator2 (u7)> ..]
+
+Tuning Standard
+	 sysex nonrt <device-id (u7)> tuning bulk-dump-request <program (u7)>
+	 sysex nonrt <device-id (u7)> tuning bulk-dump-request-back <bank (u7)> <program (u7)>
+	 sysex nonrt <device-id (u7)> tuning bulk-dump <program (u7)> <name (str16)> (-|<semitone1 (u7)> <cents1* (u14)>) .. (-|<semitone128 (u7)> <cents128* (u14)>) [<checksum (x1)> [<verification-checksum (x1)]]
+	 sysex nonrt <device-id (u7)> tuning key-based-dump <bank (u7)> <preset (u7)> <name (str16)> (-|<semitone1 (u7)> <cents1* (u14)>) .. (-|<semitone128 (u7)> <cents128* (u14)>) [<checksum (x1)> [<verification-checksum (x1)]]
+	 sysex nonrt <device-id (u7)> tuning single-note-change-back <bank (u7)> <preset (u7)> <key1 (u7)> <semitone1 (u7)> <cents1* (u14)> [..  <keyN (u7)> <semitoneN (u7)> <centsN* (u14)>]
+	 sysex nonrt <device-id (u7)> tuning octave-dump-1byte <bank (u7)> <preset (u7)>  <name (str16)> <cent1** (s7)> .. <cents12** (s7)> ( [<checksum (x1)> [<verification-checksum (x1)]]
+	 sysex nonrt <device-id (u7)> tuning octave-dump-2byte <bank (u7)> <preset (u7)>  <name (str16)> <cent1> .. <cents12 (s7)> ( [<checksum (x1)> [<verification-checksum (x1)]]
+	 sysex rt <device-id (u7)> tuning single-note-change <program (u7)> <key1 (u7)> <semitone1 (u7)> <cents1* (u14)> [..  <keyN (u7)> <semitoneN (u7)> <centsN* (u14)>]
+	 sysex rt <device-id (u7)> tuning single-note-change-bank <bank (u7)> <preset (u7)> <key1 (u7)> <semitone1 (u7)> <cents1* (u14)> [..  <keyN (u7)> <semitoneN (u7)> <centsN* (u14)>]
+	* in .0061-cent units
+	** from -64 (:=0) to 63 (:=127, ie 0 := 64)
+	*** in .012207-cents units
 
 Examples:
 	 bin/midimessage-cli -g note on 60 40 1
@@ -319,6 +334,8 @@ Examples:
 	 cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p
 	 bin/midimessage-cli --convert=nibblize --hex 1337 > test.nibblized
 	 cat test.nibblized | bin/midimessage-cli --convert=denibblize --hex
+	 bin/midimessage-cli -v1 -g nrpn 1 128 255 | bin/midimessage-cli -p
+	 bin/midimessage-cli -v1 -g nrpn 1 128 256 | bin/midimessage-cli -p --nrpn-filter
 ```
 ## Docs
 
