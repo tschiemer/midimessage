@@ -62,6 +62,8 @@ Mode_t mode = ModeUndefined;
 // Running status option
 bool runningStatusEnabled = false;
 
+bool nrpnFilterEnabled = false;
+
 // Timed option
 struct {
     bool enabled;
@@ -106,8 +108,8 @@ void discardingData( uint8_t * data, uint8_t length, void * context );
 void printHelp( void ) {
     printf("Usage:\n");
     printf("\t midimessage-cli [-h?]\n");
-    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p [-d]]\n");
-    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] --generate|-g [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...]\n");
+    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--parse|-p) [-d] [--nprn-filter]\n");
+    printf("\t midimessage-cli [--running-status|-r] [--timed|-t[milli|micro]] (--generate|-g) [-x0|-x1] [-v[N]] [--prefix=<prefix>] [--suffix=<suffix] [<cmd> ...]\n");
     printf("\t midimessage-cli --convert=(nibblize|denibblize|sevenbitize|desevenbitize) [--hex] [<data xN>]\n");
 
     printf("\nOptions:\n");
@@ -115,7 +117,8 @@ void printHelp( void ) {
     printf("\t --running-status|-r \t\t Accept (when parsing) or generate messages that rely on the running status (see MIDI specs)\n");
     printf("\t --timed|-t[milli|micro] \t Enables the capture or playback of delta-time information (ie the time between messages). Optionally the time resolution (milliseconds or microseconds) can be specified (default = micro)\n");
     printf("\t --parse|-p [<binary-data>] \t Enter parse mode and optionally pass as first argument (binary) message to be parsed. If no argument is provided starts reading binary stream from STDIN. Each successfully parsed message will be printed to STDOUT and terminated with a newline.\n");
-    printf("\t -d \t\t\t\t In parsing mode, instead of silent discarding output any discarded data to STDERR.\n");
+    printf("\t -d \t\t\t\t In parsing mode only, instead of silent discarding output any discarded data to STDERR.\n");
+    printf("\t --nrpn-filter \t\t\t\t In parsing mode only, assume CC-sequences 99-98-96 (increment), 99-98-97 (decrement), 99-98-6-38 (data entry) are NRPN sequences, thus these will be filtered even if impartial (!! ie, 99-98-6-2 will only output the message for 2; this is a convenience feature and can not be solved for the general case) \n");
     printf("\t --generate|-g [<cmd> ...] \t Enter generation mode and optionally pass command to be generated. If no command is given, expects one command from STDIN per line. Generated (binary) messages are written to STDOUT.\n");
     printf("\t --prefix=<prefix> \t\t Prefixes given string (max 32 bytes) before each binary sequence (only when in generation mode). A single %%d can be given which will be replaced with the length of the following binary message (incompatible with running-status mode).\n");
     printf("\t --suffix=<suffix> \t\t Suffixes given string (max 32 bytes) before each binary sequence (only when in generation mode).\n");
@@ -293,6 +296,8 @@ void printHelp( void ) {
     printf("\t cat test.recording | bin/midimessage-cli -gtmilli | bin/midimessage-cli -p\n");
     printf("\t bin/midimessage-cli --convert=nibblize --hex 1337 > test.nibblized\n");
     printf("\t cat test.nibblized | bin/midimessage-cli --convert=denibblize --hex\n");
+    printf("\t bin/midimessage-cli -v1 -g nrpn 1 128 255 | bin/midimessage-cli -p\n");
+    printf("\t bin/midimessage-cli -v1 -g nrpn 1 128 256 | bin/midimessage-cli -p --nrpn-filter\n");
 }
 
 
@@ -570,6 +575,88 @@ void convert(Reader_t reader, Converter_t converter, uint8_t each){
 
 void parsedMessage( Message_t * msg, void * context ){
 
+    static uint8_t nrpnMsgCount = 0;
+    static uint8_t nrpnChannel = 0;
+    static uint8_t nrpnValues[4];
+
+    if (nrpnFilterEnabled && msg->StatusClass == StatusClassControlChange) {
+        if (nrpnMsgCount == 0 && msg->Data.ControlChange.Controller == CcNonRegisteredParameterMSB) {
+            nrpnChannel = msg->Channel;
+            nrpnValues[0] = msg->Data.ControlChange.Value;
+            nrpnMsgCount = 1;
+            return;
+        }
+
+        uint8_t nrpnAction = 0;
+
+        if (nrpnMsgCount > 0 && nrpnChannel != msg->Channel){
+            nrpnMsgCount = 0;
+        } else {
+            if (nrpnMsgCount == 1) {
+                if (msg->Data.ControlChange.Controller == CcNonRegisteredParameterLSB) {
+                  nrpnValues[1] = msg->Data.ControlChange.Value;
+                  nrpnMsgCount = 2;
+                  return;
+                } else {
+                  nrpnMsgCount = 0;
+                }
+            }
+            else if (nrpnMsgCount == 2) {
+                if (msg->Data.ControlChange.Controller == CcDataEntryMSB) {
+                  nrpnValues[2] = msg->Data.ControlChange.Value;
+                  nrpnMsgCount = 3;
+                  return;
+                } else if (msg->Data.ControlChange.Controller == CcDataIncrement) {
+                  nrpnValues[2] = msg->Data.ControlChange.Value;
+                  nrpnAction = CcDataIncrement;
+                } else if (msg->Data.ControlChange.Controller == CcDataDecrement) {
+                  nrpnValues[2] = msg->Data.ControlChange.Value;
+                  nrpnAction = CcDataDecrement;
+                } else {
+                  nrpnMsgCount = 0;
+                }
+            }
+            else if (nrpnMsgCount == 3){
+                if (msg->Data.ControlChange.Controller == CcDataEntryLSB) {
+                  nrpnValues[3] = msg->Data.ControlChange.Value;
+                  nrpnMsgCount = 4;
+                  nrpnAction = CcDataEntryMSB;
+                } else {
+                  nrpnMsgCount = 0;
+                }
+            }
+        }
+
+        if (nrpnAction != 0){
+
+            if (timedOpt.enabled){
+
+                unsigned long now = getNow();
+                unsigned long diff = now - timedOpt.lastTimestamp;
+
+                printf("%ld ", diff);
+
+                timedOpt.lastTimestamp = now;
+            }
+
+            uint16_t controller = (nrpnValues[0] << 7) | nrpnValues[1];
+
+            if (nrpnAction == CcDataIncrement) {
+                printf("nrpn %d %d inc %d\n", nrpnChannel, controller, nrpnValues[2]);
+            } else if (nrpnAction == CcDataDecrement) {
+                printf("nrpn %d %d dec %d\n", nrpnChannel, controller, nrpnValues[2]);
+            } else {
+                uint16_t value = (nrpnValues[2] << 7) | nrpnValues[3];
+                printf("nrpn %d %d %d\n", nrpnChannel, controller, value);
+            }
+
+            fflush(stdout);
+
+            nrpnMsgCount = 0;
+
+            return;
+        }
+    }
 
     uint8_t stringBuffer[255];
 
@@ -633,6 +720,7 @@ int main(int argc, char * argv[], char * env[]){
                 {"help",    no_argument,    0,  'h' },
                 {"convert", required_argument, 0, 0},
                 {"hex", no_argument, 0, 0},
+                {"nrpn-filter", no_argument, 0, 'n'},
                 {0,         0,              0,  0 }
         };
 
@@ -720,6 +808,10 @@ int main(int argc, char * argv[], char * env[]){
                 runningStatusEnabled = true;
                 break;
 
+            case 'n':
+                nrpnFilterEnabled = true;
+                break;
+
             case 'd':
                 printDiscardedData = true;
                 break;
@@ -766,7 +858,7 @@ int main(int argc, char * argv[], char * env[]){
 
             if (strcmp((char*)firstArg[0], "nrpn") == 0){
 
-                if (argsCount != 4) {
+                if (argsCount < 4 || 5 < argsCount) {
                     generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
                     exit(EXIT_FAILURE);
                 }
@@ -779,15 +871,55 @@ int main(int argc, char * argv[], char * env[]){
                 }
 
                 uint16_t controller = atoi((char*)firstArg[2]);
-                uint16_t value = atoi((char*)firstArg[3]);
 
                 if (controller > MaxU14) {
                     generatorError(StringifierResultInvalidU14, argsCount, firstArg);
                     exit(EXIT_FAILURE);
                 }
-                if (value > MaxU14) {
-                    generatorError(StringifierResultInvalidU14, argsCount, firstArg);
-                    exit(EXIT_FAILURE);
+
+                uint8_t action = 0;
+                uint16_t value = 0;
+
+                if (strcmp((char*)firstArg[3], "inc") == 0){
+
+                    action = CcDataIncrement;
+
+                    if (argsCount == 5) {
+                        value = atoi((char*)firstArg[4]);
+
+                        if (value > MaxU7) {
+                            generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                }
+                else if (strcmp((char*)firstArg[3], "dec") == 0){
+
+                    action = CcDataDecrement;
+
+                    if (argsCount == 5) {
+                        value = atoi((char*)firstArg[4]);
+
+                        if (value > MaxU7) {
+                            generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+
+                } else {
+
+                  if (argsCount != 4) {
+                      generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
+                      exit(EXIT_FAILURE);
+                  }
+
+                  action = CcDataEntryMSB;
+                  value = atoi((char*)firstArg[3]);
+
+                  if (value > MaxU14) {
+                      generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                      exit(EXIT_FAILURE);
+                  }
                 }
 
                 msg.Data.ControlChange.Controller = CcNonRegisteredParameterMSB;
@@ -798,13 +930,19 @@ int main(int argc, char * argv[], char * env[]){
                 msg.Data.ControlChange.Value = controller & DataMask;
                 writeMidiPacket(&msg);
 
-                msg.Data.ControlChange.Controller = CcDataEntryMSB;
-                msg.Data.ControlChange.Value = (value >> 7) & DataMask;
-                writeMidiPacket(&msg);
+                if (action == CcDataEntryMSB){
+                    msg.Data.ControlChange.Controller = CcDataEntryMSB;
+                    msg.Data.ControlChange.Value = (value >> 7) & DataMask;
+                    writeMidiPacket(&msg);
 
-                msg.Data.ControlChange.Controller = CcDataEntryLSB;
-                msg.Data.ControlChange.Value = value & DataMask;
-                writeMidiPacket(&msg);
+                    msg.Data.ControlChange.Controller = CcDataEntryLSB;
+                    msg.Data.ControlChange.Value = value & DataMask;
+                    writeMidiPacket(&msg);
+                } else {
+                    msg.Data.ControlChange.Controller = action;
+                    msg.Data.ControlChange.Value = value & DataMask;
+                    writeMidiPacket(&msg);
+                }
 
                 exit(EXIT_SUCCESS);
 
