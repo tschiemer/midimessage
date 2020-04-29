@@ -360,91 +360,91 @@ void generator(void){
 
         if (strcmp((char*)firstArg[0], "nrpn") == 0){
 
-                          if (argsCount < 4 || 5 < argsCount) {
-                              generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
-                              continue;
-                          }
-                          msg.StatusClass = StatusClassControlChange;
-                          msg.Channel = atoi((char*)firstArg[1]);
+            if (argsCount < 4 || 5 < argsCount) {
+                generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
+                continue;
+            }
+            msg.StatusClass = StatusClassControlChange;
+            msg.Channel = atoi((char*)firstArg[1]);
 
-                          if (msg.Channel > MaxU7) {
-                              generatorError(StringifierResultInvalidU7, argsCount, firstArg);
-                              continue;
-                          }
+            if (msg.Channel > MaxU7) {
+                generatorError(StringifierResultInvalidU7, argsCount, firstArg);
+                continue;
+            }
 
-                          uint16_t controller = atoi((char*)firstArg[2]);
+            uint16_t controller = atoi((char*)firstArg[2]);
 
-                          if (controller > MaxU14) {
-                              generatorError(StringifierResultInvalidU14, argsCount, firstArg);
-                              continue;
-                          }
+            if (controller > MaxU14) {
+                generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                continue;
+            }
 
-                          uint8_t action = 0;
-                          uint16_t value = 0;
+            uint8_t action = 0;
+            uint16_t value = 0;
 
-                          if (strcmp((char*)firstArg[3], "inc") == 0){
+            if (strcmp((char*)firstArg[3], "inc") == 0){
 
-                              action = CcDataIncrement;
+                action = CcDataIncrement;
 
-                              if (argsCount == 5) {
-                                  value = atoi((char*)firstArg[4]);
+                if (argsCount == 5) {
+                    value = atoi((char*)firstArg[4]);
 
-                                  if (value > MaxU7) {
-                                      generatorError(StringifierResultInvalidU14, argsCount, firstArg);
-                                      continue;
-                                  }
-                              }
-                          }
-                          else if (strcmp((char*)firstArg[3], "dec") == 0){
+                    if (value > MaxU7) {
+                        generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                        continue;
+                    }
+                }
+            }
+            else if (strcmp((char*)firstArg[3], "dec") == 0){
 
-                              action = CcDataDecrement;
+                action = CcDataDecrement;
 
-                              if (argsCount == 5) {
-                                  value = atoi((char*)firstArg[4]);
+                if (argsCount == 5) {
+                    value = atoi((char*)firstArg[4]);
 
-                                  if (value > MaxU7) {
-                                      generatorError(StringifierResultInvalidU14, argsCount, firstArg);
-                                      continue;
-                                  }
-                              }
+                    if (value > MaxU7) {
+                        generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                        continue;
+                    }
+                }
 
-                          } else {
+            } else {
 
-                            if (argsCount != 4) {
-                                generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
-                                continue;
-                            }
+              if (argsCount != 4) {
+                  generatorError(StringifierResultWrongArgCount, argsCount, firstArg);
+                  continue;
+              }
 
-                            action = CcDataEntryMSB;
-                            value = atoi((char*)firstArg[3]);
+              action = CcDataEntryMSB;
+              value = atoi((char*)firstArg[3]);
 
-                            if (value > MaxU14) {
-                                generatorError(StringifierResultInvalidU14, argsCount, firstArg);
-                                continue;
-                            }
-                          }
+              if (value > MaxU14) {
+                  generatorError(StringifierResultInvalidU14, argsCount, firstArg);
+                  continue;
+              }
+            }
 
-                          msg.Data.ControlChange.Controller = CcNonRegisteredParameterMSB;
-                          msg.Data.ControlChange.Value = (controller >> 7) & DataMask;
-                          writeMidiPacket(&msg);
+            msg.Data.ControlChange.Controller = CcNonRegisteredParameterMSB;
+            msg.Data.ControlChange.Value = (controller >> 7) & DataMask;
+            writeMidiPacket(&msg);
 
-                          msg.Data.ControlChange.Controller = CcNonRegisteredParameterLSB;
-                          msg.Data.ControlChange.Value = controller & DataMask;
-                          writeMidiPacket(&msg);
+            msg.Data.ControlChange.Controller = CcNonRegisteredParameterLSB;
+            msg.Data.ControlChange.Value = controller & DataMask;
+            writeMidiPacket(&msg);
 
-                          if (action == CcDataEntryMSB){
-                              msg.Data.ControlChange.Controller = CcDataEntryMSB;
-                              msg.Data.ControlChange.Value = (value >> 7) & DataMask;
-                              writeMidiPacket(&msg);
+            if (action == CcDataEntryMSB){
+                msg.Data.ControlChange.Controller = CcDataEntryMSB;
+                msg.Data.ControlChange.Value = (value >> 7) & DataMask;
+                writeMidiPacket(&msg);
 
-                              msg.Data.ControlChange.Controller = CcDataEntryLSB;
-                              msg.Data.ControlChange.Value = value & DataMask;
-                              writeMidiPacket(&msg);
-                          } else {
-                              msg.Data.ControlChange.Controller = action;
-                              msg.Data.ControlChange.Value = value & DataMask;
-                              writeMidiPacket(&msg);
-                          }
+                msg.Data.ControlChange.Controller = CcDataEntryLSB;
+                msg.Data.ControlChange.Value = value & DataMask;
+                writeMidiPacket(&msg);
+            } else {
+                msg.Data.ControlChange.Controller = action;
+                msg.Data.ControlChange.Value = value & DataMask;
+                writeMidiPacket(&msg);
+            }
 
         } else {
             int result = MessagefromArgs( &msg,  argsCount, firstArg );
@@ -630,6 +630,13 @@ void parsedMessage( Message_t * msg, void * context ){
             nrpnChannel = msg->Channel;
             nrpnValues[0] = msg->Data.ControlChange.Value;
             nrpnMsgCount = 1;
+            return;
+        }
+        if (nrpnMsgCount == 0 && msg->Data.ControlChange.Controller == CcNonRegisteredParameterLSB) {
+            nrpnChannel = msg->Channel;
+            nrpnValues[0] = 0;
+            nrpnValues[1] = msg->Data.ControlChange.Value;
+            nrpnMsgCount = 2;
             return;
         }
 
