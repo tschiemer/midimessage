@@ -626,17 +626,14 @@ void parsedMessage( Message_t * msg, void * context ){
     static uint8_t nrpnValues[4];
 
     if (nrpnFilterEnabled && msg->StatusClass == StatusClassControlChange) {
-        if (nrpnMsgCount == 0 && msg->Data.ControlChange.Controller == CcNonRegisteredParameterMSB) {
+        if (nrpnMsgCount == 0 && (msg->Data.ControlChange.Controller == CcNonRegisteredParameterMSB || msg->Data.ControlChange.Controller == CcNonRegisteredParameterLSB)) {
             nrpnChannel = msg->Channel;
-            nrpnValues[0] = msg->Data.ControlChange.Value;
+            if (msg->Data.ControlChange.Controller == CcNonRegisteredParameterMSB){
+                nrpnValues[0] = msg->Data.ControlChange.Value;
+            } else {
+                nrpnValues[1] = msg->Data.ControlChange.Value;
+            }
             nrpnMsgCount = 1;
-            return;
-        }
-        if (nrpnMsgCount == 0 && msg->Data.ControlChange.Controller == CcNonRegisteredParameterLSB) {
-            nrpnChannel = msg->Channel;
-            nrpnValues[0] = 0;
-            nrpnValues[1] = msg->Data.ControlChange.Value;
-            nrpnMsgCount = 2;
             return;
         }
 
@@ -646,8 +643,12 @@ void parsedMessage( Message_t * msg, void * context ){
             nrpnMsgCount = 0;
         } else {
             if (nrpnMsgCount == 1) {
-                if (msg->Data.ControlChange.Controller == CcNonRegisteredParameterLSB) {
-                  nrpnValues[1] = msg->Data.ControlChange.Value;
+                if (msg->Data.ControlChange.Controller == CcNonRegisteredParameterLSB || msg->Data.ControlChange.Controller == CcNonRegisteredParameterMSB) {
+                  if (msg->Data.ControlChange.Controller == CcNonRegisteredParameterMSB){
+                      nrpnValues[0] = msg->Data.ControlChange.Value;
+                  } else {
+                      nrpnValues[1] = msg->Data.ControlChange.Value;
+                  }
                   nrpnMsgCount = 2;
                   return;
                 } else {
