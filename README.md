@@ -89,6 +89,24 @@ make docs
 make manufacturerids
 ```
 
+To include as library in a cmake-based project (something like) the following in your `CMakeLists.txt`:
+```
+# path to root of midimessage
+set(MIDIMESSAGE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/midimessage)
+
+# midimessage include dir
+# in your source files: #include <midimessage.h> or <midimessage/...>
+set(MIDIMESSAGE_INCLUDES ${MIDIMESSAGE_DIR}/include)
+
+# add the subproject
+add_subdirectory(${MIDIMESSAGE_DIR} EXCLUDE_FROM_ALL)
+
+# don't forget to add the include directory 
+target_include_directories(myTarget ${MIDIMESSAGE_INCLUDES})
+
+# link library with your own target
+target_link_libraries(myTarget midimsg)
+```
 
 
 ## Code Example
