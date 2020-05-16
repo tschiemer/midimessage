@@ -10,6 +10,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 /**
  * \def USE_ASSERTS
  * \brief If set enables asserts.
