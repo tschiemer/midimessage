@@ -27,15 +27,15 @@ set(SOURCE_FILES
         src/parser.cpp
         deps/c-utils/lib/util-hex.c)
 
-add_library(midimessage ${HEADER_FILES} ${SOURCE_FILES})
+add_library(midimsg STATIC ${HEADER_FILES} ${SOURCE_FILES})
 
-add_executable(midimessage-cli src/cli.cpp )
-target_link_libraries(midimessage-cli midimessage)
+add_executable(midimessage src/cli.cpp )
+target_link_libraries(midimessage midimsg)
 
 #target_include_directories(midimessage-cli PRIVATE deps/c-utils/lib)
 
 message("Install path: ${CMAKE_INSTALL_PREFIX}")
-install(TARGETS midimessage midimessage-cli
+install(TARGETS midimsg midimessage
         LIBRARY
             DESTINATION lib
             COMPONENT Libraries
@@ -84,7 +84,7 @@ add_custom_target(docs
 # EXAMPLES
 
 add_executable(simple EXCLUDE_FROM_ALL examples/simple.cpp)
-target_link_libraries(simple midimessage)
+target_link_libraries(simple midimsg)
 
 set_target_properties(simple
         PROPERTIES
