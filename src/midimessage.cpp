@@ -14,6 +14,116 @@ namespace MidiMessage {
     extern "C" {
 #endif
 
+
+    bool simpleValidate( uint8_t * bytes, size_t len ){
+        ASSERT( bytes != NULL );
+
+        if (len == 0){
+          return false;
+        }
+
+        if ( ! isControlByte(bytes[0]) ){
+            return false;
+        }
+/*
+
+    StatusClassNoteOff                  = 0x80,
+    StatusClassNoteOn                   = 0x90,
+    StatusClassPolyphonicKeyPressure    = 0xA0,
+    StatusClassControlChange            = 0xB0,
+    StatusClassProgramChange            = 0xC0,
+    StatusClassChannelPressure          = 0xD0,
+    StatusClassPitchBendChange          = 0xE0,
+    StatusClassSystemMessage            = 0xF0
+
+    SystemMessageSystemExclusive = 0xF0,
+    SystemMessageMtcQuarterFrame = 0xF1,
+    SystemMessageSongPositionPointer = 0xF2,
+    SystemMessageSongSelect = 0xF3,
+    SystemMessageTuneRequest = 0xF6,
+    SystemMessageEndOfExclusive = 0xF7,
+    SystemMessageTimingClock = 0xF8,
+    SystemMessageStart = 0xFA,
+    SystemMessageContinue = 0xFB,
+    SystemMessageStop = 0xFC,
+    SystemMessageActiveSensing = 0xFE,
+    SystemMessageReset = 0xFF
+*/
+
+        static const constexpr uint8_t lengthLUT[] = {
+          3, // 0 8* note off
+          3, // 1 9* note on
+          3, // 2 A* poly key press
+          3, // 3 B* cc
+          2, // 4 C* pc
+          2, // 5 D* ch press
+          3, // 6 E* pitch bend
+          0, // 7 F0 (sysex handled separately, pretty offset :)
+
+          2, // 8 F1 Mtc qf
+          3, // 9 F2 song pos p
+          2, // 10 F3 song sel
+          0, // 11 F4 invalid
+          0, // 12 F5 invalid
+          1, // 13 F6 tune req
+          0, // 14 F7 invalid (EOX)
+          1, // 15 F8 timing clck
+          0, // 16 F9 invalid
+          1, // 17 FA start
+          1, // 18 FB continue
+          1, // 19 FC stop
+          0, // 20 FD invalid
+          1, // 21 FE active sensing
+          1, // 22 FF reset
+        };
+
+        uint8_t testDataBytesUntil;
+
+        if (bytes[0] == 0xF0){
+
+          // if doesn't have at least 3 bytes and doesn't have EOX as last byte, it's not a valid sysex
+          if (len < 3 || bytes[len-1] != 0xF7){
+            return false;
+          }
+
+          // test all bytes until last byte
+          testDataBytesUntil = len - 1;
+
+        } else {
+          uint8_t lut;
+
+          if ((bytes[0] & 0xF0) != 0xF0){
+            // if is not system message (0xF0)
+            lut = (bytes[0] >> 4) & 0x07;
+          } else {
+            // if is system message
+            lut = (bytes[0] & 0x0F) + 7;
+          }
+
+          // does message have the right length?
+          if (len != lengthLUT[lut]){
+            return false;
+          }
+
+          // if it is only one byte long, we're done anyways
+          if (len == 1){
+            return true;
+          }
+
+          // test all remaining bytes
+          testDataBytesUntil = len;
+        }
+
+        for( size_t i = 1; i < testDataBytesUntil; i++ ){
+          if ( ! isDataByte(bytes[i]) ){
+            return false;
+          }
+        }
+
+        return true;
+    }
+
+
     inline void * memcpy( void * dst, void * src, uint8_t count ){
         for(uint8_t i = 0; i < count; i++){
             ((uint8_t*)dst)[i] = ((uint8_t*)src)[i];
@@ -97,7 +207,7 @@ namespace MidiMessage {
         }
 
         if (msg->StatusClass == StatusClassSystemMessage && msg->SystemMessage == SystemMessageSystemExclusive){
-            
+
             bytes[0] = msg->SystemMessage;
 
             if (msg->Data.SysEx.Id == SysExIdExperimental){

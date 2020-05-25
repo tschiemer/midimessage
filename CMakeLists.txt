@@ -19,12 +19,14 @@ set(HEADER_FILES
         include/midimessage/commonccs.h
         include/midimessage/notes.h
         include/midimessage/stringifier.h
-        include/midimessage/parser.h)
+        include/midimessage/parser.h
+        include/midimessage/simpleparser.h)
 
 set(SOURCE_FILES
         src/midimessage.cpp
         src/stringifier.cpp
         src/parser.cpp
+        src/simpleparser.cpp
         deps/c-utils/lib/util-hex.c)
 
 add_library(midimsg STATIC ${HEADER_FILES} ${SOURCE_FILES})

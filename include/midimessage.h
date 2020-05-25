@@ -663,7 +663,7 @@ namespace MidiMessage {
             bytes[2] = id & DataMask;
             return 3;
         }
-        
+
         return 1;
     }
 
@@ -2863,6 +2863,8 @@ namespace MidiMessage {
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
+
+    bool simpleValidate( uint8_t * bytes, size_t len );
 
     /**
      *  Tries to pack a given midi <msg> into the corresponding sequence of raw bytes.
