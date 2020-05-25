@@ -30,7 +30,7 @@ namespace MidiMessage {
     } SimpleParser_t;
 
 
-    void simpleparser_init(SimpleParser_t * parser, bool runningStatusEnabled, uint8_t * buffer, uint8_t maxLength, void (*messageHandler)(uint8_t *message, uint8_t length, void * context), void (*discardingDataHandler)(uint8_t * bytes, uint8_t length, void * context), void * context){
+    inline void simpleparser_init(SimpleParser_t * parser, bool runningStatusEnabled, uint8_t * buffer, uint8_t maxLength, void (*messageHandler)(uint8_t *message, uint8_t length, void * context), void (*discardingDataHandler)(uint8_t * bytes, uint8_t length, void * context), void * context){
 
         parser->RunningStatusEnabled = runningStatusEnabled;
 
