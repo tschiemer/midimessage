@@ -378,3 +378,4 @@ Here you will find applications that make use of this library. If you're using t
 
 - [PureData (PD) External](https://github.com/tschiemer/midimessage-pd-external)
 - [Max/MSP External](https://github.com/tschiemer/midimessage-max-external)
+- [midipatcher](https://github.com/tschiemer/midipatcher)
