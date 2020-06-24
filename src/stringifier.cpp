@@ -1,6 +1,6 @@
 
-#include <midimessage/stringifier.h>
-#include <midimessage/packers.h>
+#include "midimessage/stringifier.h"
+#include "midimessage/packers.h"
 #include <util-hex.h>
 
 

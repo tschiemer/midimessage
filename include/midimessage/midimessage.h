@@ -2,11 +2,12 @@
  * \file
  */
 
-#ifndef MIDIMESSAGE_H
-#define MIDIMESSAGE_H
+#ifndef MIDIMESSAGE_MIDIMESSAGE_H
+#define MIDIMESSAGE_MIDIMESSAGE_H
 
 //#define MIDIMESSAGE_VERSION 0x000000
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -2894,4 +2895,4 @@ namespace MidiMessage {
 } // namespace MidiMessage
 #endif
 
-#endif //MIDIMESSAGE_H
+#endif //MIDIMESSAGE_MIDIMESSAGE_H

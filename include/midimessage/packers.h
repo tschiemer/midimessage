@@ -5,7 +5,7 @@
 #ifndef MIDIMESSAGE_PACKERS_H
 #define MIDIMESSAGE_PACKERS_H
 
-#include "midimessage.h"
+#include "midimessage/midimessage.h"
 
 #ifdef __cplusplus
 namespace MidiMessage {

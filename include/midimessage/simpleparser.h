@@ -5,7 +5,7 @@
 #ifndef MIDIMESSAGE_SIMPLEPARSER_H
 #define MIDIMESSAGE_SIMPLEPARSER_H
 
-#include "../midimessage.h"
+#include "midimessage/midimessage.h"
 
 #ifdef __cplusplus
 namespace MidiMessage {

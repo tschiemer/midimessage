@@ -1,0 +1,4 @@
+include/midimessage*
+examples/*
+src/cli.cpp
+lib

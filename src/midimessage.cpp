@@ -5,8 +5,8 @@
 
 #include <stddef.h>
 
-#include <midimessage.h>
-#include <midimessage/packers.h>
+#include "midimessage/midimessage.h"
+#include "midimessage/packers.h"
 
 
 #ifdef __cplusplus

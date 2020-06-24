@@ -15,7 +15,7 @@
 
 #include <util-hex.h>
 
-#include <midimessage.h>
+#include <midimessage/midimessage.h>
 #include <midimessage/stringifier.h>
 #include <midimessage/parser.h>
 #include <midimessage/commonccs.h>

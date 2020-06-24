@@ -5,7 +5,7 @@
 #ifndef MIDIMESSAGE_COMMAND_INTERFACE_H
 #define MIDIMESSAGE_COMMAND_INTERFACE_H
 
-#include "../midimessage.h"
+#include "midimessage/midimessage.h"
 
 #ifdef __cplusplus
 namespace MidiMessage {
