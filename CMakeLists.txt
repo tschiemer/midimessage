@@ -12,7 +12,7 @@ include_directories(
         PRIVATE deps/c-utils/lib)
 
 set(HEADER_FILES
-        include/midimessage.h
+        include/midimessage/midimessage.h
         include/midimessage/packers.h
         include/midimessage/manufacturerids.h
         include/midimessage/dlsproprietarychunkids.h
