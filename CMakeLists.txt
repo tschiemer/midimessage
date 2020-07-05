@@ -93,8 +93,16 @@ set_target_properties(simple
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples/bin"
         )
 
+add_executable(nrpn-simpleparser EXCLUDE_FROM_ALL examples/nrpn-simpleparser.cpp)
+target_link_libraries(nrpn-simpleparser midimsg)
+
+set_target_properties(nrpn-simpleparser
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples/bin"
+        )
+
 # Group examples into target <examples>
 if(NOT TARGET examples)
     add_custom_target(examples)
-    add_dependencies(examples simple)
+    add_dependencies(examples simple nrpn-simpleparser)
 endif()
