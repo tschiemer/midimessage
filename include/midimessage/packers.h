@@ -6,6 +6,7 @@
 #define MIDIMESSAGE_PACKERS_H
 
 #include "midimessage/midimessage.h"
+#include "midimessage/commonccs.h"
 
 #ifdef __cplusplus
 namespace MidiMessage {
@@ -292,6 +293,176 @@ namespace MidiMessage {
 
         return false;
     }
+
+    inline uint8_t packNrpnValue(uint8_t *bytes, uint8_t channel, uint16_t controller, uint16_t value, uint8_t runningStatus){
+        ASSERT( bytes != NULL);
+        ASSERT((channel & ChannelMask) == channel);
+
+        uint8_t len = 0;
+
+        bytes[len++] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[len++] = CcNonRegisteredParameterMSB;
+        bytes[len++] = (controller >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcNonRegisteredParameterLSB;
+        bytes[len++] = controller & DataMask;
+        
+
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataEntryMSB;
+        bytes[len++] = (value >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataEntryLSB;
+        bytes[len++] = value & DataMask;
+        
+        return len;
+    }
+
+    inline uint8_t packNrpnIncrement(uint8_t *bytes, uint8_t channel, uint16_t controller, uint16_t value, uint8_t runningStatus){
+        ASSERT( bytes != NULL);
+        ASSERT((channel & ChannelMask) == channel);
+
+        uint8_t len = 0;
+
+        bytes[len++] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[len++] = CcNonRegisteredParameterMSB;
+        bytes[len++] = (controller >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcNonRegisteredParameterLSB;
+        bytes[len++] = controller & DataMask;
+        
+
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataIncrement;
+        bytes[len++] = value & DataMask;
+        
+        return len;
+    }
+
+    inline uint8_t packNrpnDecrement(uint8_t *bytes, uint8_t channel, uint16_t controller, uint16_t value, uint8_t runningStatus){
+        ASSERT( bytes != NULL);
+        ASSERT((channel & ChannelMask) == channel);
+
+        uint8_t len = 0;
+
+        bytes[len++] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[len++] = CcNonRegisteredParameterMSB;
+        bytes[len++] = (controller >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcNonRegisteredParameterLSB;
+        bytes[len++] = controller & DataMask;
+        
+
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataDecrement;
+        bytes[len++] = value & DataMask;
+        
+        return len;
+    }
+
+    inline uint8_t packRpnValue(uint8_t *bytes, uint8_t channel, uint16_t controller, uint16_t value, uint8_t runningStatus){
+        ASSERT( bytes != NULL);
+        ASSERT((channel & ChannelMask) == channel);
+
+        uint8_t len = 0;
+
+        bytes[len++] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[len++] = CcRegisteredParameterMSB;
+        bytes[len++] = (controller >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcRegisteredParameterLSB;
+        bytes[len++] = controller & DataMask;
+        
+
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataEntryMSB;
+        bytes[len++] = (value >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataEntryLSB;
+        bytes[len++] = value & DataMask;
+        
+        return len;
+    }
+
+    inline uint8_t packRpnIncrement(uint8_t *bytes, uint8_t channel, uint16_t controller, uint16_t value, uint8_t runningStatus){
+        ASSERT( bytes != NULL);
+        ASSERT((channel & ChannelMask) == channel);
+
+        uint8_t len = 0;
+
+        bytes[len++] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[len++] = CcRegisteredParameterMSB;
+        bytes[len++] = (controller >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcRegisteredParameterLSB;
+        bytes[len++] = controller & DataMask;
+        
+
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataIncrement;
+        bytes[len++] = value & DataMask;
+        
+        return len;
+    }
+
+    inline uint8_t packRpnDecrement(uint8_t *bytes, uint8_t channel, uint16_t controller, uint16_t value, uint8_t runningStatus){
+        ASSERT( bytes != NULL);
+        ASSERT((channel & ChannelMask) == channel);
+
+        uint8_t len = 0;
+
+        bytes[len++] = StatusClassControlChange | (channel & ChannelMask);
+        bytes[len++] = CcRegisteredParameterMSB;
+        bytes[len++] = (controller >> 7) & DataMask;
+        
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcRegisteredParameterLSB;
+        bytes[len++] = controller & DataMask;
+        
+
+        if (!runningStatus){
+            bytes[len++] =  bytes[0];
+        }
+        bytes[len++] = CcDataDecrement;
+        bytes[len++] = value & DataMask;
+        
+        return len;
+    }
+
+    
 
 
     inline uint8_t packProgramChange(uint8_t *bytes, uint8_t channel, uint8_t program) {
