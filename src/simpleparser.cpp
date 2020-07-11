@@ -177,9 +177,9 @@ namespace MidiMessage {
                         }
                     }
 
-                    // ALWAYS consume message
-                    parser->Length = 0;
-                    continue;
+                    // NEVER consume message (ie always pass to normal message handler)
+                    // parser->Length = 0;
+                    // continue;
                 }
 
                 // emit event
